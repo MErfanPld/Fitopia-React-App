@@ -1,0 +1,69 @@
+/**
+ * @file BottomNavigation.tsx
+ * @description Standard mobile-first tab bar pinned to the bottom of the page.
+ * Tracks location path from react-router-dom to highlight the selected main view segment.
+ */
+
+import { Home, Search, Award, User } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+
+export function BottomNavigation() {
+  const location = useLocation();
+
+  // Helper listener for unimplemented playground menu items
+  const handleNavClick = (label: string) => {
+    alert(`بخش "${label}" فیتوپیا به زودی آماده معرفی به کاربران قرار می‌گیرد.`);
+  };
+
+  return (
+    <nav className="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-3 pb-safe bg-surface-container/90 backdrop-blur-xl border-t border-white/5 z-50 rounded-t-xl shadow-[0_-4px_20px_rgba(255,106,0,0.05)] select-none">
+      {/* Home Button */}
+      <Link
+        id="nav-home"
+        to="/home"
+        className={`flex flex-col items-center justify-center rounded-xl px-4 py-1.5 transition-all duration-300 ease-out active:scale-90 ${
+          location.pathname === "/home"
+            ? "text-primary bg-primary/10"
+            : "text-on-surface-variant/60 hover:text-primary/80"
+        }`}
+      >
+        <Home size={20} className={location.pathname === "/home" ? "fill-current" : ""} />
+        <span className="font-label-sm text-label-sm mt-1">خانه</span>
+      </Link>
+
+      {/* Search Button */}
+      <button
+        id="nav-search"
+        onClick={() => handleNavClick("جستجوی باشگاه")}
+        className="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-colors active:scale-90 transition-transform duration-300 ease-out cursor-pointer"
+      >
+        <Search size={20} />
+        <span className="font-label-sm text-label-sm mt-1">جستجو</span>
+      </button>
+
+      {/* Subscription Button */}
+      <button
+        id="nav-subscribe"
+        onClick={() => handleNavClick("اشتراک فیتوپیا")}
+        className="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-colors active:scale-90 transition-transform duration-300 ease-out cursor-pointer"
+      >
+        <Award size={20} />
+        <span className="font-label-sm text-label-sm mt-1">اشتراک</span>
+      </button>
+
+      {/* Profile Button (Redirect to login/registration for full cycle mock) */}
+      <Link
+        id="nav-profile"
+        to="/login"
+        className={`flex flex-col items-center justify-center rounded-xl px-4 py-1.5 transition-all duration-300 ease-out active:scale-90 ${
+          location.pathname === "/login" || location.pathname === "/register"
+            ? "text-primary bg-primary/10"
+            : "text-on-surface-variant/60 hover:text-primary/80"
+        }`}
+      >
+        <User size={20} />
+        <span className="font-label-sm text-label-sm mt-1">پروفایل</span>
+      </Link>
+    </nav>
+  );
+}

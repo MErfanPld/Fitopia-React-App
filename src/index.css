@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+@import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
+
+@theme {
+  --font-sans: "Vazirmatn", "IRANSansX", "Yekan Bakh", "Dana", "Inter", sans-serif;
+  --font-vazir: "Vazirmatn", "IRANSansX", "Yekan Bakh", "Dana", "Inter", sans-serif;
+
+  --text-display-lg: 48px;
+  --text-display-md: 40px;
+  --text-headline: 32px;
+  --text-title: 24px;
+  --text-body-lg: 18px;
+  --text-body-md: 16px;
+  --text-label: 14px;
+  --text-caption: 12px;
+
+  --color-on-secondary: #432c00;
+  --color-secondary-container: #fdaf00;
+  --color-surface-container-lowest: #0e0e11;
+  --color-on-error-container: #ffdad6;
+  --color-primary-fixed-dim: #ffb694;
+  --color-surface-dim: #131317;
+  --color-surface-container: #201f23;
+  --color-on-surface: #e5e1e6;
+  --color-surface-bright: #39393d;
+  --color-on-primary-container: #571f00;
+  --color-on-tertiary-fixed-variant: #47464b;
+  --color-inverse-on-surface: #303034;
+  --color-on-background: #e5e1e6;
+  --color-outline-variant: #5a4136;
+  --color-surface-variant: #353438;
+  --color-on-primary-fixed-variant: #7b2f00;
+  --color-primary: #ffb694;
+  --color-tertiary: #c8c5cb;
+  --color-secondary-fixed-dim: #ffba43;
+  --color-primary-fixed: #ffdbcc;
+  --color-on-tertiary-container: #313135;
+  --color-on-surface-variant: #e2bfb0;
+  --color-on-secondary-fixed: #281800;
+  --color-inverse-surface: #e5e1e6;
+  --color-background: #131317;
+  --color-secondary: #ffd393;
+  --color-error-container: #93000a;
+  --color-surface-container-high: #2a292d;
+  --color-on-secondary-container: #694600;
+  --color-on-tertiary-fixed: #1b1b1f;
+  --color-on-primary-fixed: #351000;
+  --color-primary-container: #ff6a00;
+  --color-outline: #a98a7d;
+  --color-inverse-primary: #a14000;
+  --color-error: #ffb4ab;
+  --color-surface-container-highest: #353438;
+  --color-surface: #131317;
+  --color-on-error: #690005;
+  --color-on-primary: #571f00;
+  --color-tertiary-fixed-dim: #c8c5cb;
+  --color-on-tertiary: #303034;
+  --color-tertiary-container: #9a989d;
+  --color-secondary-fixed: #ffddaf;
+  --color-on-secondary-fixed-variant: #614000;
+  --color-surface-tint: #ffb694;
+  --color-tertiary-fixed: #e4e1e7;
+  --color-surface-container-low: #1b1b1f;
+}
+
+@layer base {
+  body, h1, h2, h3, h4, h5, h6, button, input, textarea, select, span, p, a, div {
+    font-family: 'Vazirmatn', 'IRANSansX', 'Yekan Bakh', 'Dana', 'Inter', sans-serif;
+  }
+  
+  body {
+    background-color: #07070A;
+    overflow-x: hidden;
+    min-height: max(884px, 100dvh);
+  }
+}
+
+@layer utilities {
+  /* Display Large (48px, Font Weight 800) */
+  .font-display-lg, .text-display-lg {
+    font-size: 48px !important;
+    font-weight: 800 !important;
+    line-height: 1.35 !important;
+    letter-spacing: -0.02em !important;
+  }
+  
+  /* Display Medium (40px, Font Weight 700) */
+  .font-display-md, .text-display-md {
+    font-size: 40px !important;
+    font-weight: 700 !important;
+    line-height: 1.4 !important;
+    letter-spacing: -0.01em !important;
+  }
+  
+  /* Headline (32px, Font Weight 700) */
+  .font-headline, .font-headline-md, .text-headline, .text-headline-md {
+    font-size: 32px !important;
+    font-weight: 700 !important;
+    line-height: 1.45 !important;
+    letter-spacing: -0.01em !important;
+  }
+  
+  /* Title (24px, Font Weight 600) */
+  .font-title, .text-title {
+    font-size: 24px !important;
+    font-weight: 600 !important;
+    line-height: 1.5 !important;
+  }
+  
+  /* Body Large (18px, Font Weight 400) */
+  .font-body-lg, .text-body-lg {
+    font-size: 18px !important;
+    font-weight: 400 !important;
+    line-height: 1.65 !important;
+  }
+  
+  /* Body Medium (16px, Font Weight 400) */
+  .font-body-md, .text-body-md {
+    font-size: 16px !important;
+    font-weight: 400 !important;
+    line-height: 1.7 !important;
+  }
+  
+  /* Label (14px, Font Weight 500) */
+  .font-label, .font-label-sm, .text-label, .text-label-sm {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    line-height: 1.6 !important;
+  }
+  
+  /* Caption (12px, Font Weight 500) */
+  .font-caption, .text-caption {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    line-height: 1.5 !important;
+  }
+
+  /* Force premium Iranian font system override (Digikala / Snapp / Divar feel) */
+  .font-vazir {
+    font-family: 'Vazirmatn', 'IRANSansX', 'Yekan Bakh', 'Dana', 'Inter', sans-serif !important;
+  }
+}
+
+.glass-panel {
+  background: rgba(14, 14, 18, 0.6);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: border-color 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.glass-panel:hover {
+  border-color: rgba(255, 176, 0, 0.3);
+}
+
+.energy-gradient {
+  background: linear-gradient(135deg, #FF6A00 0%, #FFB000 100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.energy-gradient:hover {
+  box-shadow: 0 0 20px rgba(255, 106, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+.input-underline {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: #FFB000;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(255, 176, 0, 0.5);
+  transform: translateX(-50%);
+}
+
+.custom-checkbox input:checked ~ .checkmark-container .checkmark-svg {
+  stroke-dashoffset: 0;
+}
+
+.checkmark-svg {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  transition: stroke-dashoffset 0.3s ease-out;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.floating-brand {
+  animation: float 4s ease-in-out infinite;
+}
+

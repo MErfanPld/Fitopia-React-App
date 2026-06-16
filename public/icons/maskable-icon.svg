@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Solid dark fill for perfect mask clipping -->
+    <rect id="bg" width="512" height="512" fill="#07070A" />
+    
+    <!-- Premium Orange-Gold Chrome Gradient -->
+    <linearGradient id="primary-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF8A00" />
+      <stop offset="50%" stop-color="#FF6A00" />
+      <stop offset="100%" stop-color="#FF3D00" />
+    </linearGradient>
+
+    <!-- Accent Golden Glow Gradient -->
+    <linearGradient id="glow-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF6A00" />
+      <stop offset="100%" stop-color="#FFB000" />
+    </linearGradient>
+
+    <!-- Drop Shadow for Letter F -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#FF6A00" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <!-- Full bleed black background for masking constraint -->
+  <use href="#bg" />
+
+  <!-- Centered Scaled Branding to stay safely inside the 60% safe zone constraint (r=150 in center) -->
+  <g transform="translate(48, 48) scale(0.8)" filter="url(#shadow)">
+    <!-- Main stem of F as a fast leaning athletic pillar -->
+    <path d="M170 120 C170 110, 180 100, 195 100 H350 C365 100, 375 112, 370 128 L355 178 C352 188, 342 195, 331 195 H245 L230 245 H305 C320 245, 330 257, 325 273 L312 315 C309 325, 299 332, 288 332 H205 L160 402 C155 410, 145 412, 137 406 C130 401, 128 391, 133 383 L225 240 L260 125 C263 115, 255 106, 245 106 H195 C185 106, 175 113, 172 122 Z" 
+          fill="url(#primary-grad)" />
+    
+    <!-- Dynamic Glowing Energetic Arc underneath -->
+    <path d="M110 380 C150 440, 240 460, 320 440 C390 422, 430 360, 420 300 C418 288, 432 280, 440 290 C458 360, 410 440, 330 462 C240 487, 135 460, 95 390 C90 380, 102 370, 110 380 Z" 
+          fill="url(#glow-grad)" />
+  </g>
+</svg>

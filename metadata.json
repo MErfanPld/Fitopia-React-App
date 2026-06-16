@@ -1,0 +1,6 @@
+{
+  "name": "Fitopia Register",
+  "description": "An installable high-performance Progressive Web App (PWA) built for FITOPIA with offline caching, route code-splitting, and native feel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
