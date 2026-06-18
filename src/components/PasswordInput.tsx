@@ -23,7 +23,7 @@ export function PasswordInput({
   placeholder = "••••••••",
   error,
   register,
-  forgotPasswordHref = "#",
+  forgotPasswordHref,
 }: PasswordInputProps) {
   // Eye icon visibility toggle
   const [showPassword, setShowPassword] = useState(false);
@@ -37,18 +37,20 @@ export function PasswordInput({
         >
           {label}
         </label>
-        <a
-          href={forgotPasswordHref}
-          onClick={(e) => {
-            if (forgotPasswordHref === "#") {
-              e.preventDefault();
-              alert("بازیابی رمز عبور شبیه‌سازی شد. ایمیلی برای شما ارسال خواهد شد.");
-            }
-          }}
-          className="text-xs text-primary/70 hover:text-primary transition-colors font-medium"
-        >
-          فراموشی رمز عبور
-        </a>
+        {forgotPasswordHref && (
+          <a
+            href={forgotPasswordHref}
+            onClick={(e) => {
+              if (forgotPasswordHref === "#") {
+                e.preventDefault();
+                alert("بازیابی رمز عبور شبیه‌سازی شد. ایمیلی برای شما ارسال خواهد شد.");
+              }
+            }}
+            className="text-xs text-primary/70 hover:text-primary transition-colors font-medium"
+          >
+            فراموشی رمز عبور
+          </a>
+        )}
       </div>
       
       <div className="relative flex items-center">

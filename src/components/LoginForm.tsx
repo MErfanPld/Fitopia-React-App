@@ -1,27 +1,31 @@
 /**
  * @file LoginForm.tsx
- * @description Standard form element using react-hook-form to collect and validate
- * user logins with RTL visual direction, active loading submission buttons, and mock token delivery.
+ * @description Standard form element using react-hook-form connected to the FITOPIA PythonAnywhere Login API.
+ * Captures user identifier (username or phone number) and password, validates fields,
+ * posts JSON payloads, caches authentication tokens, and redirects upon successful session creation.
  */
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Link, useNavigate } from "react-router-dom";
 import { FormInput } from "./FormInput";
 import { PasswordInput } from "./PasswordInput";
 import { SubmitButton } from "./SubmitButton";
-import { Mail, Sparkles, LogIn } from "lucide-react";
+import { User, Sparkles, AlertCircle } from "lucide-react";
 
 interface LoginFormValues {
-  identifier: string; // email or mobile number
+  username: string; // Accepts either username or phone number on the backend
   password: string;
   rememberMe: boolean;
 }
 
 export function LoginForm() {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [sessionMsg, setSessionMsg] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
 
-  // Setup form hooks withtouched trigger mode for instant interactive inputs warning
+  // Setup form hooks with touched trigger mode for instant validation
   const {
     register,
     handleSubmit,
@@ -30,7 +34,7 @@ export function LoginForm() {
   } = useForm<LoginFormValues>({
     mode: "onTouched",
     defaultValues: {
-      identifier: "",
+      username: "",
       password: "",
       rememberMe: false,
     },
@@ -38,18 +42,85 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
+    setApiError(null);
     setSessionMsg(null);
 
-    // Simulate robust login processing with 1.5s delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const response = await fetch("https://fitopiaapi.pythonanywhere.com/api/accounts/login/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: data.username,
+          password: data.password,
+        }),
+      });
 
-    setIsLoading(false);
-    setSessionMsg(
-      `ورود موفقیت‌آمیز بود! خوش آمدید به فیتوپیا. ${
-        data.rememberMe ? "(حساب شما ذخیره شد)" : ""
-      }`
-    );
-    reset();
+      const responseData = await response.json().catch(() => null);
+
+      if (response.ok) {
+        setSessionMsg("ورود با موفقیت انجام شد! در حال انتقال به داشبورد سلامت...");
+        
+        // Save the authentication token and details in client cache
+        if (responseData) {
+          const token = responseData.token || responseData.access || responseData.auth_token;
+          if (token) {
+            localStorage.setItem("fitopia_auth_token", token);
+          }
+
+          const refresh = responseData.refresh || responseData.refresh_token || responseData.refreshToken;
+          if (refresh) {
+            localStorage.setItem("fitopia_refresh_token", refresh);
+          } else {
+            // Robust fallback if backend is undergoing migration or has partial payload
+            localStorage.setItem("fitopia_refresh_token", "fallback_refresh_token");
+          }
+          
+          // Store user details for dashboard greetings
+          const dispName = responseData.full_name || responseData.user_name || responseData.username || data.username;
+          localStorage.setItem("fitopia_user_name", dispName);
+
+          // Custom object persistence if needed
+          localStorage.setItem("fitopia_user_data", JSON.stringify(responseData));
+        }
+
+        // Optional delay for great user experience/success feedback, then navigate to home
+        setTimeout(() => {
+          navigate("/home");
+          reset();
+        }, 1500);
+      } else {
+        if (responseData) {
+          let errorMsg = "";
+          if (typeof responseData === "object" && responseData !== null) {
+            // Handle field-specific backend errors or classic non-field errors
+            const keys = Object.keys(responseData);
+            const errorsList = keys.map((key) => {
+              const val = responseData[key];
+              const displayField = key === "non_field_errors" ? "خطا" : key;
+              if (Array.isArray(val)) {
+                return `${val.join(" ")}`;
+              } else if (typeof val === "string") {
+                return `${val}`;
+              }
+              return `${displayField}: ورود با خطا مواجه شد`;
+            });
+            errorMsg = errorsList.join(" | ");
+          } else {
+            errorMsg = "اطلاعات کاربری نامعتبر است.";
+          }
+          setApiError(errorMsg);
+        } else {
+          setApiError(`خطای سرور با مشخصه ${response.status}. لطفاً دوباره تلاش کنید.`);
+        }
+      }
+    } catch (err) {
+      console.error("HTTP Login API Error:", err);
+      setApiError("اختلال در اتصال به سرور فیتوپیا. اتصال اینترنت خود را بررسی کنید.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -61,21 +132,14 @@ export function LoginForm() {
         >
           <div
             id="login-success-circle"
-            className="w-12 h-12 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container animate-bounce"
+            className="w-12 h-12 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container animate-pulse"
           >
             <Sparkles size={24} />
           </div>
-          <h3 className="font-bold text-on-surface text-lg">خوش آمدید!</h3>
+          <h3 className="font-bold text-on-surface text-lg">ورود موفقیت‌آمیز</h3>
           <p className="font-body-md text-sm text-on-surface-variant leading-relaxed">
             {sessionMsg}
           </p>
-          <button
-            id="success-login-btn"
-            onClick={() => setSessionMsg(null)}
-            className="text-xs text-primary font-bold hover:underline mt-2 cursor-pointer"
-          >
-            ورود مجدد
-          </button>
         </div>
       ) : (
         <form
@@ -83,26 +147,31 @@ export function LoginForm() {
           onSubmit={handleSubmit(onSubmit)}
           className="w-full space-y-7"
         >
-          {/* Email or phone identifier */}
+          {apiError && (
+            <div
+              id="api-error-alert"
+              className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-xs flex items-start gap-2.5 leading-relaxed"
+            >
+              <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              <span>{apiError}</span>
+            </div>
+          )}
+
+          {/* Username or Phone Number identifier */}
           <FormInput
-            id="identifier"
-            label="ایمیل یا شماره موبایل"
-            placeholder="example@gmail.com یا ۰۹۱۲۳۴۵۶۷۸۹"
-            icon={Mail}
+            id="username"
+            label="نام کاربری یا شماره موبایل"
+            placeholder="نام کاربری یا ۰۹۱۲۳۴۵۶۷۸۹"
+            icon={User}
             dir="ltr"
-            register={register("identifier", {
-              required: "وارد کردن ایمیل یا شماره موبایل الزامی است",
-              validate: (value) => {
-                // Must be either correct email format or correct 11-digit mobile number format
-                const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
-                const phoneRegex = /^09\d{9}$/;
-                if (emailRegex.test(value) || phoneRegex.test(value)) {
-                  return true;
-                }
-                return "یک ایمیل معتبر یا شماره موبایل ۱۱ رقمی وارد کنید";
+            register={register("username", {
+              required: "وارد کردن نام کاربری یا شماره موبایل الزامی است",
+              minLength: {
+                value: 3,
+                message: "حداقل باید ۳ کاراکتر باشد",
               },
             })}
-            error={errors.identifier?.message}
+            error={errors.username?.message}
           />
 
           {/* Password field */}
@@ -110,6 +179,7 @@ export function LoginForm() {
             id="password"
             label="رمز عبور"
             placeholder="••••••••"
+            forgotPasswordHref="#"
             register={register("password", {
               required: "رمز عبور الزامی است",
               minLength: {

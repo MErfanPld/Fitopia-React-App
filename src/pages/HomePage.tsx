@@ -42,32 +42,29 @@ export function HomePage() {
       <Header />
 
       {/* 4. Main wellness workspace feed */}
-      <main className="relative z-10 pt-24 pb-32 px-4 max-w-7xl mx-auto w-full select-none text-right">
-        <div className="space-y-12" id="home-dashboard-layout">
-          
-          {/* Greeting Hero Section */}
+      <main className="relative z-10 pt-24 pb-36 px-4 md:px-8 max-w-7xl mx-auto w-full select-none text-right">
+        {/* Top greeting dashboard entry */}
+        <div className="mb-8" id="home-greeting-wrapper">
           <GreetingSection />
+        </div>
 
-          {/* Direct PWA Install Campaign Prompt */}
-          <PWAInstallButton />
+        {/* Responsive grid: Stack on mobile, side-by-side bento blocks on desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start" id="home-dashboard-layout">
+          
+          {/* Main workout-related selectors & logs (Span 8 on desktop, ordered 2nd for semantic RTL alignment) */}
+          <div className="lg:col-span-8 lg:order-2 space-y-10 w-full overflow-hidden">
+            <PWAInstallButton />
+            <CategorySlider />
+            <PopularGyms />
+            <ActivityList />
+          </div>
 
-          {/* Token Card section */}
-          <TokenCard />
-
-          {/* Categories Selector */}
-          <CategorySlider />
-
-          {/* Popular partner gyms */}
-          <PopularGyms />
-
-          {/* Nearby partner gyms Map view */}
-          <NearbyGymsMap />
-
-          {/* Advanced Quick Trigger Action cards */}
-          <QuickActions />
-
-          {/* Fitness Logs activities registry */}
-          <ActivityList />
+          {/* Quick Balance, Actions, & Location widgets (Span 4 on desktop, ordered 1st for LHS placement) */}
+          <div className="lg:col-span-4 lg:order-1 space-y-10 w-full lg:sticky lg:top-24">
+            <TokenCard />
+            <QuickActions />
+            <NearbyGymsMap />
+          </div>
 
         </div>
       </main>

@@ -1,30 +1,35 @@
 /**
  * @file RegisterForm.tsx
- * @description Native registration layout using react-hook-form to register new athletes.
- * Enforces dynamic schema constraints including email format, telephone format,
- * password matching criteria, and legal terms agreement checking.
+ * @description Integration with FITOPIA PythonAnywhere registration backend.
+ * Captures user full name, custom alphanumeric username, phone number, and password,
+ * validating fields gracefully inside react-hook-form and posting secure JSON mock registration models.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { Link, useNavigate } from "react-router-dom";
 import { FormInput } from "./FormInput";
+import { PasswordInput } from "./PasswordInput";
 import { SubmitButton } from "./SubmitButton";
-import { Smartphone, Mail, Sparkles } from "lucide-react";
+import { Smartphone, User, Sparkles, AlertCircle } from "lucide-react";
 
 interface RegisterFormValues {
   fullName: string;
-  mobileNumber: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
+  username: string;
+  phoneNumber: string;
+  password?: string;
+  confirmPassword?: string;
   terms: boolean;
 }
 
 export function RegisterForm() {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState<number>(8);
 
-  // Intransitive fields registration mode
+  // Setup hook form tracking validation states
   const {
     register,
     handleSubmit,
@@ -35,28 +40,101 @@ export function RegisterForm() {
     mode: "onTouched",
     defaultValues: {
       fullName: "",
-      mobileNumber: "",
-      email: "",
+      username: "",
+      phoneNumber: "",
       password: "",
       confirmPassword: "",
       terms: false,
     },
   });
 
-  const passwordValue = watch("password");
+  const passwordVal = watch("password");
 
+  // Quick Countdown loop for automatic redirect after registration success
+  useEffect(() => {
+    if (successMsg) {
+      const interval = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            navigate("/login");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [successMsg, navigate]);
+
+  // Submission handler connecting with standard PythonAnywhere Registration API
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
+    setApiError(null);
     setSuccessMsg(null);
 
-    // Simulate robust API call for 2 seconds
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      const response = await fetch("https://fitopiaapi.pythonanywhere.com/api/accounts/register/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phone_number: data.phoneNumber,
+          username: data.username,
+          full_name: data.fullName,
+          password: data.password,
+        }),
+      });
 
-    setIsLoading(false);
-    setSuccessMsg(
-      `تبریک ${data.fullName}! حساب کاربری شما در فیتوپیا با موفقیت ساخته شد.`
-    );
-    reset();
+      const responseData = await response.json().catch(() => null);
+
+      if (response.ok) {
+        setSuccessMsg(
+          `تبریک ${data.fullName}! حساب کاربری شما با نام کاربری ${data.username} در پایگاه داده سلامت فیتوپیا ثبت شد.`
+        );
+        // Persist name locally to customize dashboard greetings on first run
+        localStorage.setItem("fitopia_user_name", data.fullName);
+        reset();
+      } else {
+        if (responseData) {
+          let errorMsg = "";
+          if (typeof responseData === "object" && responseData !== null) {
+            const keys = Object.keys(responseData);
+            const fieldTranslations: Record<string, string> = {
+              phone_number: "شماره موبایل",
+              username: "نام کاربری",
+              full_name: "نام کامل",
+              password: "رمز عبور",
+              non_field_errors: "خطا",
+              detail: "جزئیات",
+            };
+
+            const errorsList = keys.map((key) => {
+              const val = responseData[key];
+              const displayField = fieldTranslations[key] || key;
+              if (Array.isArray(val)) {
+                return `${displayField}: ${val.join(" ")}`;
+              } else if (typeof val === "string") {
+                return `${displayField}: ${val}`;
+              }
+              return `${displayField}: خطای مقداردهی مکرر`;
+            });
+            errorMsg = errorsList.join(" | ");
+          } else {
+            errorMsg = "اطلاعات ارسالی با قالب مد نظر سرور همخوانی ندارد.";
+          }
+          setApiError(errorMsg);
+        } else {
+          setApiError(`خطای سرور با مشخصه ${response.status}`);
+        }
+      }
+    } catch (err) {
+      console.error("HTTP Registration API Error:", err);
+      setApiError("بروز اختلال در اتصال به سرور ثبت‌نام. وضعیت شبکه را بررسی کنید.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -68,17 +146,29 @@ export function RegisterForm() {
         >
           <div
             id="sparkles-circle"
-            className="w-12 h-12 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container"
+            className="w-12 h-12 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container animate-[pulse_2s_infinite]"
           >
             <Sparkles size={24} />
           </div>
-          <h3 className="font-bold text-on-surface text-lg">ساخت حساب موفقیت‌آمیز بود!</h3>
+          <h3 className="font-bold text-on-surface text-lg">ثبت‌نام با موفقیت انجام شد!</h3>
           <p className="font-body-md text-sm text-on-surface-variant leading-relaxed">
             {successMsg}
           </p>
+          <p id="countdown-text" className="text-xs text-on-surface-variant/60 font-medium">
+            انتقال خودکار به صفحه ورود در {countdown} ثانیه دیگر...
+          </p>
+          <Link
+            to="/login"
+            className="w-full mt-4 py-3 bg-gradient-to-r from-[#FF6A00] to-[#FFB000] text-center text-on-primary font-bold rounded-xl shadow-lg shadow-primary/20 active:scale-95 hover:brightness-110 duration-200 transition-all block text-sm"
+          >
+            ورود به حساب کاربری
+          </Link>
           <button
             id="success-back-btn"
-            onClick={() => setSuccessMsg(null)}
+            onClick={() => {
+              setSuccessMsg(null);
+              setCountdown(8);
+            }}
             className="text-xs text-primary font-bold hover:underline mt-2 cursor-pointer"
           >
             ایجاد یک حساب کاربری دیگر
@@ -90,6 +180,16 @@ export function RegisterForm() {
           onSubmit={handleSubmit(onSubmit)}
           className="w-full space-y-7"
         >
+          {apiError && (
+            <div
+              id="api-error-alert"
+              className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-xs flex items-start gap-2.5 leading-relaxed"
+            >
+              <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              <span>{apiError}</span>
+            </div>
+          )}
+
           {/* Full Name */}
           <FormInput
             id="fullName"
@@ -105,68 +205,73 @@ export function RegisterForm() {
             error={errors.fullName?.message}
           />
 
-          {/* Mobile Number */}
+          {/* Username */}
           <FormInput
-            id="mobileNumber"
+            id="username"
+            label="نام کاربری"
+            dir="ltr"
+            placeholder="example_username"
+            icon={User}
+            register={register("username", {
+              required: "نام کاربری الزامی است",
+              minLength: {
+                value: 3,
+                message: "نام کاربری حداقل باید ۳ کاراکتر باشد",
+              },
+              pattern: {
+                value: /^[a-zA-Z0-9_.-]+$/,
+                message: "فقط حروف انگلیسی، اعداد، نقطه و خط تیره مجاز است",
+              }
+            })}
+            error={errors.username?.message}
+          />
+
+          {/* Phone Number */}
+          <FormInput
+            id="phoneNumber"
             label="شماره موبایل"
             type="tel"
             dir="ltr"
             placeholder="09123456789"
             icon={Smartphone}
-            register={register("mobileNumber", {
+            register={register("phoneNumber", {
               required: "شماره موبایل الزامی است",
               pattern: {
                 value: /^09\d{9}$/,
-                message: "یک شماره موبایل معتبر ۱۱ رقمی (مانند ۰۹۱۲۳۴۵۶۷۸۹) وارد کنید",
+                message: "یک شماره موبایل معتبر ۱۱ رقمی (مثلاً ۰۹۱۲۳۴۵۶۷۸۹) وارد کنید",
               },
             })}
-            error={errors.mobileNumber?.message}
+            error={errors.phoneNumber?.message}
           />
 
-          {/* Email */}
-          <FormInput
-            id="email"
-            label="ایمیل"
-            type="email"
-            dir="ltr"
-            placeholder="example@fitopia.pro"
-            icon={Mail}
-            register={register("email", {
-              required: "ایمیل الزامی است",
-              pattern: {
-                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                message: "آدرس ایمیل معتبر نیست",
-              },
-            })}
-            error={errors.email?.message}
-          />
-
-          {/* Password */}
-          <FormInput
+          {/* Password (required) */}
+          <PasswordInput
             id="password"
             label="رمز عبور"
-            type="password"
             placeholder="••••••••"
             register={register("password", {
               required: "رمز عبور الزامی است",
               minLength: {
                 value: 6,
-                message: "رمز عبور حداقل باید ۶ کاراکتر باشد",
+                message: "رمز عبور باید حداقل ۶ کاراکتر باشد",
+              },
+              maxLength: {
+                value: 30,
+                message: "رمز عبور نمی‌تواند بیش از ۳۰ کاراکتر باشد",
               },
             })}
             error={errors.password?.message}
           />
 
-          {/* Confirm Password */}
-          <FormInput
+          {/* Confirm Password (frontend only validation) */}
+          <PasswordInput
             id="confirmPassword"
             label="تکرار رمز عبور"
-            type="password"
             placeholder="••••••••"
             register={register("confirmPassword", {
               required: "تکرار رمز عبور الزامی است",
               validate: (value) =>
-                value === passwordValue || "رمز عبور و تکرار آن یکسان نیستند",
+                value === passwordVal || "تکرار رمز عبور با رمز عبور اولیه مطابقت ندارد",
             })}
             error={errors.confirmPassword?.message}
           />

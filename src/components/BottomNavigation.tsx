@@ -16,7 +16,7 @@ export function BottomNavigation() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-3 pb-safe bg-surface-container/90 backdrop-blur-xl border-t border-white/5 z-50 rounded-t-xl shadow-[0_-4px_20px_rgba(255,106,0,0.05)] select-none">
+    <nav className="fixed bottom-0 left-0 w-full md:bottom-6 md:left-1/2 md:-translate-x-1/2 md:max-w-md md:rounded-2xl md:border md:border-white/10 md:shadow-[0_8px_32px_rgba(0,0,0,0.5)] flex justify-around items-center px-4 py-3 pb-safe md:pb-3 bg-surface-container/90 backdrop-blur-xl border-t border-white/5 z-50 rounded-t-xl shadow-[0_-4px_20px_rgba(255,106,0,0.05)] select-none">
       {/* Home Button */}
       <Link
         id="nav-home"

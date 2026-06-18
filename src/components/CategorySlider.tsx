@@ -28,7 +28,7 @@ export function CategorySlider({ onCategoryChange }: CategorySliderProps) {
     <section className="mt-10 fade-in-up select-none" style={{ animationDelay: "0.3s" }} id="category-slider">
       <h4 className="font-headline-md text-headline-md text-on-surface mb-4">دسته‌بندی باشگاه‌ها</h4>
       
-      <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2 relative z-10">
+      <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2 relative z-10 md:flex-wrap md:overflow-visible">
         {categories.map((cat) => {
           const isActive = cat === activeCategory;
           return (

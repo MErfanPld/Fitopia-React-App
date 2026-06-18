@@ -17,7 +17,7 @@ export function GymCard({ gym, onClick }: GymCardProps) {
   return (
     <div
       onClick={onClick}
-      className="flex-shrink-0 w-64 rounded-2xl overflow-hidden glass-card group cursor-pointer select-none transition-all duration-300 hover:border-primary/20 active:scale-[0.98]"
+      className="flex-shrink-0 w-64 md:w-full rounded-2xl overflow-hidden glass-card group cursor-pointer select-none transition-all duration-300 hover:border-primary/20 active:scale-[0.98]"
     >
       <div className="h-40 relative overflow-hidden">
         <img

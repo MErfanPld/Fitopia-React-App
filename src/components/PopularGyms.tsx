@@ -33,7 +33,7 @@ export function PopularGyms({ onGymSelect }: PopularGymsProps) {
         </button>
       </div>
       
-      <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4">
+      <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 md:grid md:grid-cols-2 xl:grid-cols-3 md:gap-6 md:pb-0 md:overflow-visible">
         {gymsData.map((gym) => (
           <GymCard 
             key={gym.id} 
