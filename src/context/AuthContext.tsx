@@ -108,52 +108,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log("Stored refresh token (localStorage):", localStorage.getItem("refresh"));
   };
 
-  const logout = async () => {
-    const currentRefresh = refreshToken || localStorage.getItem("refresh") || localStorage.getItem("fitopia_refresh_token") || "";
-    const currentAccess = token || localStorage.getItem("access") || localStorage.getItem("fitopia_auth_token") || "";
+const logout = async () => {
+  const currentRefresh =
+    refreshToken ||
+    localStorage.getItem("refresh") ||
+    localStorage.getItem("fitopia_refresh_token") ||
+    "";
 
-    // Clear local storage and state regardless of outcome
-    const clearAuthCache = () => {
-      setToken(null);
-      setRefreshToken(null);
-      setUserData(null);
-      setDisplayName("کاربر عزیز");
-      
-      localStorage.removeItem("access");
-      localStorage.removeItem("fitopia_auth_token");
-      localStorage.removeItem("refresh");
-      localStorage.removeItem("fitopia_refresh_token");
-      localStorage.removeItem("fitopia_user_name");
-      localStorage.removeItem("fitopia_user_data");
-    };
+  const currentAccess =
+    token ||
+    localStorage.getItem("access") ||
+    localStorage.getItem("fitopia_auth_token") ||
+    "";
 
-    try {
-      const response = await fetch("https://fitopiaapi.pythonanywhere.com/api/accounts/logout/", {
+  const clearAuthCache = () => {
+    setToken(null);
+    setRefreshToken(null);
+    setUserData(null);
+    setDisplayName("کاربر عزیز");
+
+    localStorage.removeItem("access");
+    localStorage.removeItem("fitopia_auth_token");
+    localStorage.removeItem("refresh");
+    localStorage.removeItem("fitopia_refresh_token");
+    localStorage.removeItem("fitopia_user_name");
+    localStorage.removeItem("fitopia_user_data");
+  };
+
+  try {
+    const response = await fetch(
+      "https://fitopiaapi.pythonanywhere.com/api/accounts/logout/",
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(currentAccess ? { "Authorization": `Bearer ${currentAccess}` } : {}),
+          ...(currentAccess
+            ? { Authorization: `Bearer ${currentAccess}` }
+            : {}),
         },
         body: JSON.stringify({
           refresh: currentRefresh,
         }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        const detail = errorData?.detail || errorData?.error || errorData?.refresh;
-        const msg = Array.isArray(detail) ? detail.join(" | ") : detail || "خروج با خطا مواجه شد";
-        throw new Error(msg);
       }
-      
-      clearAuthCache();
-    } catch (err) {
-      console.error("Logout API request error:", err);
-      // Re-throw so component can display exact error warning and keep user logged in if specified,
-      // but if we want robust behavior, we throw so UI holds user.
-      throw err;
+    );
+
+    // ✅ مهم: حتی اگر API fail شد هم باید logout انجام شود
+    clearAuthCache();
+
+    if (!response.ok) {
+      console.warn("Logout API failed but user was logged out locally");
     }
-  };
+  } catch (err) {
+    console.error("Logout API error:", err);
+
+    // ✅ مهم: حتی در error هم پاک کن
+    clearAuthCache();
+  }
+};
 
   const setDisplayNameState = (name: string) => {
     setDisplayName(name);
