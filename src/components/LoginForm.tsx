@@ -12,6 +12,7 @@ import { FormInput } from "./FormInput";
 import { PasswordInput } from "./PasswordInput";
 import { SubmitButton } from "./SubmitButton";
 import { User, Sparkles, AlertCircle } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 interface LoginFormValues {
   username: string; // Accepts either username or phone number on the backend
@@ -21,6 +22,7 @@ interface LoginFormValues {
 
 export function LoginForm() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [sessionMsg, setSessionMsg] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -65,24 +67,12 @@ export function LoginForm() {
         // Save the authentication token and details in client cache
         if (responseData) {
           const token = responseData.token || responseData.access || responseData.auth_token;
-          if (token) {
-            localStorage.setItem("fitopia_auth_token", token);
-          }
-
-          const refresh = responseData.refresh || responseData.refresh_token || responseData.refreshToken;
-          if (refresh) {
-            localStorage.setItem("fitopia_refresh_token", refresh);
-          } else {
-            // Robust fallback if backend is undergoing migration or has partial payload
-            localStorage.setItem("fitopia_refresh_token", "fallback_refresh_token");
-          }
-          
-          // Store user details for dashboard greetings
+          const refresh = responseData.refresh || responseData.refresh_token || responseData.refreshToken || "fallback_refresh_token";
           const dispName = responseData.full_name || responseData.user_name || responseData.username || data.username;
-          localStorage.setItem("fitopia_user_name", dispName);
-
-          // Custom object persistence if needed
-          localStorage.setItem("fitopia_user_data", JSON.stringify(responseData));
+          
+          if (token) {
+            login(token, refresh, responseData, dispName);
+          }
         }
 
         // Optional delay for great user experience/success feedback, then navigate to home

@@ -9,53 +9,18 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, LogOut, Loader2, AlertCircle, User } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { useAuth } from "../context/AuthContext";
 
 export function Header() {
   const navigate = useNavigate();
+  const { displayName, logout } = useAuth();
   const [unreadNotifications, setUnreadNotifications] = useState(1);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
-  const [displayName, setDisplayName] = useState("کاربر عزیز");
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Sync profile display name on mounting
-  useEffect(() => {
-    const rawStored = localStorage.getItem("fitopia_user_name");
-    
-    // Check if there is full user data
-    const storedDataStr = localStorage.getItem("fitopia_user_data");
-    let resolvedName = "";
-
-    if (storedDataStr) {
-      try {
-        const userData = JSON.parse(storedDataStr);
-        if (userData && typeof userData === "object") {
-          resolvedName = userData.full_name || userData.user_name || userData.username;
-        }
-      } catch (e) {
-        console.error("Stale user data in local storage:", e);
-      }
-    }
-
-    if (!resolvedName && rawStored) {
-      resolvedName = rawStored;
-    }
-
-    // Defensive default
-    if (resolvedName) {
-      // If it resembles a phone number format, fallback
-      const cleanNum = resolvedName.trim().replace(/[\s\-()]/g, "");
-      if (/^\+?\d+$/.test(cleanNum)) {
-        setDisplayName("کاربر فیتوپیا");
-      } else {
-        setDisplayName(resolvedName);
-      }
-    } else {
-      setDisplayName("کاربر عزیز");
-    }
-  }, [isDropdownOpen]);
 
   // Click outside detector
   useEffect(() => {
@@ -86,46 +51,12 @@ export function Header() {
     setIsLoggingOut(true);
     setLogoutError(null);
 
-    const refreshToken = localStorage.getItem("fitopia_refresh_token") || "";
-    const accessToken = localStorage.getItem("fitopia_auth_token") || "";
-
     try {
-      const response = await fetch("https://fitopiaapi.pythonanywhere.com/api/accounts/logout/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify({
-          refresh: refreshToken,
-        }),
-      });
-
-      if (response.ok) {
-        // Complete sweep of authentication cached items
-        localStorage.removeItem("fitopia_auth_token");
-        localStorage.removeItem("fitopia_refresh_token");
-        localStorage.removeItem("fitopia_user_name");
-        localStorage.removeItem("fitopia_user_data");
-
-        setIsDropdownOpen(false);
-        navigate("/login");
-      } else {
-        const responseData = await response.json().catch(() => null);
-        let message = "خروج از حساب با خطا مواجه شد.";
-        if (responseData && typeof responseData === "object") {
-          const detail = responseData.detail || responseData.error || responseData.refresh;
-          if (Array.isArray(detail)) {
-            message = detail.join(" | ");
-          } else if (typeof detail === "string") {
-            message = detail;
-          }
-        }
-        setLogoutError(message);
-      }
-    } catch (err) {
-      console.error("HTTP Logout Request Fail:", err);
-      setLogoutError("اختلال در اتصال به شبکه. دوباره تلاش کنید.");
+      await logout();
+      setIsDropdownOpen(false);
+      navigate("/welcome");
+    } catch (err: any) {
+      setLogoutError(err.message || "خروج از حساب با خطا مواجه شد.");
     } finally {
       setIsLoggingOut(false);
     }

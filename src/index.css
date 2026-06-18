@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
-@import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Vazirmatn:wght@100;200;300;400;500;600;700;800;900&display=swap');
 
 @theme {
-  --font-sans: "Vazirmatn", "IRANSansX", "Yekan Bakh", "Dana", "Inter", sans-serif;
-  --font-vazir: "Vazirmatn", "IRANSansX", "Yekan Bakh", "Dana", "Inter", sans-serif;
+  --font-sans: "Vazirmatn", "Inter", system-ui, sans-serif;
+  --font-vazir: "Vazirmatn", "Inter", system-ui, sans-serif;
 
   --text-display-lg: 48px;
   --text-display-md: 40px;
@@ -65,8 +65,12 @@
 }
 
 @layer base {
-  body, h1, h2, h3, h4, h5, h6, button, input, textarea, select, span, p, a, div {
-    font-family: 'Vazirmatn', 'IRANSansX', 'Yekan Bakh', 'Dana', 'Inter', sans-serif;
+  html, body, #root {
+    font-family: 'Vazirmatn', 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  body, h1, h2, h3, h4, h5, h6, button, input, textarea, select, span, p, a, div, label, table, th, td, li, ul, ol, dialog {
+    font-family: 'Vazirmatn', 'Inter', system-ui, -apple-system, sans-serif;
   }
   
   body {
@@ -81,31 +85,31 @@
   .font-display-lg, .text-display-lg {
     font-size: 48px !important;
     font-weight: 800 !important;
-    line-height: 1.35 !important;
-    letter-spacing: -0.02em !important;
+    line-height: 1.45 !important;
+    letter-spacing: normal !important;
   }
   
   /* Display Medium (40px, Font Weight 700) */
   .font-display-md, .text-display-md {
     font-size: 40px !important;
     font-weight: 700 !important;
-    line-height: 1.4 !important;
-    letter-spacing: -0.01em !important;
+    line-height: 1.5 !important;
+    letter-spacing: normal !important;
   }
   
   /* Headline (32px, Font Weight 700) */
   .font-headline, .font-headline-md, .text-headline, .text-headline-md {
     font-size: 32px !important;
     font-weight: 700 !important;
-    line-height: 1.45 !important;
-    letter-spacing: -0.01em !important;
+    line-height: 1.5 !important;
+    letter-spacing: normal !important;
   }
   
   /* Title (24px, Font Weight 600) */
   .font-title, .text-title {
     font-size: 24px !important;
     font-weight: 600 !important;
-    line-height: 1.5 !important;
+    line-height: 1.55 !important;
   }
   
   /* Body Large (18px, Font Weight 400) */
@@ -133,12 +137,12 @@
   .font-caption, .text-caption {
     font-size: 12px !important;
     font-weight: 500 !important;
-    line-height: 1.5 !important;
+    line-height: 1.55 !important;
   }
 
   /* Force premium Iranian font system override (Digikala / Snapp / Divar feel) */
   .font-vazir {
-    font-family: 'Vazirmatn', 'IRANSansX', 'Yekan Bakh', 'Dana', 'Inter', sans-serif !important;
+    font-family: 'Vazirmatn', 'Inter', system-ui, -apple-system, sans-serif !important;
   }
 }
 

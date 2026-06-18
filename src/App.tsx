@@ -15,9 +15,13 @@ import { OfflineIndicator } from "./components/OfflineIndicator";
 
 // Asynchronously load routes with named export resolution for optimal performance
 const HomePage = lazy(() => import("./pages/HomePage").then((module) => ({ default: module.HomePage })));
+const WelcomePage = lazy(() => import("./pages/WelcomePage").then((module) => ({ default: module.WelcomePage })));
 const LoginPage = lazy(() => import("./pages/LoginPage").then((module) => ({ default: module.LoginPage })));
 const RegisterPage = lazy(() => import("./pages/RegisterPage").then((module) => ({ default: module.RegisterPage })));
 const OfflinePage = lazy(() => import("./pages/OfflinePage").then((module) => ({ default: module.OfflinePage })));
+
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 
 // Sleek glassmorphic skeleton loader for premium dynamic routes
 function LoadingFallback() {
@@ -36,26 +40,45 @@ function LoadingFallback() {
   );
 }
 
+function AppContent() {
+  const { isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingFallback />;
+  }
+
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <Routes>
+        <Route path="/welcome" element={<WelcomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/home" element={
+          <ProtectedRoute>
+            <HomePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/offline" element={<OfflinePage />} />
+        {/* Clean redirect for any other path directly to /home */}
+        <Route path="*" element={<Navigate to="/home" replace />} />
+      </Routes>
+    </Suspense>
+  );
+}
+
 export default function App() {
   return (
-    <BrowserRouter>
-      {/* 1. Global Offline Connectivity Tracker */}
-      <OfflineIndicator />
+    <AuthProvider>
+      <BrowserRouter>
+        {/* 1. Global Offline Connectivity Tracker */}
+        <OfflineIndicator />
 
-      {/* 2. Global Hot Service Worker Dynamic Updater Toast */}
-      <UpdatePrompt />
+        {/* 2. Global Hot Service Worker Dynamic Updater Toast */}
+        <UpdatePrompt />
 
-      {/* 3. Suspense Lazy Route Code Splitting Wrapper */}
-      <Suspense fallback={<LoadingFallback />}>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/offline" element={<OfflinePage />} />
-          {/* Clean redirect for any other path directly to /home */}
-          <Route path="*" element={<Navigate to="/home" replace />} />
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+        {/* 3. Suspense Lazy Route Code Splitting Wrapper with Auth State Loading Barrier */}
+        <AppContent />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

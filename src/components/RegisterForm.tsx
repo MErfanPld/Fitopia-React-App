@@ -12,6 +12,7 @@ import { FormInput } from "./FormInput";
 import { PasswordInput } from "./PasswordInput";
 import { SubmitButton } from "./SubmitButton";
 import { Smartphone, User, Sparkles, AlertCircle } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 interface RegisterFormValues {
   fullName: string;
@@ -24,6 +25,7 @@ interface RegisterFormValues {
 
 export function RegisterForm() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -91,10 +93,25 @@ export function RegisterForm() {
 
       if (response.ok) {
         setSuccessMsg(
-          `تبریک ${data.fullName}! حساب کاربری شما با نام کاربری ${data.username} در پایگاه داده سلامت فیتوپیا ثبت شد.`
+          `تبریک ${data.fullName}! حساب کاربری شما با نام کاربری ${data.username} در پایگاه داده سلامت فیتوپیا ثبت شد. در حال هدایت به بخش ورود...`
         );
-        // Persist name locally to customize dashboard greetings on first run
-        localStorage.setItem("fitopia_user_name", data.fullName);
+        
+        // If the registration endpoint returns a token, log them in automatically
+        const token = responseData?.token || responseData?.access || responseData?.auth_token;
+        const refresh = responseData?.refresh || responseData?.refresh_token || responseData?.refreshToken || "fallback_refresh_token";
+        
+        if (token) {
+          login(token, refresh, responseData, data.fullName);
+          setTimeout(() => {
+            navigate("/home");
+          }, 2000);
+        } else {
+          // Fallback if no token is returned, save name candidate and redirect to login
+          localStorage.setItem("fitopia_user_name", data.fullName);
+          setTimeout(() => {
+            navigate("/login");
+          }, 2000);
+        }
         reset();
       } else {
         if (responseData) {
