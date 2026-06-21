@@ -82,7 +82,7 @@ export function PopularGyms({ onGymSelect }: PopularGymsProps) {
                 name: gym.name,
                 cover_image: gym.cover_image,
                 popularity_score: gym.popularity_score,
-                rating: gym.popularity_score / 20,
+                rating: gym.popularity_score,
               }}
               onClick={() => handleGymClick(gym)}
             />
