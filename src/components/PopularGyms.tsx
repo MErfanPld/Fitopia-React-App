@@ -78,14 +78,11 @@ export function PopularGyms({ onGymSelect }: PopularGymsProps) {
             <GymCard
               key={gym.id}
               gym={{
-                id: gym.id.toString(),
+                id: gym.id,
                 name: gym.name,
-                image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=350&q=80",
-                rating: gym.popularity_score / 20, // Convert score to 5-star rating
-                distance: `${Math.random() * 10}.${Math.floor(Math.random() * 10)} کیلومتر`,
-                tokensCost: gym.prices.length > 0 ? Math.ceil(gym.prices[0].monthly_price / 50) : 3,
-                openHours: "۰۶:۰۰ تا ۲۳:۰۰",
-                popular: gym.is_popular,
+                cover_image: gym.cover_image,
+                popularity_score: gym.popularity_score,
+                rating: gym.popularity_score / 20,
               }}
               onClick={() => handleGymClick(gym)}
             />
