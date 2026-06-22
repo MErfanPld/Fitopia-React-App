@@ -25,24 +25,70 @@ export interface Price {
   id: number;
   monthly_price: number;
   yearly_price: number;
+  session_price?: number;
+  quarterly_price?: number;
   gym: number;
-  sport: number;
+  sport?: Sport;
+}
+
+export interface Facility {
+  id: number;
+  title: string;
+}
+
+export interface Review {
+  id: number;
+  user_name: string;
+  text: string;
+  rating: number;
+  date?: string;
+}
+
+export interface Coach {
+  id: number;
+  name: string;
+  specialty?: string;
+  image?: string;
+}
+
+export interface Banner {
+  id: number;
+  image: string;
+}
+
+export interface Image {
+  id: number;
+  image: string;
+  title?: string;
 }
 
 export interface Gym {
   id: number;
-  sports: Sport[];
-  prices: Price[];
-  images: string[];
-  videos: string[];
   name: string;
+  description: string;
   address: string;
   phone: string;
   latitude: number;
   longitude: number;
-  popularity_score: number;
-  is_popular: boolean;
   cover_image?: string;
+  working_hours: string;
+  rules: string;
+  instagram?: string;
+  telegram?: string;
+  whatsapp?: string;
+  website?: string;
+  google_map_url?: string;
+  popularity_score: number;
+  average_rating: number;
+  is_popular: boolean;
+  sports: Sport[];
+  prices: Price[];
+  facilities: Facility[];
+  images: (Image | string)[];
+  videos: string[];
+  banners: Banner[];
+  coaches: Coach[];
+  reviews: Review[];
 }
 
 // Hook for categories
