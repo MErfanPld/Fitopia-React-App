@@ -86,11 +86,10 @@ export function GymCard({ gym, onClick }: GymCardProps) {
           {/* Monthly Price */}
           {monthlyPrice && (
             <div className="flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-lg">
-              <DollarSign size={14} className="text-primary" />
               <span className="font-vazir font-semibold text-primary text-sm">
                 {monthlyPrice.toLocaleString('fa-IR')}
               </span>
-              <span className="text-primary/70 text-xs">/ ماه</span>
+              <span className="text-primary/70 text-xs">تومان</span>
             </div>
           )}
         </div>
