@@ -19,6 +19,7 @@ const WelcomePage = lazy(() => import("./pages/WelcomePage").then((module) => ({
 const LoginPage = lazy(() => import("./pages/LoginPage").then((module) => ({ default: module.LoginPage })));
 const RegisterPage = lazy(() => import("./pages/RegisterPage").then((module) => ({ default: module.RegisterPage })));
 const OfflinePage = lazy(() => import("./pages/OfflinePage").then((module) => ({ default: module.OfflinePage })));
+const GymDetailPage = lazy(() => import("./pages/GymDetailPage").then((module) => ({ default: module.GymDetailPage })));
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -56,6 +57,11 @@ function AppContent() {
         <Route path="/home" element={
           <ProtectedRoute>
             <HomePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/gym/:gymId" element={
+          <ProtectedRoute>
+            <GymDetailPage />
           </ProtectedRoute>
         } />
         <Route path="/offline" element={<OfflinePage />} />
