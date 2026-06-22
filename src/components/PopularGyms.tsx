@@ -18,8 +18,9 @@ export function PopularGyms({ onGymSelect }: PopularGymsProps) {
     if (onGymSelect) {
       onGymSelect(gym);
     } else {
+      const sportsText = gym.sports?.map(s => s.name).join(", ") || "ورزش‌ها مشخص نیست";
       alert(
-        `اطلاعات جامع باشگاه "${gym.name}" بارگذاری شد!\nموقعیت مکانی: ${gym.address}\nامتیاز محبوبیت: ${gym.popularity_score}`
+        `اطلاعات جامع باشگاه "${gym.name}" بارگذاری شد!\nموقعیت مکانی: ${gym.address}\nامتیاز محبوبیت: ${gym.popularity_score}\nورزش‌ها: ${sportsText}`
       );
     }
   };
@@ -77,13 +78,7 @@ export function PopularGyms({ onGymSelect }: PopularGymsProps) {
           {popularGyms.map((gym) => (
             <GymCard
               key={gym.id}
-              gym={{
-                id: gym.id,
-                name: gym.name,
-                cover_image: gym.cover_image,
-                popularity_score: gym.popularity_score,
-                rating: gym.popularity_score,
-              }}
+              gym={gym}
               onClick={() => handleGymClick(gym)}
             />
           ))}
