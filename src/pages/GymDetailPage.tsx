@@ -10,7 +10,7 @@ import {
   ArrowLeft, Share2, MapPin, Clock, Star, Dumbbell, Wallet, 
   Phone, Mail, Globe, Instagram, MessageCircle, Users, Award,
   Heart, AlertCircle, Image as ImageIcon, Play, MapPinIcon,
-  ChevronLeft, ChevronRight, Send
+  ChevronLeft, ChevronRight, Send, Home
 } from "lucide-react";
 import { Gym } from "../hooks/useGymAPI";
 
@@ -36,7 +36,8 @@ export function GymDetailPage() {
         if (!response.ok) throw new Error("باشگاه یافت نشد");
         const data = await response.json();
         setGym(data);
-        setComments(data.reviews || []);
+        // بهتر هندل کردن نظرات
+        setComments(data.reviews && Array.isArray(data.reviews) ? data.reviews : []);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : "خطایی رخ داد");
@@ -75,6 +76,17 @@ export function GymDetailPage() {
     }
   };
 
+  // تابع برای گرفتن URL تصویر
+  const getImageUrl = (image: any): string => {
+    if (typeof image === 'string') {
+      return image;
+    }
+    if (image && image.image) {
+      return image.image;
+    }
+    return "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80";
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#07070A] flex items-center justify-center">
@@ -106,7 +118,7 @@ export function GymDetailPage() {
   const mainPrice = gym.prices && gym.prices.length > 0 ? gym.prices[0] : null;
 
   return (
-    <div className="min-h-screen bg-[#07070A] text-on-surface pb-32">
+    <div className="min-h-screen bg-[#07070A] text-on-surface pb-24">
       {/* Header */}
       <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 bg-surface-container/60 backdrop-blur-md border-b border-white/5">
         <button
@@ -274,7 +286,8 @@ export function GymDetailPage() {
             <div className="relative group">
               <div className="relative w-full h-96 rounded-2xl overflow-hidden border border-white/5">
                 <img
-                  src={gym.images[currentImageIndex]}
+                  key={currentImageIndex}
+                  src={getImageUrl(gym.images[currentImageIndex])}
                   alt={`تصویر ${currentImageIndex + 1}`}
                   className="w-full h-full object-cover transition-all duration-500"
                   onError={(e) => {
@@ -316,9 +329,12 @@ export function GymDetailPage() {
                     }`}
                   >
                     <img
-                      src={img}
+                      src={getImageUrl(img)}
                       alt={`تصویر ${idx + 1}`}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=100&q=80";
+                      }}
                     />
                   </button>
                 ))}
@@ -436,6 +452,9 @@ export function GymDetailPage() {
                         src={coach.image}
                         alt={coach.name}
                         className="w-24 h-24 rounded-full mx-auto object-cover border-2 border-primary/30 group-hover:border-primary transition-all group-hover:scale-110"
+                        onError={(e) => {
+                          e.currentTarget.src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80";
+                        }}
                       />
                     ) : (
                       <div className="w-24 h-24 rounded-full mx-auto bg-primary/20 flex items-center justify-center">
@@ -502,19 +521,24 @@ export function GymDetailPage() {
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <p className="font-bold text-sm text-on-surface">{review.user_name || "کاربر ناشناس"}</p>
+                      <p className="font-bold text-sm text-on-surface">
+                        {review.user_name || review.userName || "کاربر ناشناس"}
+                      </p>
                       <p className="text-xs text-on-surface-variant mt-1">
-                        {review.date ? new Date(review.date).toLocaleDateString('fa-IR', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        }) : "امروز"}
+                        {review.date 
+                          ? new Date(review.date).toLocaleDateString('fa-IR', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })
+                          : "امروز"
+                        }
                       </p>
                     </div>
                   </div>
                   
                   <p className="text-sm text-on-surface leading-relaxed mb-3">
-                    {review.text}
+                    {review.text || "بدون متن"}
                   </p>
 
                   {/* Rating Display */}
@@ -616,17 +640,15 @@ export function GymDetailPage() {
         )}
       </main>
 
-      {/* CTA Button */}
-      <div className="fixed bottom-0 left-0 w-full z-50 p-4">
-        <div className="bg-surface-container/70 backdrop-blur border border-white/5 p-4 rounded-2xl flex items-center justify-between shadow-lg">
-          <div className="flex flex-col">
-            <span className="text-primary font-black text-lg">رزرو جلسه</span>
-            <span className="text-xs text-on-surface-variant">
-              {mainPrice ? `${mainPrice.session_price?.toLocaleString("fa-IR") || mainPrice.monthly_price?.toLocaleString("fa-IR")} تومان` : "قیمت موجود نیست"}
-            </span>
-          </div>
-          <button className="bg-gradient-to-r from-primary-container to-primary text-on-primary px-8 py-3 rounded-xl font-black hover:shadow-lg hover:shadow-primary/30 transition-all active:scale-95">
-            رزرو
+      {/* Bottom Navigation - Home Page Style */}
+      <div className="fixed bottom-0 left-0 w-full z-50">
+        <div className="bg-surface-container/70 backdrop-blur border-t border-white/5 px-4 py-3">
+          <button
+            onClick={() => navigate('/')}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary-container to-primary text-on-primary px-8 py-3 rounded-xl font-black hover:shadow-lg hover:shadow-primary/30 transition-all active:scale-95"
+          >
+            <Home size={20} />
+            بازگشت به خانه
           </button>
         </div>
       </div>
