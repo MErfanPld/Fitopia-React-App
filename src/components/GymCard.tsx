@@ -3,6 +3,7 @@
  * @description Card item displaying gym with comprehensive info: name, sports, monthly price, and rating
  */
 
+import React from "react";
 import { Star, Dumbbell, DollarSign } from "lucide-react";
 import { Gym, Price } from "../hooks/useGymAPI";
 
@@ -25,7 +26,17 @@ export function GymCard({ gym, onClick }: GymCardProps) {
   return (
     <div
       onClick={onClick}
-      className="flex-shrink-0 w-full rounded-2xl overflow-hidden glass-card group cursor-pointer select-none transition-all duration-300 hover:border-primary/30 active:scale-[0.98] border border-white/10 hover:shadow-lg"
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (!onClick) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      aria-label={gym.name}
+      className="flex-shrink-0 w-full rounded-2xl overflow-hidden glass-card group cursor-pointer select-none transition-all duration-300 hover:border-primary/30 active:scale-[0.98] border border-white/5"
     >
       {/* Cover Image */}
       {gym.cover_image && (
