@@ -33,6 +33,8 @@ export interface Gym {
   id: number;
   sports: Sport[];
   prices: Price[];
+  images: string[];
+  videos: string[];
   name: string;
   address: string;
   phone: string;
@@ -40,6 +42,7 @@ export interface Gym {
   longitude: number;
   popularity_score: number;
   is_popular: boolean;
+  cover_image?: string;
 }
 
 // Hook for categories
