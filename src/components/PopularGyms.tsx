@@ -4,6 +4,7 @@
  * from API. Filters popular gyms and displays them in card overlays.
  */
 
+import { useNavigate } from "react-router-dom";
 import { useGyms, Gym } from "../hooks/useGymAPI";
 import { GymCard } from "./GymCard";
 
@@ -13,15 +14,14 @@ interface PopularGymsProps {
 
 export function PopularGyms({ onGymSelect }: PopularGymsProps) {
   const { gyms, loading, error } = useGyms();
+  const navigate = useNavigate();
 
   const handleGymClick = (gym: Gym) => {
     if (onGymSelect) {
       onGymSelect(gym);
     } else {
-      const sportsText = gym.sports?.map(s => s.name).join(", ") || "ورزش‌ها مشخص نیست";
-      alert(
-        `اطلاعات جامع باشگاه "${gym.name}" بارگذاری شد!\nموقعیت مکانی: ${gym.address}\nامتیاز محبوبیت: ${gym.popularity_score}\nورزش‌ها: ${sportsText}`
-      );
+      // Navigate to gym detail page
+      navigate(`/gym/${gym.id}`);
     }
   };
 
@@ -62,7 +62,7 @@ export function PopularGyms({ onGymSelect }: PopularGymsProps) {
       <div className="flex justify-between items-center mb-4">
         <h4 className="font-headline-md text-headline-md text-on-surface">باشگاه‌های محبوب</h4>
         <button
-          onClick={() => alert("نمایش تمامی باشگاه‌های همکار فیتوپیا در فاز بعدی فعال می‌گردد.")}
+          onClick={() => navigate("/gym/all")}
           className="text-primary font-label-sm hover:underline cursor-pointer bg-transparent border-none"
         >
           مشاهده همه
