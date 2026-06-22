@@ -5,18 +5,20 @@
  */
 
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { 
   ArrowLeft, Share2, MapPin, Clock, Star, Dumbbell, Wallet, 
   Phone, Mail, Globe, Instagram, MessageCircle, Users, Award,
   Heart, AlertCircle, Image as ImageIcon, Play, MapPinIcon,
-  ChevronLeft, ChevronRight, Send, Home
+  ChevronLeft, ChevronRight, Send, Home, Search
 } from "lucide-react";
 import { Gym } from "../hooks/useGymAPI";
+import { BottomNavigation } from "../components/BottomNavigation";
 
 export function GymDetailPage() {
   const { gymId } = useParams<{ gymId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [gym, setGym] = useState<Gym | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,8 +38,13 @@ export function GymDetailPage() {
         if (!response.ok) throw new Error("باشگاه یافت نشد");
         const data = await response.json();
         setGym(data);
-        // بهتر هندل کردن نظرات
-        setComments(data.reviews && Array.isArray(data.reviews) ? data.reviews : []);
+        
+        // بهتر هندل کردن نظرات - console log برای debug
+        console.log("API Response Reviews:", data.reviews);
+        
+        if (data.reviews && Array.isArray(data.reviews)) {
+          setComments(data.reviews);
+        }
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : "خطایی رخ داد");
@@ -343,7 +350,7 @@ export function GymDetailPage() {
           </section>
         )}
 
-        {/* Pricing Section - Redesigned */}
+        {/* Pricing Section - With Select Button */}
         {gym.prices && gym.prices.length > 0 && (
           <section>
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
@@ -389,7 +396,7 @@ export function GymDetailPage() {
 
                     {/* Quarterly & Yearly */}
                     {(price.quarterly_price || price.yearly_price) && (
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-2 gap-3 mb-4">
                         {price.quarterly_price && (
                           <div className="bg-surface-container/50 p-3 rounded-lg">
                             <p className="text-xs text-on-surface-variant mb-1">فصلی (3 ماه)</p>
@@ -410,6 +417,11 @@ export function GymDetailPage() {
                         )}
                       </div>
                     )}
+
+                    {/* Select/Payment Button */}
+                    <button className="w-full mt-4 bg-gradient-to-r from-primary-container to-primary text-on-primary px-4 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-primary/30 transition-all active:scale-95">
+                      انتخاب و پرداخت
+                    </button>
                   </div>
                 </div>
               ))}
@@ -482,7 +494,7 @@ export function GymDetailPage() {
           </section>
         )}
 
-        {/* Reviews Section - Complete */}
+        {/* Reviews Section - Fixed Display */}
         <section>
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
             <div className="w-1.5 h-6 bg-primary-container rounded-full" />
@@ -511,47 +523,50 @@ export function GymDetailPage() {
             </div>
           </div>
 
-          {/* Comments List */}
+          {/* Comments List - Debug Info */}
           {comments.length > 0 ? (
             <div className="space-y-3">
-              {comments.map((review: any, idx: number) => (
-                <div
-                  key={review.id || idx}
-                  className="bg-surface-container/70 backdrop-blur border border-white/5 p-5 rounded-xl hover:border-primary/30 transition-all"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <p className="font-bold text-sm text-on-surface">
-                        {review.user_name || review.userName || "کاربر ناشناس"}
-                      </p>
-                      <p className="text-xs text-on-surface-variant mt-1">
-                        {review.date 
-                          ? new Date(review.date).toLocaleDateString('fa-IR', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })
-                          : "امروز"
-                        }
-                      </p>
+              {comments.map((review: any, idx: number) => {
+                console.log("Rendering review:", review); // Debug
+                return (
+                  <div
+                    key={review.id || idx}
+                    className="bg-surface-container/70 backdrop-blur border border-white/5 p-5 rounded-xl hover:border-primary/30 transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <p className="font-bold text-sm text-on-surface">
+                          {review.user_name || review.userName || review.name || "کاربر ناشناس"}
+                        </p>
+                        <p className="text-xs text-on-surface-variant mt-1">
+                          {review.date 
+                            ? new Date(review.date).toLocaleDateString('fa-IR', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })
+                            : "امروز"
+                          }
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <p className="text-sm text-on-surface leading-relaxed mb-3">
-                    {review.text || "بدون متن"}
-                  </p>
+                    
+                    <p className="text-sm text-on-surface leading-relaxed mb-3">
+                      {review.text || review.comment || "بدون متن"}
+                    </p>
 
-                  {/* Rating Display */}
-                  {review.rating && (
-                    <div className="flex items-center gap-1 text-xs">
-                      <span className="text-on-surface-variant">امتیاز:</span>
-                      <span className="bg-primary/20 text-primary px-2 py-1 rounded-full font-bold">
-                        {review.rating}/5
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    {/* Rating Display */}
+                    {review.rating && (
+                      <div className="flex items-center gap-1 text-xs">
+                        <span className="text-on-surface-variant">امتیاز:</span>
+                        <span className="bg-primary/20 text-primary px-2 py-1 rounded-full font-bold">
+                          {review.rating}/5
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="bg-surface-container/70 backdrop-blur border border-white/5 p-8 rounded-2xl text-center">
@@ -640,18 +655,8 @@ export function GymDetailPage() {
         )}
       </main>
 
-      {/* Bottom Navigation - Home Page Style */}
-      <div className="fixed bottom-0 left-0 w-full z-50">
-        <div className="bg-surface-container/70 backdrop-blur border-t border-white/5 px-4 py-3">
-          <button
-            onClick={() => navigate('/')}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary-container to-primary text-on-primary px-8 py-3 rounded-xl font-black hover:shadow-lg hover:shadow-primary/30 transition-all active:scale-95"
-          >
-            <Home size={20} />
-            بازگشت به خانه
-          </button>
-        </div>
-      </div>
+      {/* Bottom Navigation */}
+      <BottomNavigation />
     </div>
   );
 }
