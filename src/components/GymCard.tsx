@@ -11,6 +11,7 @@ interface GymCardProps {
     name: string;
     cover_image?: string;
     popularity_score?: number;
+    sports?:string;
     rating?: number;
   };
   onClick?: () => void;
@@ -51,7 +52,7 @@ export function GymCard({ gym, onClick }: GymCardProps) {
           <span className="font-vazir font-semibold text-on-surface">
             {rating.toFixed(1)}
           </span>
-          <span className="text-on-surface-variant/60 text-sm">/ 5</span>
+          <span className="text-on-surface-variant/60 text-sm">/ {gym.sports}</span>
         </div>
       </div>
     </div>
