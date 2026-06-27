@@ -1,13 +1,3 @@
-/**
- * @file App.tsx
- * @description Master router component of the FITOPIA application.
- * Manages:
- * - Declarative routes via react-router-dom
- * - Performance optimization with lazy-loaded route partitions
- * - Custom elegant double-spinning loading skeletons during route resolver transitions
- * - Global layout overlays for PWA update triggers and Offline toasts
- */
-
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { UpdatePrompt } from "./components/UpdatePrompt";
@@ -20,6 +10,8 @@ const LoginPage = lazy(() => import("./pages/LoginPage").then((module) => ({ def
 const RegisterPage = lazy(() => import("./pages/RegisterPage").then((module) => ({ default: module.RegisterPage })));
 const OfflinePage = lazy(() => import("./pages/OfflinePage").then((module) => ({ default: module.OfflinePage })));
 const GymDetailPage = lazy(() => import("./pages/GymDetailPage").then((module) => ({ default: module.GymDetailPage })));
+// Profile page (new)
+const ProfilePage = lazy(() => import("./pages/ProfilePage").then((module) => ({ default: module.ProfilePage })));
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -62,6 +54,11 @@ function AppContent() {
         <Route path="/gym/:gymId" element={
           <ProtectedRoute>
             <GymDetailPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <ProfilePage />
           </ProtectedRoute>
         } />
         <Route path="/offline" element={<OfflinePage />} />
