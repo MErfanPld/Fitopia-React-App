@@ -15,3 +15,11 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 );
 
+// Register service worker only in production to avoid MIME / dev-server issues
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+      console.warn('Service worker registration failed:', err);
+    });
+  });
+}
