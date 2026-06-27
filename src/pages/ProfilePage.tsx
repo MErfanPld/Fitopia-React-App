@@ -217,7 +217,10 @@ export function ProfilePage() {
               )}
             </div>
             <input id="avatarUpload" type="file" accept="image/*" onChange={onFileChange} className="hidden" />
-            <button type="button" className="absolute bottom-0 right-0 w-8 h-8 amber-gradient rounded-full flex items-center justify-center border-2 border-background shadow-lg transition-transfo[...]
+            <button
+              type="button"
+              className="absolute bottom-0 right-0 w-8 h-8 amber-gradient rounded-full flex items-center justify-center border-2 border-background shadow-lg transition-transform hover:scale-110 active:scale-90"
+            >
               <span className="material-symbols-outlined text-on-primary text-[18px]">photo_camera</span>
             </button>
           </label>
@@ -257,8 +260,19 @@ export function ProfilePage() {
                 <div>
                   <label className="font-label-sm text-label-sm text-on-surface-variant">تاریخ تولد</label>
                   {/* Use native date input as fallback; users can also paste a Jalali date if backend supports it. */}
-                  <input type="date" {...register("birth_date")} className="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface" />
-                  <p className="text-xs text-on-surface-variant mt-1">اگر می‌خواهید از تقویم شمسی استفاده کنید، می‌توانید تاریخ را به‌صو[...]
+                  <DatePicker
+                    value={birthDateValue}
+                    onChange={(d: any) => {
+                      const formatted = d?.format ? d.format("YYYY-MM-DD") : "";
+                      setBirthDateValue(d);
+                      setValue("birth_date", formatted);
+                    }}
+                    calendar={persian}
+                    locale={persian_fa}
+                    format="YYYY-MM-DD"
+                    inputClass="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface"
+                  />
+                  <p className="text-xs text-on-surface-variant mt-1">تاریخ به صورت شمسی انتخاب و برای backend به YYYY-MM-DD تبدیل می‌شود.</p>
                 </div>
               </div>
 
