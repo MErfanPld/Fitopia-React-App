@@ -110,6 +110,15 @@ export default defineConfig(() => {
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      // Proxy /api requests to the real backend to avoid CORS during local development
+      proxy: {
+        '/api': {
+          target: 'https://fitopiaapi.pythonanywhere.com',
+          changeOrigin: true,
+          secure: true,
+          rewrite: (pathStr) => pathStr.replace(/^\/api/, '/api'),
+        }
+      }
     },
   };
 });
