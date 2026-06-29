@@ -1,90 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import subscriptionService, { Plan } from '../services/subscriptionService';
+import Toast from '../components/Toast';
 
-interface Plan {
-  id: string;
-  name: string;
-  nameEn: string;
-  price: number;
-  tokens: number;
-  features: string[];
-  isPopular?: boolean;
-  isBestValue?: boolean;
-  badge?: string;
+interface ToastState {
+  show: boolean;
+  message: string;
+  type: 'success' | 'error' | 'info';
 }
-
-const plans: Plan[] = [
-  {
-    id: 'bronze',
-    name: 'پلن برنزی',
-    nameEn: 'Bronze',
-    price: 150000,
-    tokens: 5,
-    features: [
-      'دسترسی به ۱۰ باشگاه اکونومی',
-      'انقضای ۳۰ روزه',
-    ],
-  },
-  {
-    id: 'silver',
-    name: 'پلن نقره‌ای',
-    nameEn: 'Silver',
-    price: 300000,
-    tokens: 10,
-    features: [
-      'دسترسی به ۳۰ باشگاه استاندارد',
-      'رزرو سریع کلاس‌های گروهی',
-    ],
-  },
-  {
-    id: 'gold',
-    name: 'پلن طلایی',
-    nameEn: 'Gold',
-    price: 500000,
-    tokens: 20,
-    features: [
-      'دسترسی به تمامی باشگاه‌های طلایی',
-      'کمد اختصاصی رایگان',
-      'مهمان رایگان (۱ بار در ماه)',
-    ],
-    isPopular: true,
-  },
-  {
-    id: 'diamond',
-    name: 'پلن الماس',
-    nameEn: 'Diamond',
-    price: 800000,
-    tokens: 35,
-    features: [
-      'دسترسی به استخر و سونا',
-      'آنالیز بدن رایگان (ماهانه)',
-    ],
-    isBestValue: true,
-    badge: 'بهترین ارزش',
-  },
-  {
-    id: 'vip',
-    name: 'پلن VIP',
-    nameEn: 'VIP',
-    price: 1500000,
-    tokens: 60,
-    features: [
-      'دسترسی به تمامی شعب FITOPIA',
-      'پارکینگ اختصاصی',
-    ],
-  },
-  {
-    id: 'premium',
-    name: 'پلن پریمیوم',
-    nameEn: 'Premium',
-    price: 2500000,
-    tokens: 100,
-    features: [
-      'تمامی امکانات VIP',
-      'مربی خصوصی (۴ جلسه در ماه)',
-    ],
-  },
-];
 
 interface FAQItem {
   id: string;
@@ -115,23 +38,89 @@ const faqs: FAQItem[] = [
 
 const Subscriptions: React.FC = () => {
   const navigate = useNavigate();
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
   const [discountEnabled, setDiscountEnabled] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [purchasing, setPurchasing] = useState(false);
+  const [toast, setToast] = useState<ToastState>({
+    show: false,
+    message: '',
+    type: 'info',
+  });
+
+  useEffect(() => {
+    fetchPlans();
+  }, []);
+
+  const fetchPlans = async () => {
+    try {
+      setLoading(true);
+      const data = await subscriptionService.getPlans();
+      // Sort plans by order field
+      const sortedPlans = data.sort((a, b) => a.order - b.order);
+      setPlans(sortedPlans);
+      showToast('پلن‌ها با موفقیت بارگذاری شدند', 'success');
+    } catch (error: any) {
+      console.error('Error fetching plans:', error);
+      showToast(error.message || 'خطا در بارگذاری پلن‌ها', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatPrice = (price: number): string => {
     return price.toLocaleString('fa-IR');
   };
 
-  const handleSelectPlan = (planId: string) => {
-    setSelectedPlan(planId);
-    // Navigate to payment or show confirmation
-    navigate(`/checkout/${planId}`, { state: { discount: discountEnabled } });
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ ...toast, show: false });
+    }, 4000);
+  };
+
+  const handleSelectPlan = async (plan: Plan) => {
+    try {
+      setPurchasing(true);
+      setSelectedPlan(plan.id.toString());
+
+      // Call purchase API
+      const purchase = await subscriptionService.purchasePlan({
+        plan_id: plan.id,
+        use_wallet: discountEnabled,
+      });
+
+      showToast(`پلن ${plan.name} با موفقیت خریداری شد`, 'success');
+      
+      // Redirect to success page or subscription details
+      setTimeout(() => {
+        navigate('/subscription-success', { state: { purchase } });
+      }, 1500);
+    } catch (error: any) {
+      console.error('Error purchasing plan:', error);
+      showToast(error.message || 'خطا در خریداری پلن', 'error');
+      setSelectedPlan(null);
+    } finally {
+      setPurchasing(false);
+    }
   };
 
   const toggleAccordion = (id: string) => {
     setActiveAccordion(activeAccordion === id ? null : id);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-surface-container-lowest flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-on-surface-variant">در حال بارگذاری...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-surface-container-lowest text-on-surface dark">
@@ -191,73 +180,82 @@ const Subscriptions: React.FC = () => {
 
         {/* Plan Cards */}
         <div className="space-y-6">
-          {plans.map((plan) => (
-            <div
-              key={plan.id}
-              className={`glass-panel p-6 rounded-2xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300 ${
-                plan.isPopular ? 'plan-popular' : ''
-              } ${plan.isBestValue ? 'border-secondary/30 bg-secondary/5' : ''}`}
-            >
-              {/* Popular Badge */}
-              {plan.isPopular && (
-                <div className="absolute -left-10 top-6 -rotate-45 bg-primary px-12 py-1 text-[10px] font-bold text-on-primary shadow-lg uppercase tracking-widest">
-                  پرطرفدار
-                </div>
-              )}
-
-              {/* Header */}
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-headline-md text-on-surface">{plan.name}</h3>
-                    {plan.isBestValue && (
-                      <span className="bg-secondary/20 text-secondary text-[10px] px-2 py-0.5 rounded-full border border-secondary/30">
-                        {plan.badge}
-                      </span>
-                    )}
+          {plans.map((plan, index) => {
+            const isPopular = plan.order === 2; // Assuming middle plan is popular
+            const isBestValue = plan.token_count > 30; // Arbitrary logic for best value
+            
+            return (
+              <div
+                key={plan.id}
+                className={`glass-panel p-6 rounded-2xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300 ${
+                  isPopular ? 'plan-popular' : ''
+                } ${isBestValue ? 'border-secondary/30 bg-secondary/5' : ''}`}
+              >
+                {/* Popular Badge */}
+                {isPopular && (
+                  <div className="absolute -left-10 top-6 -rotate-45 bg-primary px-12 py-1 text-[10px] font-bold text-on-primary shadow-lg uppercase tracking-widest">
+                    پرطرفدار
                   </div>
-                  <p className="text-primary font-bold mt-1">{formatPrice(plan.price)} تومان</p>
+                )}
+
+                {/* Header */}
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-headline-md text-on-surface">{plan.name}</h3>
+                      {isBestValue && (
+                        <span className="bg-secondary/20 text-secondary text-[10px] px-2 py-0.5 rounded-full border border-secondary/30">
+                          بهترین ارزش
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-primary font-bold mt-1">{formatPrice(plan.price)} تومان</p>
+                  </div>
+                  <div
+                    className={`rounded-lg px-3 py-1 flex items-center gap-1 ${
+                      isPopular ? 'bg-primary/20 border border-primary/30' : 'bg-surface-container'
+                    }`}
+                  >
+                    <span className={`font-bold ${isPopular ? 'text-primary' : ''}`}>{plan.token_count}</span>
+                    <span className={`text-xs ${isPopular ? 'text-primary' : 'text-on-surface-variant'}`}>توکن</span>
+                  </div>
                 </div>
-                <div
-                  className={`rounded-lg px-3 py-1 flex items-center gap-1 ${
-                    plan.isPopular ? 'bg-primary/20 border border-primary/30' : 'bg-surface-container'
+
+                {/* Description */}
+                <p className="text-sm text-on-surface-variant/80">{plan.description}</p>
+
+                {/* Gyms Count */}
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="material-symbols-outlined text-primary text-lg">location_on</span>
+                  <span className="text-on-surface-variant">{plan.gyms_count} باشگاه</span>
+                </div>
+
+                {/* Duration */}
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="material-symbols-outlined text-primary text-lg">schedule</span>
+                  <span className="text-on-surface-variant">{plan.duration_days} روز اعتبار</span>
+                </div>
+
+                {/* CTA Button */}
+                <button
+                  onClick={() => handleSelectPlan(plan)}
+                  disabled={purchasing && selectedPlan === plan.id.toString()}
+                  className={`amber-gradient py-3 rounded-xl font-bold text-on-primary active:scale-95 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+                    isPopular ? 'shadow-[0_0_20px_rgba(255,106,0,0.4)] font-extrabold' : ''
                   }`}
                 >
-                  <span className={`font-bold ${plan.isPopular ? 'text-primary' : ''}`}>{plan.tokens}</span>
-                  <span className={`text-xs ${plan.isPopular ? 'text-primary' : 'text-on-surface-variant'}`}>توکن</span>
-                </div>
+                  {purchasing && selectedPlan === plan.id.toString() ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-on-primary/30 border-t-on-primary rounded-full animate-spin"></div>
+                      درحال پردازش...
+                    </>
+                  ) : (
+                    'انتخاب پلن'
+                  )}
+                </button>
               </div>
-
-              {/* Features */}
-              <ul className="space-y-2 py-2">
-                {plan.features.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-2 text-sm text-on-surface-variant/80">
-                    <span
-                      className={`material-symbols-outlined text-lg ${
-                        plan.isPopular ? 'text-primary' : 'text-primary'
-                      }`}
-                      style={plan.isPopular && index === 0 ? { fontVariationSettings: "'FILL' 1" } : {}}
-                    >
-                      {plan.isPopular && index === 0 ? 'stars' : 'check_circle'}
-                    </span>
-                    <span className={plan.isPopular && index === 0 ? 'text-on-surface font-medium' : ''}>
-                      {feature}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              {/* CTA Button */}
-              <button
-                onClick={() => handleSelectPlan(plan.id)}
-                className={`amber-gradient py-3 rounded-xl font-bold text-on-primary active:scale-95 transition-all duration-200 ${
-                  plan.isPopular ? 'shadow-[0_0_20px_rgba(255,106,0,0.4)] font-extrabold' : ''
-                }`}
-              >
-                انتخاب پلن
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* FAQ Section */}
@@ -309,6 +307,9 @@ const Subscriptions: React.FC = () => {
         />
         <NavItem icon="person" label="پروفایل" href="/profile" />
       </nav>
+
+      {/* Toast Notification */}
+      {toast.show && <Toast message={toast.message} type={toast.type} />}
     </div>
   );
 };
