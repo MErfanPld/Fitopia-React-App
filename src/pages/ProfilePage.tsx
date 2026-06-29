@@ -45,29 +45,32 @@ export function ProfilePage() {
       setFetching(true);
       setServerMessage(null);
       try {
+        if (!token) {
+          setFetching(false);
+          return;
+        }
+
         const json = await api.get("/accounts/profile/");
         if (!mounted) return;
 
-        // normalize keys to our form
         reset({
           username: json.username ?? "",
           full_name: json.full_name ?? "",
           gender: json.gender ?? "",
           birth_date: json.birth_date ?? "",
         });
-        
+
         if (json.avatar) {
           setAvatarPreview(json.avatar);
         }
 
-        // set jalali datepicker value and form value if birth_date exists
+        // set jalali datepicker value
         if (json.birth_date) {
           try {
             const dob = new DateObject({ date: json.birth_date, calendar: persian });
             setBirthDateValue(dob);
             setValue("birth_date", dob.format("YYYY-MM-DD"));
           } catch (e) {
-            // fallback to raw value
             setValue("birth_date", json.birth_date ?? "");
           }
         }
@@ -80,18 +83,12 @@ export function ProfilePage() {
       }
     };
 
-    if (token) {
-      load();
-    } else {
-      setFetching(false);
-    }
-
+    load();
     return () => {
       mounted = false;
     };
   }, [token, reset, setValue]);
 
-  // helper: convert file to FormData
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] || null;
     setAvatarFile(f);
@@ -113,12 +110,11 @@ export function ProfilePage() {
       form.append("gender", data.gender);
       form.append("birth_date", data.birth_date);
 
-      // اگر فایل آواتار انتخاب شده، آن را اضافه کن
       if (avatarFile) {
         form.append("avatar", avatarFile);
       }
 
-      const response = await fetch("/api/accounts/profile/", {
+      const response = await fetch("https://fitopiaapi.pythonanywhere.com/api/accounts/profile/", {
         method: "PUT",
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -130,18 +126,16 @@ export function ProfilePage() {
         const updated = await response.json();
         setServerMessage("پروفایل با موفقیت بروزرسانی شد.");
         setMessageType("success");
-        
+
         if (updated.full_name) {
           setDisplayNameState(updated.full_name);
         }
         if (updated.avatar) {
           setAvatarPreview(updated.avatar);
         }
-        
-        // Clear file input
+
         setAvatarFile(null);
-        
-        // Reset form with new data
+
         reset({
           username: updated.username ?? data.username,
           full_name: updated.full_name ?? data.full_name,
@@ -162,13 +156,6 @@ export function ProfilePage() {
     }
   };
 
-  const handleLogout = async () => {
-    const { logout } = await import("../context/AuthContext").then(
-      (mod) => mod
-    );
-    // We'll use the global logout from context
-  };
-
   if (!token) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -181,11 +168,8 @@ export function ProfilePage() {
 
   return (
     <div className="min-h-screen pb-24 bg-background text-on-background">
-      {/* Background effects */}
       <ShaderBackground />
       <ParticleOverlay />
-
-      {/* Header */}
       <Header />
 
       <main className="relative z-10 pt-24 px-margin-mobile max-w-lg mx-auto">
@@ -248,33 +232,30 @@ export function ProfilePage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {/* Username */}
               <div>
                 <label className="font-label-sm text-label-sm text-on-surface-variant">نام کاربری</label>
                 <input
                   {...register("username")}
                   placeholder="نام کاربری خود را وارد کنید"
-                  className="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface placeholder-on-surface-variant/40 focus:outline-none focus:border-primary"
+                  className="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface placeholder-on-surface-variant/40 focus:outline-none"
                 />
               </div>
 
-              {/* Full Name */}
               <div>
                 <label className="font-label-sm text-label-sm text-on-surface-variant">نام کامل</label>
                 <input
                   {...register("full_name")}
                   placeholder="نام کامل خود را وارد کنید"
-                  className="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface placeholder-on-surface-variant/40 focus:outline-none focus:border-primary"
+                  className="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface placeholder-on-surface-variant/40 focus:outline-none"
                 />
               </div>
 
-              {/* Gender & Birth Date */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="font-label-sm text-label-sm text-on-surface-variant">جنسیت</label>
                   <select
                     {...register("gender")}
-                    className="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface focus:outline-none focus:border-primary"
+                    className="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface focus:outline-none"
                   >
                     <option value="">انتخاب</option>
                     <option value="male">مرد</option>
@@ -295,12 +276,11 @@ export function ProfilePage() {
                     calendar={persian}
                     locale={persian_fa}
                     format="YYYY-MM-DD"
-                    inputClass="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface focus:outline-none focus:border-primary"
+                    inputClass="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface focus:outline-none"
                   />
                 </div>
               </div>
 
-              {/* Message */}
               {serverMessage && (
                 <div
                   className={`text-sm p-3 rounded-lg ${
@@ -313,7 +293,6 @@ export function ProfilePage() {
                 </div>
               )}
 
-              {/* Submit Button */}
               <div className="mt-6">
                 <SubmitButton loading={loading}>ذخیره تغییرات</SubmitButton>
               </div>
@@ -358,7 +337,6 @@ export function ProfilePage() {
         </section>
       </main>
 
-      {/* Bottom Navigation */}
       <BottomNavigation />
     </div>
   );
