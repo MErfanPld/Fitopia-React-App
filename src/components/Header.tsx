@@ -4,13 +4,21 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 export function Header() {
-  const { logout } = useAuth();
+  const { logout, userData } = useAuth();
   const navigate = useNavigate();
 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const ref = useRef<HTMLDivElement>(null);
+
+  // Load avatar from userData
+  useEffect(() => {
+    if (userData?.avatar) {
+      setAvatarUrl(userData.avatar);
+    }
+  }, [userData?.avatar]);
 
   // close outside click
   useEffect(() => {
@@ -25,15 +33,18 @@ export function Header() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const handleProfileClick = () => {
+    setOpen(false);
+    navigate("/profile");
+  };
+
   const handleLogoutClick = async () => {
     setLoading(true);
 
     try {
       await logout();
-
-      setOpen(false); // ✅ درست
+      setOpen(false);
       navigate("/welcome", { replace: true });
-
     } catch (err) {
       console.error(err);
     } finally {
@@ -50,30 +61,53 @@ export function Header() {
         {/* AVATAR */}
         <div
           onClick={() => setOpen((p) => !p)}
-          className="w-10 h-10 rounded-full bg-orange-500 cursor-pointer"
-        />
+          className="w-10 h-10 rounded-full bg-primary cursor-pointer overflow-hidden flex items-center justify-center hover:ring-2 hover:ring-primary/50 transition"
+        >
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt="User Avatar"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <svg className="w-6 h-6 text-on-primary" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg>
+          )}
+        </div>
 
         {/* DROPDOWN */}
         {open && (
-          <div className="absolute right-0 mt-3 w-56 bg-black/90 border border-white/10 rounded-2xl shadow-xl overflow-hidden">
+          <div className="absolute right-0 mt-3 w-56 bg-surface-container-low border border-white/10 rounded-2xl shadow-xl overflow-hidden">
 
             {/* header */}
             <div className="px-4 py-3 border-b border-white/10 text-right">
-              <p className="text-xs text-white/50">حساب کاربری</p>
-              <p className="text-sm text-white font-bold">پنل کاربر</p>
+              <p className="text-xs text-on-surface-variant">حساب کاربری</p>
+              <p className="text-sm text-on-surface font-bold">{userData?.full_name || "کاربر فیتوپیا"}</p>
             </div>
+
+            {/* Profile button */}
+            <button
+              onClick={handleProfileClick}
+              className="w-full flex items-center justify-end gap-2 px-4 py-3 text-on-surface hover:bg-white/5 transition text-right border-b border-white/10"
+              style={{ direction: "rtl" }}
+            >
+              <span className="text-sm font-medium">پنل کاربر</span>
+              <svg className="w-5 h-5 text-on-surface-variant" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+              </svg>
+            </button>
 
             {/* logout button */}
             <button
               onClick={handleLogoutClick}
               disabled={loading}
-              className="w-full flex items-center justify-end gap-2 px-4 py-3 text-red-400 hover:bg-red-500/10 transition text-right"
+              className="w-full flex items-center justify-end gap-2 px-4 py-3 text-red-400 hover:bg-red-500/10 transition text-right disabled:opacity-50"
               style={{ direction: "rtl" }}
             >
               <span className="text-sm font-medium">
                 {loading ? "در حال خروج..." : "خروج از حساب"}
               </span>
-
               <LogOut size={16} />
             </button>
 
@@ -86,7 +120,7 @@ export function Header() {
       <h1 className="text-white font-bold">FITOPIA</h1>
 
       {/* NOTIFICATION */}
-      <Bell className="text-white cursor-pointer" />
+      <Bell className="text-white cursor-pointer hover:text-primary transition" />
 
     </header>
   );
