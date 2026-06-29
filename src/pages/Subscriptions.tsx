@@ -3,20 +3,24 @@ import { useSubscriptionPlans } from '../hooks/useSubscriptionPlans';
 import PlanCard from '../components/subscription/PlanCard';
 import PlanCardSkeleton from '../components/subscription/PlanCardSkeleton';
 import ConfirmModal from '../components/subscription/ConfirmModal';
+import { BottomNavigation } from '../components/BottomNavigation';
+import { Header } from '../components/Header';
+import { ShaderBackground } from '../components/ShaderBackground';
+import { ParticleOverlay } from '../components/ParticleOverlay';
 import { SubscriptionPlan } from '../types/subscription';
 
 const FAQ_ITEMS = [
   {
     q: 'توکن‌ها چگونه کار می‌کنند؟',
-    a: 'هر ورود به باشگاه معادل تعداد مشخصی توکن است. باشگاه‌های اکونومی معمولاً ۱ توکن و باشگاه‌های لوکس تا ۳ توکن نیاز دارند.',
+    a: 'هر ورود به باشگاه معادل تعداد مشخصی توکن است. باشگاه‌های اکونومی معمولاً ۱ توکن و باشگاه‌های لوکس تا ۳ توکن استفاده می‌کنند.',
   },
   {
     q: 'آیا توکن‌ها منقضی می‌شوند؟',
-    a: 'بله، توکن‌های هر پلن ۳۰ روز پس از خرید اعتبار دارند. در صورت تمدید قبل از انقضا، توکن‌های قبلی به ماه بعد منتقل می‌شوند.',
+    a: 'بله، توکن‌های هر پلن ۳۰ روز پس از خرید اعتبار دارند. در صورت تمدید قبل از انقضا، توکن‌های قبلی به ماه بعدی منتقل می‌شوند.',
   },
   {
     q: 'چطور وارد باشگاه شویم؟',
-    a: 'کافیست در اپلیکیشن QR کد موجود در پذیرش باشگاه را اسکن کنید. سیستم به طور خودکار توکن لازم را از حساب شما کسر می‌کند.',
+    a: 'کافیست در اپلیکیشن QR کد موجود در پذیرش باشگاه را اسکن کنید. سیستم به طور خودکار توکن لازم را از حساب شما کم می‌کند.',
   },
 ];
 
@@ -36,6 +40,15 @@ const Subscriptions = () => {
 
   return (
     <>
+      {/* 1. Dynamic background fluid simulation */}
+      <ShaderBackground />
+
+      {/* 2. Floating particles */}
+      <ParticleOverlay />
+
+      {/* 3. Top Header navigation bar */}
+      <Header />
+
       <main className="relative z-10 pt-24 pb-32 px-[16px] max-w-[1280px] mx-auto">
 
         {/* Hero */}
@@ -52,7 +65,13 @@ const Subscriptions = () => {
         <div className="glass-panel rounded-xl p-4 mb-10 flex items-center justify-between border-[rgba(255,180,148,0.2)] bg-[rgba(255,180,148,0.05)]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined">redeem</span>
+              <svg
+                className="w-6 h-6"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M5.5 4h13a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-1l1.5 6a1 1 0 0 1-1 1.18H5a1 1 0 0 1-1-1.18l1.5-6h-1a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm12.5 2h-13v3h13V6zm-8 8h4v2h-4v-2z" />
+              </svg>
             </div>
             <div>
               <p className="text-[16px] text-on-surface font-semibold">شما ۱۲۰,۰۰۰ تومان تخفیف دارید</p>
@@ -78,7 +97,13 @@ const Subscriptions = () => {
         {/* Plan Cards */}
         {error ? (
           <div className="glass-panel rounded-2xl p-8 text-center flex flex-col items-center gap-4">
-            <span className="material-symbols-outlined text-error text-5xl">wifi_off</span>
+            <svg
+              className="w-12 h-12 text-error"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
+            </svg>
             <p className="text-on-surface-variant">{error}</p>
             <button
               onClick={refetch}
@@ -106,7 +131,13 @@ const Subscriptions = () => {
         {/* FAQ */}
         <section className="mt-16 mb-24">
           <h2 className="text-[24px] font-semibold text-on-surface mb-6 flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">help_outline</span>
+            <svg
+              className="w-6 h-6 text-primary"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+            </svg>
             سوالات متداول
           </h2>
           <div className="space-y-4">
@@ -117,12 +148,14 @@ const Subscriptions = () => {
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                 >
                   <span className="text-[16px] font-semibold text-on-surface">{item.q}</span>
-                  <span
-                    className="material-symbols-outlined text-on-surface-variant transition-transform duration-300"
+                  <svg
+                    className="w-5 h-5 text-on-surface-variant transition-transform duration-300"
                     style={{ transform: openFaq === i ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    expand_more
-                  </span>
+                    <path d="M7 10l5 5 5-5z" />
+                  </svg>
                 </button>
                 <div
                   style={{
@@ -140,6 +173,9 @@ const Subscriptions = () => {
           </div>
         </section>
       </main>
+
+      {/* Bottom Navigation */}
+      <BottomNavigation />
 
       <ConfirmModal
         plan={selectedPlan}
