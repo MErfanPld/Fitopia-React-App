@@ -2,18 +2,21 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useAuth } from "../context/AuthContext";
 import { BottomNavigation } from "../components/BottomNavigation";
+import { Header } from "../components/Header";
+import { ShaderBackground } from "../components/ShaderBackground";
+import { ParticleOverlay } from "../components/ParticleOverlay";
 import { SubmitButton } from "../components/SubmitButton";
 import DatePicker from "react-multi-date-picker";
 import DateObject from "react-date-object";
 import persian from "react-date-object/calendars/persian";
 import persian_fa from "react-date-object/locales/persian_fa";
+import api from "../services/api";
 
 type ProfileForm = {
   username: string;
   full_name: string;
   gender: string;
-  birth_date: string; // YYYY-MM-DD
-  avatar: string; // URL or data URL
+  birth_date: string;
 };
 
 export function ProfilePage() {
@@ -24,19 +27,16 @@ export function ProfilePage() {
       full_name: "",
       gender: "",
       birth_date: "",
-      avatar: "",
     },
   });
 
   const [loading, setLoading] = useState<boolean>(false);
   const [fetching, setFetching] = useState<boolean>(true);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
+  const [messageType, setMessageType] = useState<"success" | "error" | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [birthDateValue, setBirthDateValue] = useState<any>(null);
-
-  // Use a proxied local path so dev server can proxy /api -> backend (configure vite proxy)
-  const apiBase = "/api/accounts/profile/";
 
   // Load profile on mount
   useEffect(() => {
@@ -45,65 +45,53 @@ export function ProfilePage() {
       setFetching(true);
       setServerMessage(null);
       try {
-        const res = await fetch(apiBase, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
+        const json = await api.get("/accounts/profile/");
         if (!mounted) return;
-        if (res.ok) {
-          const json = await res.json();
-          // normalize keys to our form
-          reset({
-            username: json.username ?? "",
-            full_name: json.full_name ?? "",
-            gender: json.gender ?? "",
-            birth_date: json.birth_date ?? "",
-            avatar: json.avatar ?? "",
-          });
-          setAvatarPreview(json.avatar ?? null);
 
-          // set jalali datepicker value and form value if birth_date exists
-          if (json.birth_date) {
-            try {
-              const dob = new DateObject({ date: json.birth_date, calendar: persian });
-              setBirthDateValue(dob);
-              setValue("birth_date", dob.format("YYYY-MM-DD"));
-            } catch (e) {
-              // fallback to raw value
-              setValue("birth_date", json.birth_date ?? "");
-            }
-          }
-        } else {
-          setServerMessage("خطا در خواندن اطلاعات پروفایل");
+        // normalize keys to our form
+        reset({
+          username: json.username ?? "",
+          full_name: json.full_name ?? "",
+          gender: json.gender ?? "",
+          birth_date: json.birth_date ?? "",
+        });
+        
+        if (json.avatar) {
+          setAvatarPreview(json.avatar);
         }
-      } catch (err) {
+
+        // set jalali datepicker value and form value if birth_date exists
+        if (json.birth_date) {
+          try {
+            const dob = new DateObject({ date: json.birth_date, calendar: persian });
+            setBirthDateValue(dob);
+            setValue("birth_date", dob.format("YYYY-MM-DD"));
+          } catch (e) {
+            // fallback to raw value
+            setValue("birth_date", json.birth_date ?? "");
+          }
+        }
+      } catch (err: any) {
         console.error("Profile fetch error", err);
-        setServerMessage("خطا در ارتباط با سرور");
+        setServerMessage(err.message || "خطا در ارتباط با سرور");
+        setMessageType("error");
       } finally {
         if (mounted) setFetching(false);
       }
     };
 
-    load();
+    if (token) {
+      load();
+    } else {
+      setFetching(false);
+    }
+
     return () => {
       mounted = false;
     };
   }, [token, reset, setValue]);
 
-  // helper: convert file to dataURL
-  const fileToDataURL = (file: File) =>
-    new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        resolve(String(reader.result));
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
+  // helper: convert file to FormData
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] || null;
     setAvatarFile(f);
@@ -116,140 +104,178 @@ export function ProfilePage() {
   const onSubmit = async (data: ProfileForm) => {
     setLoading(true);
     setServerMessage(null);
+    setMessageType(null);
 
     try {
-      // آماده‌سازی json اولیه
-      const jsonPayload = {
-        username: data.username,
-        full_name: data.full_name,
-        gender: data.gender,
-        birth_date: data.birth_date,
-        avatar: data.avatar || null,
-      };
+      const form = new FormData();
+      form.append("username", data.username);
+      form.append("full_name", data.full_name);
+      form.append("gender", data.gender);
+      form.append("birth_date", data.birth_date);
 
-      // اگر فایل آواتار انتخاب شده، ابتدا با FormData تلاش کن
+      // اگر فایل آواتار انتخاب شده، آن را اضافه کن
       if (avatarFile) {
-        const form = new FormData();
         form.append("avatar", avatarFile);
-        form.append("username", data.username);
-        form.append("full_name", data.full_name);
-        form.append("gender", data.gender);
-        form.append("birth_date", data.birth_date);
-
-        const res = await fetch(apiBase, {
-          method: "PUT",
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            // DO NOT set Content-Type for FormData
-          },
-          body: form,
-        });
-
-        if (res.ok) {
-          const updated = await res.json();
-          setServerMessage("پروفایل با موفقیت بروزرسانی شد.");
-          if (updated.full_name) setDisplayNameState(updated.full_name);
-          if (updated.avatar) setAvatarPreview(updated.avatar);
-          setLoading(false);
-          return;
-        }
-
-        console.warn("Multipart upload failed, falling back to JSON/dataURL.");
       }
 
-      // fallback: اگر فایل انتخاب شد آن را به dataURL تبدیل کن و در JSON بگذار
-      let avatarValue = jsonPayload.avatar;
-      if (avatarFile) {
-        try {
-          const dataUrl = await fileToDataURL(avatarFile);
-          avatarValue = dataUrl;
-        } catch (e) {
-          console.warn("Failed to convert avatar file to data URL", e);
-        }
-      }
-
-      const res2 = await fetch(apiBase, {
+      const response = await fetch("/api/accounts/profile/", {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ ...jsonPayload, avatar: avatarValue }),
+        body: form,
       });
 
-      if (res2.ok) {
-        const updated = await res2.json();
+      if (response.ok) {
+        const updated = await response.json();
         setServerMessage("پروفایل با موفقیت بروزرسانی شد.");
-        if (updated.full_name) setDisplayNameState(updated.full_name);
-        if (updated.avatar) setAvatarPreview(updated.avatar);
+        setMessageType("success");
+        
+        if (updated.full_name) {
+          setDisplayNameState(updated.full_name);
+        }
+        if (updated.avatar) {
+          setAvatarPreview(updated.avatar);
+        }
+        
+        // Clear file input
+        setAvatarFile(null);
+        
+        // Reset form with new data
+        reset({
+          username: updated.username ?? data.username,
+          full_name: updated.full_name ?? data.full_name,
+          gender: updated.gender ?? data.gender,
+          birth_date: updated.birth_date ?? data.birth_date,
+        });
       } else {
-        const errJson = await res2.json().catch(() => null);
-        setServerMessage(errJson?.detail || "خطا در بروزرسانی پروفایل");
+        const errJson = await response.json().catch(() => ({}));
+        setServerMessage(errJson.detail || "خطا در بروزرسانی پروفایل");
+        setMessageType("error");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Profile update error", err);
       setServerMessage("خطا در ارتباط با سرور هنگام بروزرسانی");
+      setMessageType("error");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleLogout = async () => {
+    const { logout } = await import("../context/AuthContext").then(
+      (mod) => mod
+    );
+    // We'll use the global logout from context
+  };
+
+  if (!token) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-on-surface-variant">لطفاً ابتدا وارد شوید</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen pb-24 bg-background text-on-background">
-      <header className="fixed top-0 w-full z-40 bg-surface/80 backdrop-blur-xl border-b border-white/5 h-16 flex items-center px-margin-mobile">
-        <h1 className="mx-auto font-headline-md text-headline-md text-on-surface">پروفایل</h1>
-      </header>
+      {/* Background effects */}
+      <ShaderBackground />
+      <ParticleOverlay />
 
-      <main className="pt-24 px-margin-mobile max-w-lg mx-auto">
-        <section className="flex flex-col items-center mb-6">
+      {/* Header */}
+      <Header />
+
+      <main className="relative z-10 pt-24 px-margin-mobile max-w-lg mx-auto">
+        {/* Avatar Section */}
+        <section className="flex flex-col items-center mb-8">
           <label htmlFor="avatarUpload" className="relative group">
-            <div className="w-28 h-28 rounded-full border-2 border-primary/30 p-1 mb-4 overflow-hidden amber-glow cursor-pointer bg-surface flex items-center justify-center">
+            <div className="w-32 h-32 rounded-full border-2 border-primary/30 p-1 mb-4 overflow-hidden cursor-pointer bg-surface flex items-center justify-center relative">
               {avatarPreview ? (
-                // pass undefined if empty to avoid empty-string src warning
-                // Use inline style to enforce object-fit
                 <img
-                  src={avatarPreview || undefined}
+                  src={avatarPreview}
                   alt={userData?.full_name || "avatar"}
                   className="w-full h-full object-cover rounded-full"
                 />
               ) : (
-                <div className="text-on-surface-variant">ارسال عکس</div>
+                <div className="flex flex-col items-center justify-center text-on-surface-variant">
+                  <svg className="w-8 h-8 mb-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                  </svg>
+                  <span className="text-xs">ارسال عکس</span>
+                </div>
               )}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h2.86l2.3-3.54z" />
+                </svg>
+              </div>
             </div>
-            <input id="avatarUpload" type="file" accept="image/*" onChange={onFileChange} className="hidden" />
+            <input
+              id="avatarUpload"
+              type="file"
+              accept="image/*"
+              onChange={onFileChange}
+              className="hidden"
+            />
             <button
               type="button"
-              className="absolute bottom-0 right-0 w-8 h-8 amber-gradient rounded-full flex items-center justify-center border-2 border-background shadow-lg transition-transform hover:scale-110 active:scale-90"
+              className="absolute bottom-0 right-0 w-10 h-10 amber-gradient rounded-full flex items-center justify-center border-2 border-background shadow-lg transition-transform hover:scale-110"
             >
-              <span className="material-symbols-outlined text-on-primary text-[18px]">photo_camera</span>
+              <svg className="w-5 h-5 text-on-primary" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" />
+              </svg>
             </button>
           </label>
 
-          <p className="font-headline-md text-headline-md text-on-surface">{userData?.full_name ?? "کاربر فیتوپیا"}</p>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-1" dir="ltr">
+          <p className="font-headline-md text-headline-md text-on-surface text-center">
+            {userData?.full_name ?? "کاربر فیتوپیا"}
+          </p>
+          <p className="font-body-md text-body-md text-on-surface-variant mt-2 text-center" dir="ltr">
             {userData?.phone_number ?? ""}
           </p>
         </section>
 
-        <section className="glass-panel p-6 rounded-xl mb-6">
+        {/* Form Section */}
+        <section className="glass-panel p-6 rounded-2xl mb-6">
           {fetching ? (
-            <div className="py-8 text-center">در حال بارگذاری اطلاعات...</div>
+            <div className="py-8 text-center text-on-surface-variant">
+              <div className="inline-block">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
+              </div>
+            </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {/* Username */}
               <div>
                 <label className="font-label-sm text-label-sm text-on-surface-variant">نام کاربری</label>
-                <input {...register("username")} className="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface" />
+                <input
+                  {...register("username")}
+                  placeholder="نام کاربری خود را وارد کنید"
+                  className="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface placeholder-on-surface-variant/40 focus:outline-none focus:border-primary"
+                />
               </div>
 
+              {/* Full Name */}
               <div>
                 <label className="font-label-sm text-label-sm text-on-surface-variant">نام کامل</label>
-                <input {...register("full_name")} className="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface" />
+                <input
+                  {...register("full_name")}
+                  placeholder="نام کامل خود را وارد کنید"
+                  className="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface placeholder-on-surface-variant/40 focus:outline-none focus:border-primary"
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Gender & Birth Date */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="font-label-sm text-label-sm text-on-surface-variant">جنسیت</label>
-                  <select {...register("gender")} className="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface">
+                  <select
+                    {...register("gender")}
+                    className="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface focus:outline-none focus:border-primary"
+                  >
                     <option value="">انتخاب</option>
                     <option value="male">مرد</option>
                     <option value="female">زن</option>
@@ -259,7 +285,6 @@ export function ProfilePage() {
 
                 <div>
                   <label className="font-label-sm text-label-sm text-on-surface-variant">تاریخ تولد</label>
-                  {/* Use native date input as fallback; users can also paste a Jalali date if backend supports it. */}
                   <DatePicker
                     value={birthDateValue}
                     onChange={(d: any) => {
@@ -270,50 +295,71 @@ export function ProfilePage() {
                     calendar={persian}
                     locale={persian_fa}
                     format="YYYY-MM-DD"
-                    inputClass="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface"
+                    inputClass="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface focus:outline-none focus:border-primary"
                   />
-                  <p className="text-xs text-on-surface-variant mt-1">تاریخ به صورت شمسی انتخاب و برای backend به YYYY-MM-DD تبدیل می‌شود.</p>
                 </div>
               </div>
 
-              {serverMessage && <p className="text-sm text-on-surface-variant">{serverMessage}</p>}
+              {/* Message */}
+              {serverMessage && (
+                <div
+                  className={`text-sm p-3 rounded-lg ${
+                    messageType === "success"
+                      ? "bg-green-500/10 text-green-400"
+                      : "bg-red-500/10 text-red-400"
+                  }`}
+                >
+                  {serverMessage}
+                </div>
+              )}
 
-              <div className="mt-4">
-                {/* SubmitButton is in repo; falls back to a native button if missing */}
-                {typeof SubmitButton === "function" ? (
-                  <SubmitButton loading={loading}>ذخیره تغییرات</SubmitButton>
-                ) : (
-                  <button type="submit" disabled={loading} className="amber-gradient text-on-primary px-5 py-2 rounded-lg font-label-sm">
-                    {loading ? "در حال ارسال..." : "ذخیره تغییرات"}
-                  </button>
-                )}
+              {/* Submit Button */}
+              <div className="mt-6">
+                <SubmitButton loading={loading}>ذخیره تغییرات</SubmitButton>
               </div>
             </form>
           )}
         </section>
 
+        {/* Settings Section */}
         <section className="mb-12">
-          <div className="glass-panel rounded-xl overflow-hidden">
-            <button className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors" onClick={() => alert('تغییر رمز به زودی')}>
+          <div className="glass-panel rounded-2xl overflow-hidden divide-y divide-white/5">
+            <button
+              type="button"
+              className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors"
+              onClick={() => alert("تغییر رمز عبور - به زودی")}
+            >
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-on-surface-variant">lock</span>
+                <svg className="w-5 h-5 text-on-surface-variant" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 2.1l6.33 3.16v4.74c0 4.59-2.85 8.86-6.33 10.28-3.48-1.42-6.33-5.69-6.33-10.28V6.26L12 3.1zm3-1.1H9v2h6V2z" />
+                </svg>
                 <span className="font-body-md text-body-md text-on-surface">تغییر رمز عبور</span>
               </div>
-              <span className="material-symbols-outlined text-on-surface-variant/30">chevron_left</span>
+              <svg className="w-5 h-5 text-on-surface-variant/30" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+              </svg>
             </button>
-            <button className="w-full p-4 flex items-center justify-between border-t border-white/5 hover:bg-white/5 transition-colors" onClick={() => alert('اعلان‌ها')}>
+            <button
+              type="button"
+              className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors"
+              onClick={() => alert("اعلان‌ها - به زودی")}
+            >
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-on-surface-variant">notifications</span>
+                <svg className="w-5 h-5 text-on-surface-variant" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+                </svg>
                 <span className="font-body-md text-body-md text-on-surface">اعلان‌ها</span>
               </div>
-              <span className="material-symbols-outlined text-on-surface-variant/30">chevron_left</span>
+              <svg className="w-5 h-5 text-on-surface-variant/30" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+              </svg>
             </button>
           </div>
         </section>
       </main>
 
-      {/* Bottom nav to match home style */}
+      {/* Bottom Navigation */}
       <BottomNavigation />
     </div>
   );
-};
+}
