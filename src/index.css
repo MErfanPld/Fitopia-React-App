@@ -199,3 +199,23 @@
   animation: float 4s ease-in-out infinite;
 }
 
+.glass-panel {
+  background: rgba(14, 14, 18, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.glass-panel:hover {
+  transform: scale(1.02);
+  border-color: rgba(255, 106, 0, 0.3);
+}
+.amber-gradient {
+  background: linear-gradient(135deg, #FF6A00 0%, #FFB000 100%);
+}
+.plan-popular {
+  border: 1.5px solid rgba(255, 106, 0, 0.5);
+  box-shadow: 0 0 30px rgba(255, 106, 0, 0.1);
+}
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
