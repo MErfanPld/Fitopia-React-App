@@ -42,26 +42,30 @@ export function BottomNavigation() {
       </button>
 
       {/* Subscription Button */}
-      <button
-        id="nav-subscribe"
-        onClick={() => handleNavClick("اشتراک فیتوپیا")}
-        className="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-colors active:scale-90 transition-transform duration-300 ease-out cursor-pointer"
-      >
-        <Award size={20} />
-        <span className="font-label-sm text-label-sm mt-1">اشتراک</span>
-      </button>
-
-      {/* Profile Button (Redirect to login/registration for full cycle mock) */}
       <Link
-        id="nav-profile"
-        to="/login"
+        id="nav-subscribe"
+        to="/subscriptions"
         className={`flex flex-col items-center justify-center rounded-xl px-4 py-1.5 transition-all duration-300 ease-out active:scale-90 ${
-          location.pathname === "/login" || location.pathname === "/register"
+          location.pathname === "/subscriptions"
             ? "text-primary bg-primary/10"
             : "text-on-surface-variant/60 hover:text-primary/80"
         }`}
       >
-        <User size={20} />
+        <Award size={20} className={location.pathname === "/subscriptions" ? "fill-current" : ""} />
+        <span className="font-label-sm text-label-sm mt-1">اشتراک</span>
+      </Link>
+
+      {/* Profile Button */}
+      <Link
+        id="nav-profile"
+        to="/profile"
+        className={`flex flex-col items-center justify-center rounded-xl px-4 py-1.5 transition-all duration-300 ease-out active:scale-90 ${
+          location.pathname === "/profile"
+            ? "text-primary bg-primary/10"
+            : "text-on-surface-variant/60 hover:text-primary/80"
+        }`}
+      >
+        <User size={20} className={location.pathname === "/profile" ? "fill-current" : ""} />
         <span className="font-label-sm text-label-sm mt-1">پروفایل</span>
       </Link>
     </nav>
