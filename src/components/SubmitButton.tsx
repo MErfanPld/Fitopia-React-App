@@ -8,31 +8,31 @@ import { Loader2 } from "lucide-react";
 
 interface SubmitButtonProps {
   id?: string;
-  label: string; // The button main title
-  loading?: boolean; // Toggles spinner layout replacement
-  disabled?: boolean; // Toggles click eligibility attributes
+  loading?: boolean;
+  disabled?: boolean;
+  children?: React.ReactNode;
 }
 
 export function SubmitButton({
-  id = "submit-register",
-  label,
+  id = "submit-btn",
   loading = false,
   disabled = false,
+  children = "ثبت",
 }: SubmitButtonProps) {
   return (
     <button
       id={id}
       type="submit"
       disabled={disabled || loading}
-      className={`energy-gradient spring-btn w-full py-4 rounded-xl font-headline-md text-lg text-on-primary-container font-extrabold shadow-lg mt-4 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.97] select-none hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed`}
+      className="w-full py-3 rounded-xl font-bold text-on-primary active:scale-95 transition-transform amber-gradient shadow-[0_0_20px_rgba(255,106,0,0.2)] flex items-center justify-center gap-2"
     >
       {loading ? (
         <>
-          <Loader2 id="spinner-icon" className="animate-spin text-on-primary-container" size={22} />
-          <span id="loading-txt">در حال ثبت‌نام...</span>
+          <Loader2 className="animate-spin" size={20} />
+          <span>در حال ثبت‌نام...</span>
         </>
       ) : (
-        <span id="btn-label">{label}</span>
+        <span>{children}</span>
       )}
     </button>
   );
