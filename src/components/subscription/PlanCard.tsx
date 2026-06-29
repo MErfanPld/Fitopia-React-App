@@ -58,21 +58,28 @@ const PlanCard = ({ plan, onSelect, isPopular, isBestValue }: PlanCardProps) => 
       <ul className="space-y-2 py-2">
         {plan.description && (
           <li className="flex items-center gap-2 text-sm text-on-surface-variant/80">
-            <span
-              className="material-symbols-outlined text-primary text-lg"
-              style={isPopular ? { fontVariationSettings: "'FILL' 1" } : {}}
-            >
-              {isPopular ? 'stars' : 'check_circle'}
-            </span>
+            {isPopular ? (
+              <svg className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+              </svg>
+            )}
             {plan.description}
           </li>
         )}
         <li className="flex items-center gap-2 text-sm text-on-surface-variant/80">
-          <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
+          <svg className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+          </svg>
           دسترسی به {plan.gyms_count} باشگاه
         </li>
         <li className="flex items-center gap-2 text-sm text-on-surface-variant/80">
-          <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
+          <svg className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+          </svg>
           اعتبار {plan.duration_days} روزه
         </li>
       </ul>
