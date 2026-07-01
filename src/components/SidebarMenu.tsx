@@ -1,6 +1,15 @@
 import { FC, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { 
+  Smartphone, 
+  User, 
+  Calendar, 
+  Heart, 
+  BarChart3, 
+  Settings, 
+  LogOut 
+} from 'lucide-react';
 
 interface SidebarMenuProps {
   isOpen: boolean;
@@ -14,40 +23,40 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
     {
       id: 'subscriptions',
       label: 'تاریخچه اشتراک‌ها',
-      icon: 'workspace_premium',
+      icon: Smartphone,
       path: '/subscriptions/history',
     },
     {
       id: 'profile',
       label: 'پروفایل',
-      icon: 'person',
+      icon: User,
       path: '/profile',
     },
     {
       id: 'bookings',
       label: 'رزروهای من',
-      icon: 'event_available',
+      icon: Calendar,
       path: '#',
       soon: true,
     },
     {
       id: 'favorites',
       label: 'باشگاه‌های مورد علاقه',
-      icon: 'favorite',
+      icon: Heart,
       path: '#',
       soon: true,
     },
     {
       id: 'stats',
       label: 'آمار و تحلیل',
-      icon: 'analytics',
+      icon: BarChart3,
       path: '#',
       soon: true,
     },
     {
       id: 'settings',
       label: 'تنظیمات',
-      icon: 'settings',
+      icon: Settings,
       path: '#',
       soon: true,
     },
@@ -76,7 +85,7 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
         <div className="flex items-center justify-between p-6 border-b border-white/10 flex-shrink-0">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <span className="material-symbols-outlined text-primary text-xl">account_circle</span>
+              <User className="text-primary w-6 h-6" />
             </div>
             <div className="min-w-0">
               <p className="text-sm text-on-surface-variant">خوش‌آمدید</p>
@@ -87,40 +96,41 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
             onClick={onClose}
             className="p-2 hover:bg-white/5 rounded-lg transition-colors flex-shrink-0"
           >
-            <span className="material-symbols-outlined text-on-surface">close</span>
+            <svg className="w-6 h-6 text-on-surface" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
         {/* Menu Items */}
         <nav className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
-          {menuItems.map((item, index) => (
-            <Link
-              key={item.id}
-              to={item.path}
-              onClick={item.soon ? (e) => e.preventDefault() : onClose}
-              style={{
-                animation: isOpen ? `slideInMenuItem 0.3s ease-out ${index * 50}ms forwards` : 'none',
-                opacity: 0,
-              }}
-              className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all ${
-                item.soon
-                  ? 'opacity-50 cursor-not-allowed'
-                  : 'hover:bg-primary/10 text-on-surface group'
-              }`}
-            >
-              <span className={`material-symbols-outlined text-xl flex-shrink-0 ${
-                item.soon ? '' : 'group-hover:text-primary'
-              }`}>
-                {item.icon}
-              </span>
-              <span className="flex-1 text-sm font-medium min-w-0">{item.label}</span>
-              {item.soon && (
-                <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full flex-shrink-0">
-                  به زودی
-                </span>
-              )}
-            </Link>
-          ))}
+          {menuItems.map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.id}
+                to={item.path}
+                onClick={item.soon ? (e) => e.preventDefault() : onClose}
+                style={{
+                  animation: isOpen ? `slideInMenuItem 0.3s ease-out ${index * 50}ms forwards` : 'none',
+                  opacity: 0,
+                }}
+                className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all ${
+                  item.soon
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:bg-primary/10 text-on-surface group'
+                }`}
+              >
+                <Icon className={`w-6 h-6 flex-shrink-0 ${item.soon ? '' : 'group-hover:text-primary'}`} />
+                <span className="flex-1 text-sm font-medium min-w-0">{item.label}</span>
+                {item.soon && (
+                  <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full flex-shrink-0">
+                    به زودی
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Divider */}
@@ -132,9 +142,7 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
             onClick={handleLogout}
             className="w-full flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-red-500/10 text-red-400 transition-all group"
           >
-            <span className="material-symbols-outlined group-hover:scale-110 transition-transform flex-shrink-0">
-              logout
-            </span>
+            <LogOut className="w-6 h-6 group-hover:scale-110 transition-transform flex-shrink-0" />
             <span className="text-sm font-medium">خروج از حساب</span>
           </button>
         </div>
