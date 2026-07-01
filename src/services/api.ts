@@ -76,7 +76,21 @@ class ApiService {
    */
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
+      let error: any = {};
+      
+      try {
+        error = await response.json();
+      } catch {
+        error = { detail: `HTTP ${response.status}: ${response.statusText}` };
+      }
+
+      // ✅ BETTER LOGGING for debugging
+      console.error('❌ API Error Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: error,
+        message: error.detail || error.message || error.non_field_errors?.[0] || 'Unknown error',
+      });
 
       // If unauthorized, try to refresh token
       if (response.status === 401) {
@@ -92,7 +106,7 @@ class ApiService {
 
       throw {
         status: response.status,
-        message: error.detail || error.message || 'API Error',
+        message: error.detail || error.message || error.non_field_errors?.[0] || 'API Error',
         data: error,
       };
     }
@@ -173,6 +187,7 @@ class ApiService {
   async post<T = any>(endpoint: string, data?: any, options?: ApiRequestOptions): Promise<T> {
     try {
       const url = this.buildUrl(endpoint, options?.params);
+      console.log('📤 POST:', url, 'with data:', data);
       const response = await fetch(url, {
         ...options,
         method: 'POST',
