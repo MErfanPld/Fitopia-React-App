@@ -64,14 +64,14 @@ export function Header() {
           className="p-2 hover:bg-white/5 rounded-lg transition-colors"
           title="منو"
         >
-          <span className="material-symbols-outlined text-white">menu</span>
+          <span className="material-symbols-outlined text-white text-xl">menu</span>
         </button>
 
         {/* TITLE */}
         <h1 className="text-white font-bold">FITOPIA</h1>
 
         {/* RIGHT SIDE - PROFILE + NOTIFICATION */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           {/* NOTIFICATION */}
           <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
             <Bell size={20} className="text-white cursor-pointer hover:text-primary transition" />
