@@ -18,6 +18,7 @@ import FilterBar from '../components/subscription/FilterBar';
 import DiscountCard from '../components/subscription/DiscountCard';
 import { useSubscriptionHistory } from '../hooks/useSubscriptionHistory';
 import { SubscriptionHistoryItem, SubscriptionStatus } from '../types/subscription';
+import { ArrowLeft } from 'lucide-react';
 
 const FILTER_TABS = [
   { id: 'all', label: 'همه' },
@@ -88,9 +89,10 @@ export function SubscriptionHistoryPage() {
           <div className="flex items-center gap-4">
             <button
               onClick={handleBackClick}
-              className="material-symbols-outlined text-on-surface hover:opacity-80 transition-opacity active:scale-95"
+              className="p-2 hover:bg-white/5 rounded-lg transition-colors active:scale-95"
+              title="برگشت"
             >
-              arrow_forward
+              <ArrowLeft className="w-6 h-6 text-on-surface" />
             </button>
             <h1 className="font-headline-md text-headline-md text-primary">
               تاریخچه اشتراک‌ها
@@ -104,9 +106,9 @@ export function SubscriptionHistoryPage() {
         {/* Error State */}
         {error && (
           <div className="glass-panel rounded-2xl p-8 text-center flex flex-col items-center gap-4">
-            <span className="material-symbols-outlined text-error text-5xl">
-              error_outline
-            </span>
+            <svg className="w-12 h-12 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
             <p className="text-on-surface-variant">{error}</p>
             <button
               onClick={refetch}
@@ -134,9 +136,9 @@ export function SubscriptionHistoryPage() {
               ))
             ) : (
               <div className="glass-panel rounded-2xl p-12 text-center">
-                <span className="material-symbols-outlined text-on-surface-variant text-5xl block mb-4">
-                  history
-                </span>
+                <svg className="w-12 h-12 text-on-surface-variant block mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 <p className="text-on-surface-variant">
                   هیچ اشتراکی برای این فیلتر پیدا نشد
                 </p>
