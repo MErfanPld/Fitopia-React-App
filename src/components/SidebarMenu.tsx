@@ -105,7 +105,7 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Menu Items */}
+        {/* Menu Items - Scrollable */}
         <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2 custom-scrollbar">
           {menuItems.map((item, index) => {
             const Icon = item.icon;
@@ -147,10 +147,10 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
         </nav>
 
         {/* Divider */}
-        <div className="border-t border-white/10 flex-shrink-0" />
+        <div className="border-t border-white/10" />
 
-        {/* Footer - Logout */}
-        <div className="p-4 space-y-2 flex-shrink-0 bg-gradient-to-t from-surface-container/50 to-transparent">
+        {/* Footer - Logout (Always Visible) */}
+        <div className="p-4 space-y-2 bg-gradient-to-t from-surface-container/50 to-transparent">
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-gradient-to-r from-red-500/10 to-red-600/5 hover:from-red-500/20 hover:to-red-600/15 text-red-400 hover:text-red-300 transition-all group border border-red-500/20 hover:border-red-500/40"
