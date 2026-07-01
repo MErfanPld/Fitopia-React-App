@@ -9,6 +9,7 @@ import {
   BarChart3, 
   Settings, 
   LogOut,
+  CreditCard,
   ChevronLeft 
 } from 'lucide-react';
 
@@ -27,6 +28,13 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
       icon: Smartphone,
       path: '/subscriptions/history',
       color: 'from-blue-500 to-blue-600',
+    },
+    {
+      id: 'payment',
+      label: 'درخواست پرداخت',
+      icon: CreditCard,
+      path: '/subscriptions/payment',
+      color: 'from-green-500 to-green-600',
     },
     {
       id: 'profile',
@@ -57,7 +65,7 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
       icon: BarChart3,
       path: '#',
       soon: true,
-      color: 'from-green-500 to-green-600',
+      color: 'from-cyan-500 to-cyan-600',
     },
     {
       id: 'settings',
