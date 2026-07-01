@@ -92,22 +92,43 @@ export function PaymentPage() {
       return;
     }
 
+    // ✅ اضافی: چک کن که plan.id معتبر است
+    if (!plan.id) {
+      setError('شناسه پلن نامعتبر است');
+      console.error('Invalid plan.id:', plan.id);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const response = await apiService.post('/subscriptions/purchase/', {
-        plan_id: plan.id,
+      // ✅ بهتر: Body صحیح شامل تمام فیلدهای مورد نیاز
+      const paymentData = {
+        plan_id: Number(plan.id), // اطمینان حاصل کن که عدد است
+        payment_method: selectedMethod, // اضافه کن روش پرداخت
         use_discount: useDiscount,
-      });
+        discount_amount: useDiscount ? discount : 0, // اضافه کن میزان تخفیف
+      };
+
+      console.log('📤 Sending payment request:', paymentData);
+
+      const response = await apiService.post('/subscriptions/purchase/', paymentData);
+
+      console.log('✅ Payment response:', response);
 
       setSuccess(true);
       setTimeout(() => {
         navigate('/subscriptions/history', { replace: true });
       }, 2000);
     } catch (err: any) {
-      console.error('Payment error:', err);
-      setError(err.message || 'خطا در پردازش پرداخت. لطفاً دوباره تلاش کنید.');
+      console.error('❌ Payment error:', err);
+      
+      // بهتر: خطای واضح‌تر برای کاربر
+      const errorMessage = err.message || 'خطا در پردازش پرداخت';
+      const detailedError = err.data?.detail || err.data?.message || errorMessage;
+      
+      setError(`${detailedError}. لطفاً دوباره تلاش کنید.`);
     } finally {
       setLoading(false);
     }
@@ -299,7 +320,7 @@ export function PaymentPage() {
           <button
             onClick={handlePayment}
             disabled={loading}
-            className="flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-yellow-500 text-on-primary font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-yellow-500 text-on-primary font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
