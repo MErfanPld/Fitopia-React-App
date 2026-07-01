@@ -12,15 +12,15 @@ import { SubscriptionPlan } from '../types/subscription';
 const FAQ_ITEMS = [
   {
     q: 'توکن‌ها چگونه کار می‌کنند؟',
-    a: 'هر ورود به باشگاه معادل تعداد مشخصی توکن است. باشگاه‌های اکونومی معمولاً ۱ توکن و باشگاه‌های لوکس تا ۳ توکن استفاده می‌کنند.',
+    a: 'هر ورود به باشگاه معادل تعداد مشخصی توکن است. باشگاه‌های اکونومی معمولاً ۱ توکن و باشگاه‌های لوکس تا ۳ توکن مصرف می‌کنند.',
   },
   {
     q: 'آیا توکن‌ها منقضی می‌شوند؟',
-    a: 'بله، توکن‌های هر پلن ۳۰ روز پس از خرید اعتبار دارند. در صورت تمدید قبل از انقضا، توکن‌های قبلی به ماه بعدی منتقل می‌شوند.',
+    a: 'بله، توکن‌های هر پلن ۳۰ روز پس از خرید اعتبار دارند. در صورت تمدید قبل از انقضا، توکن‌های قبلی به ماه بعد منتقل می‌شوند.',
   },
   {
     q: 'چطور وارد باشگاه شویم؟',
-    a: 'کافیست در اپلیکیشن QR کد موجود در پذیرش باشگاه را اسکن کنید. سیستم به طور خودکار توکن لازم را از حساب شما کم می‌کند.',
+    a: 'کافیست در اپلیکیشن QR کد موجود در پذیرش باشگاه را اسکن کنید. سیستم به طور خودکار توکن لازم را از حساب شما کسر می‌کند.',
   },
 ];
 
@@ -28,12 +28,6 @@ const Subscriptions = () => {
   const { plans, loading, error, refetch } = useSubscriptionPlans();
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-
-  const handleConfirm = () => {
-    // TODO: API پرداخت
-    console.log('خرید پلن:', selectedPlan);
-    setSelectedPlan(null);
-  };
 
   // پلن وسطی رو popular نشون بده
   const getPopularIndex = () => Math.floor(plans.length / 2);
@@ -61,39 +55,6 @@ const Subscriptions = () => {
           </p>
         </section>
 
-        {/* Discount Banner */}
-        <div className="glass-panel rounded-xl p-4 mb-10 flex items-center justify-between border-[rgba(255,180,148,0.2)] bg-[rgba(255,180,148,0.05)]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-              <svg
-                className="w-6 h-6"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M5.5 4h13a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-1l1.5 6a1 1 0 0 1-1 1.18H5a1 1 0 0 1-1-1.18l1.5-6h-1a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm12.5 2h-13v3h13V6zm-8 8h4v2h-4v-2z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-[16px] text-on-surface font-semibold">شما ۱۲۰,۰۰۰ تومان تخفیف دارید</p>
-              <p className="text-xs text-on-surface-variant opacity-60">قابل استفاده در تمامی پلن‌ها</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-on-surface-variant">استفاده از تخفیف</span>
-            <button
-              className="w-11 h-6 bg-[#353438] rounded-full p-1 transition-colors duration-300"
-              onClick={(e) => {
-                const btn = e.currentTarget;
-                const dot = btn.querySelector('div') as HTMLElement;
-                btn.classList.toggle('bg-primary');
-                dot.classList.toggle('-translate-x-[18px]');
-              }}
-            >
-              <div className="w-4 h-4 bg-white rounded-full transition-transform duration-300" />
-            </button>
-          </div>
-        </div>
-
         {/* Plan Cards */}
         {error ? (
           <div className="glass-panel rounded-2xl p-8 text-center flex flex-col items-center gap-4">
@@ -113,7 +74,7 @@ const Subscriptions = () => {
             </button>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6 mb-12">
             {loading
               ? Array.from({ length: 3 }).map((_, i) => <PlanCardSkeleton key={i} />)
               : plans.map((plan, index) => (
@@ -179,7 +140,6 @@ const Subscriptions = () => {
 
       <ConfirmModal
         plan={selectedPlan}
-        onConfirm={handleConfirm}
         onClose={() => setSelectedPlan(null)}
       />
     </>
