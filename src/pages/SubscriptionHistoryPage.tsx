@@ -75,23 +75,18 @@ export function SubscriptionHistoryPage() {
       <Header />
 
       <main className="px-margin-mobile md:px-margin-desktop mt-6 space-y-8 max-w-5xl mx-auto pb-32">
-        {/* Back Button & Title */}
-        <header className="w-full sticky top-20 z-40 bg-transparent flex items-center justify-between pt-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={handleBackClick}
-              className="p-2 hover:bg-white/5 rounded-lg transition-colors active:scale-95"
-              title="برگشت"
-            >
-              <ArrowLeft className="w-6 h-6 text-on-surface" />
-            </button>
-            <h1 className="font-headline-md text-headline-md text-primary">
-              تاریخچه اشتراک‌ها
-            </h1>
-          </div>
-          <div className="font-display-lg-mobile text-display-lg-mobile tracking-tighter text-primary">
-            FITOPIA
-          </div>
+        {/* Back Button & Title - Cleaned up Header */}
+        <header className="flex items-center gap-3 pt-2">
+          <button
+            onClick={handleBackClick}
+            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors active:scale-95 flex-shrink-0"
+            title="برگشت"
+          >
+            <ArrowLeft className="w-5 h-5 text-on-surface" />
+          </button>
+          <h1 className="text-xl font-bold text-white">
+            تاریخچه اشتراک‌ها
+          </h1>
         </header>
 
         {/* Error State */}
