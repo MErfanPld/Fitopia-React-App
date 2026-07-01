@@ -1,5 +1,6 @@
 import { FC } from 'react';
 import { formatPersianNumber } from '../../utils/formatting';
+import { Star } from 'lucide-react';
 
 interface DiscountCardProps {
   discountAmount: number;
@@ -13,12 +14,7 @@ const DiscountCard: FC<DiscountCardProps> = ({ discountAmount }) => {
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-primary">
-            <span
-              className="material-symbols-outlined"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              stars
-            </span>
+            <Star className="w-5 h-5" fill="currentColor" />
             <span className="font-bold text-lg">باشگاه وفاداری فیتوپیا</span>
           </div>
           <h2 className="text-2xl font-bold text-white">تخفیف انباشته شما</h2>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { LogOut, Bell } from "lucide-react";
+import { Bell } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import SidebarMenu from "./SidebarMenu";
@@ -64,7 +64,9 @@ export function Header() {
           className="p-2 hover:bg-white/5 rounded-lg transition-colors"
           title="منو"
         >
-          <span className="material-symbols-outlined text-white text-xl">menu</span>
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
         </button>
 
         {/* TITLE */}
@@ -130,7 +132,9 @@ export function Header() {
                   <span className="text-sm font-medium">
                     {loading ? "در حال خروج..." : "خروج از حساب"}
                   </span>
-                  <LogOut size={16} />
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
                 </button>
 
               </div>

@@ -1,6 +1,7 @@
 import { FC } from 'react';
 import { SubscriptionHistoryItem } from '../../types/subscription';
 import { formatPersianDate, formatPersianNumber } from '../../utils/formatting';
+import { CheckCircle, Clock, XCircle, Zap } from 'lucide-react';
 
 interface HistoryItemProps {
   item: SubscriptionHistoryItem;
@@ -36,13 +37,13 @@ const HistoryItem: FC<HistoryItemProps> = ({ item, isActive = false }) => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'active':
-        return 'workspace_premium';
+        return <CheckCircle className="w-8 h-8" />;
       case 'expired':
-        return 'fitness_center';
+        return <Clock className="w-8 h-8" />;
       case 'cancelled':
-        return 'block';
+        return <XCircle className="w-8 h-8" />;
       default:
-        return 'help';
+        return <Zap className="w-8 h-8" />;
     }
   };
 
@@ -55,15 +56,13 @@ const HistoryItem: FC<HistoryItemProps> = ({ item, isActive = false }) => {
       <div className="flex justify-between items-start mb-4">
         <div className="flex gap-4">
           <div
-            className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+            className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
               item.status === 'active'
                 ? 'bg-primary/10 text-primary'
                 : 'bg-surface-container text-on-surface-variant'
             }`}
           >
-            <span className="material-symbols-outlined text-3xl">
-              {getStatusIcon(item.status)}
-            </span>
+            {getStatusIcon(item.status)}
           </div>
           <div>
             <h3 className="font-bold text-lg text-white">
@@ -98,14 +97,16 @@ const HistoryItem: FC<HistoryItemProps> = ({ item, isActive = false }) => {
             <span className="text-on-surface-variant">
               توکن‌های استفاده نشده به تخفیف دوره بعد تبدیل می‌شوند.
             </span>
-            <span className="material-symbols-outlined text-primary group-hover:translate-x-[-4px] transition-transform">
-              arrow_back
+            <span className="group-hover:translate-x-[-4px] transition-transform">
+              <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
             </span>
           </div>
         </>
       ) : item.discount_applied > 0 ? (
         <div className="bg-primary/5 p-3 rounded-lg border border-primary/20 flex items-center gap-3">
-          <span className="material-symbols-outlined text-primary">savings</span>
+          <Zap className="w-5 h-5 text-primary flex-shrink-0" />
           <div className="text-xs">
             <span className="text-primary font-bold">
               {formatPersianNumber(item.discount_applied)} تومان

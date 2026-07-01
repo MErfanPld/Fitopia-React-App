@@ -1,12 +1,3 @@
-/**
- * @file SubscriptionHistoryPage.tsx
- * @description Subscription history page showing:
- * - Current active subscription with token usage
- * - History of all subscriptions
- * - Accumulated discount from unused tokens
- * - Filter options (all, active, expired, cancelled)
- */
-
 import { useState, useEffect } from 'react';
 import { Header } from '../components/Header';
 import { BottomNavigation } from '../components/BottomNavigation';
@@ -17,7 +8,7 @@ import HistoryItem from '../components/subscription/HistoryItem';
 import FilterBar from '../components/subscription/FilterBar';
 import DiscountCard from '../components/subscription/DiscountCard';
 import { useSubscriptionHistory } from '../hooks/useSubscriptionHistory';
-import { SubscriptionHistoryItem, SubscriptionStatus } from '../types/subscription';
+import { SubscriptionHistoryItem } from '../types/subscription';
 import { ArrowLeft } from 'lucide-react';
 
 const FILTER_TABS = [

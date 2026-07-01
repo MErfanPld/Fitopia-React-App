@@ -54,7 +54,9 @@ const ActivePlanCard: FC<ActivePlanCardProps> = ({ subscription }) => {
           </div>
           <button className="text-primary font-label-sm flex items-center gap-1 hover:opacity-80">
             جزئیات پلن
-            <span className="material-symbols-outlined text-sm">chevron_left</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
           </button>
         </div>
       </div>
