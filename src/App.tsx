@@ -10,10 +10,9 @@ const LoginPage = lazy(() => import("./pages/LoginPage").then((module) => ({ def
 const RegisterPage = lazy(() => import("./pages/RegisterPage").then((module) => ({ default: module.RegisterPage })));
 const OfflinePage = lazy(() => import("./pages/OfflinePage").then((module) => ({ default: module.OfflinePage })));
 const GymDetailPage = lazy(() => import("./pages/GymDetailPage").then((module) => ({ default: module.GymDetailPage })));
-// Profile page (new)
 const ProfilePage = lazy(() => import("./pages/ProfilePage").then((module) => ({ default: module.ProfilePage })));
-// Subscriptions page (new)
 const Subscriptions = lazy(() => import("./pages/Subscriptions").then((module) => ({ default: module.default })));
+const SubscriptionHistoryPage = lazy(() => import("./pages/SubscriptionHistoryPage").then((module) => ({ default: module.SubscriptionHistoryPage })));
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -66,6 +65,11 @@ function AppContent() {
         <Route path="/subscriptions" element={
           <ProtectedRoute>
             <Subscriptions />
+          </ProtectedRoute>
+        } />
+        <Route path="/subscriptions/history" element={
+          <ProtectedRoute>
+            <SubscriptionHistoryPage />
           </ProtectedRoute>
         } />
         <Route path="/offline" element={<OfflinePage />} />
