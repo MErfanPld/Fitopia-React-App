@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Menu, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import SidebarMenu from "./SidebarMenu";
@@ -35,6 +35,18 @@ export function Header() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Close sidebar on small screens when navigating
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768 && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [sidebarOpen]);
+
   const handleProfileClick = () => {
     setOpen(false);
     navigate("/profile");
@@ -56,36 +68,45 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 w-full h-16 flex justify-between items-center px-4 bg-black/40 backdrop-blur z-[9999]">
-
-        {/* HAMBURGER MENU */}
+      <header className="fixed top-0 left-0 w-full h-20 md:h-16 flex items-center justify-between px-3 md:px-6 bg-gradient-to-b from-surface/95 via-surface/90 to-surface/80 backdrop-blur-xl border-b border-white/5 z-40 transition-all">
+        
+        {/* LEFT: Hamburger Menu */}
         <button
-          onClick={() => setSidebarOpen(true)}
-          className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2.5 hover:bg-white/10 rounded-lg transition-all hover:scale-105 active:scale-95 md:hidden"
           title="منو"
         >
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+          {sidebarOpen ? (
+            <X className="w-5 h-5 text-primary" />
+          ) : (
+            <Menu className="w-5 h-5 text-on-surface" />
+          )}
         </button>
 
-        {/* TITLE */}
-        <h1 className="text-white font-bold">FITOPIA</h1>
+        {/* CENTER: Logo */}
+        <div className="flex-1 text-center md:text-left">
+          <h1 className="text-lg md:text-2xl font-black text-primary tracking-wider bg-gradient-to-r from-primary to-yellow-400 bg-clip-text text-transparent">
+            FITOPIA
+          </h1>
+        </div>
 
-        {/* RIGHT SIDE - PROFILE + NOTIFICATION */}
-        <div className="flex items-center gap-2">
-          {/* NOTIFICATION */}
-          <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-            <Bell size={20} className="text-white cursor-pointer hover:text-primary transition" />
+        {/* RIGHT: Notification + Profile */}
+        <div className="flex items-center gap-2 md:gap-4">
+          {/* Notification Bell */}
+          <button 
+            className="p-2.5 hover:bg-white/10 rounded-lg transition-all hover:scale-105 active:scale-95 relative group"
+            title="اعلان‌ها"
+          >
+            <Bell size={20} className="text-on-surface group-hover:text-primary transition" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
           </button>
 
-          {/* PROFILE */}
+          {/* Profile Dropdown */}
           <div className="relative" ref={ref}>
-
-            {/* AVATAR */}
-            <div
-              onClick={() => setOpen((p) => !p)}
-              className="w-10 h-10 rounded-full bg-primary cursor-pointer overflow-hidden flex items-center justify-center hover:ring-2 hover:ring-primary/50 transition"
+            {/* Avatar Button */}
+            <button
+              onClick={() => setOpen(!open)}
+              className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-primary to-yellow-500 cursor-pointer overflow-hidden flex items-center justify-center hover:ring-2 hover:ring-primary/50 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/20"
             >
               {avatarUrl ? (
                 <img
@@ -94,55 +115,50 @@ export function Header() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <svg className="w-6 h-6 text-on-primary" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                 </svg>
               )}
-            </div>
+            </button>
 
-            {/* DROPDOWN */}
+            {/* Dropdown Menu */}
             {open && (
-              <div className="absolute left-0 mt-3 w-56 bg-surface-container-low border border-white/10 rounded-2xl shadow-xl overflow-hidden">
-
-                {/* header */}
-                <div className="px-4 py-3 border-b border-white/10 text-right">
-                  <p className="text-xs text-on-surface-variant">حساب کاربری</p>
-                  <p className="text-sm text-on-surface font-bold">{userData?.full_name || "کاربر فیتوپیا"}</p>
+              <div className="absolute left-0 md:left-auto md:right-0 top-12 w-56 bg-surface-container-high border border-primary/20 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-sm z-50 animate-in fade-in slide-in-from-top-2">
+                
+                {/* Header */}
+                <div className="px-4 py-4 border-b border-white/10 text-right bg-gradient-to-b from-primary/10 to-transparent">
+                  <p className="text-xs text-on-surface-variant font-medium">حساب کاربری</p>
+                  <p className="text-sm text-white font-bold mt-1">{userData?.full_name || "کاربر فیتوپیا"}</p>
                 </div>
 
-                {/* Profile button */}
+                {/* Profile Button */}
                 <button
                   onClick={handleProfileClick}
-                  className="w-full flex items-center justify-end gap-2 px-4 py-3 text-on-surface hover:bg-white/5 transition text-right border-b border-white/10"
-                  style={{ direction: "rtl" }}
+                  className="w-full flex items-center justify-end gap-3 px-4 py-3 text-on-surface hover:bg-primary/10 hover:text-primary transition-all text-right border-b border-white/10 group"
                 >
                   <span className="text-sm font-medium">پنل کاربر</span>
-                  <svg className="w-5 h-5 text-on-surface-variant" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-on-surface-variant group-hover:text-primary transition" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                   </svg>
                 </button>
 
-                {/* logout button */}
+                {/* Logout Button */}
                 <button
                   onClick={handleLogoutClick}
                   disabled={loading}
-                  className="w-full flex items-center justify-end gap-2 px-4 py-3 text-red-400 hover:bg-red-500/10 transition text-right disabled:opacity-50"
-                  style={{ direction: "rtl" }}
+                  className="w-full flex items-center justify-end gap-3 px-4 py-3 text-red-400 hover:bg-red-500/15 hover:text-red-300 transition-all text-right disabled:opacity-50 group"
                 >
                   <span className="text-sm font-medium">
-                    {loading ? "در حال خروج..." : "خروج از حساب"}
+                    {loading ? "در حال خروج..." : "خروج"}
                   </span>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
                 </button>
-
               </div>
             )}
-
           </div>
         </div>
-
       </header>
 
       {/* Sidebar Menu */}
