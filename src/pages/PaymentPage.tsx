@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { BottomNavigation } from '../components/BottomNavigation';
 import { ShaderBackground } from '../components/ShaderBackground';
@@ -7,6 +7,7 @@ import { ParticleOverlay } from '../components/ParticleOverlay';
 import { useAuth } from '../context/AuthContext';
 import { ArrowLeft, CreditCard, Wallet, Building2, Loader } from 'lucide-react';
 import apiService from '../services/api';
+import { SubscriptionPlan } from '../types/subscription';
 
 interface PaymentMethod {
   id: string;
@@ -18,17 +19,43 @@ interface PaymentMethod {
 
 export function PaymentPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { token } = useAuth();
+  
   const [selectedMethod, setSelectedMethod] = useState<string>('bank');
   const [useDiscount, setUseDiscount] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [planId, setPlanId] = useState<number | null>(null);
+  const [plan, setPlan] = useState<SubscriptionPlan | null>(null);
+  const [discount, setDiscount] = useState(0);
 
   useEffect(() => {
     document.title = 'FITOPIA | درخواست پرداخت';
+    
+    // Get plan from navigation state
+    const state = location.state as { planId: number; plan: SubscriptionPlan } | null;
+    if (state?.plan) {
+      setPlan(state.plan);
+    } else {
+      // Fallback if no plan provided
+      navigate('/subscriptions', { replace: true });
+    }
+
+    // Load discount
+    loadDiscount();
   }, []);
+
+  const loadDiscount = async () => {
+    try {
+      const response = await apiService.get('/subscriptions/my-discount/');
+      if (response?.discount_remaining) {
+        setDiscount(response.discount_remaining);
+      }
+    } catch (err) {
+      console.error('Error loading discount:', err);
+    }
+  };
 
   const paymentMethods: PaymentMethod[] = [
     {
@@ -54,8 +81,13 @@ export function PaymentPage() {
     },
   ];
 
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
+
+  const finalPrice = plan ? (useDiscount ? Math.max(0, plan.price - discount) : plan.price) : 0;
+
   const handlePayment = async () => {
-    if (!planId) {
+    if (!plan) {
       setError('لطفاً ابتدا یک پلن را انتخاب کنید');
       return;
     }
@@ -65,7 +97,7 @@ export function PaymentPage() {
 
     try {
       const response = await apiService.post('/subscriptions/purchase/', {
-        plan_id: planId,
+        plan_id: plan.id,
         use_discount: useDiscount,
       });
 
@@ -105,6 +137,20 @@ export function PaymentPage() {
     );
   }
 
+  if (!plan) {
+    return (
+      <>
+        <ShaderBackground />
+        <ParticleOverlay />
+        <Header />
+        <main className="relative z-10 pt-24 pb-32 px-4 max-w-2xl mx-auto h-screen flex items-center justify-center">
+          <Loader className="w-8 h-8 animate-spin text-primary" />
+        </main>
+        <BottomNavigation />
+      </>
+    );
+  }
+
   return (
     <>
       <ShaderBackground />
@@ -134,23 +180,18 @@ export function PaymentPage() {
           </div>
         )}
 
-        {/* Plan Selection */}
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold text-white mb-4">انتخاب پلن</h2>
-          <div className="relative">
-            <select
-              value={planId || ''}
-              onChange={(e) => setPlanId(e.target.value ? parseInt(e.target.value) : null)}
-              className="w-full px-4 py-3 bg-surface-container border border-white/10 rounded-xl text-on-surface focus:outline-none focus:border-primary/50 appearance-none"
-            >
-              <option value="">انتخاب پلن...</option>
-              <option value="1">پلن آغازگر - ۱۲۰,۰۰۰ تومان</option>
-              <option value="2">پلن حرفه‌ای - ۲۰۰,۰۰۰ تومان</option>
-              <option value="3">پلن اپتیمال - ۳۵۰,۰۰۰ تومان</option>
-            </select>
-            <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M7 10l5 5 5-5z" />
-            </svg>
+        {/* Plan Info */}
+        <section className="mb-8 glass-panel rounded-xl p-5 bg-primary/5 border-primary/20">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-on-surface-variant mb-1">پلن انتخاب شده</p>
+              <h2 className="text-lg font-bold text-white">{plan.name}</h2>
+              <p className="text-xs text-on-surface-variant mt-1">{plan.token_count} توکن • {plan.gyms_count} باشگاه</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-on-surface-variant">قیمت</p>
+              <p className="text-2xl font-bold text-primary">{formatPrice(plan.price)}</p>
+            </div>
           </div>
         </section>
 
@@ -194,31 +235,33 @@ export function PaymentPage() {
         </section>
 
         {/* Discount Option */}
-        <section className="mb-8">
-          <div className="glass-panel rounded-xl p-4 flex items-center justify-between border-primary/20 bg-primary/5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M5.5 4h13a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-1l1.5 6a1 1 0 0 1-1 1.18H5a1 1 0 0 1-1-1.18l1.5-6h-1a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" />
-                </svg>
+        {discount > 0 && (
+          <section className="mb-8">
+            <div className="glass-panel rounded-xl p-4 flex items-center justify-between border-primary/20 bg-primary/5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M5.5 4h13a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-1l1.5 6a1 1 0 0 1-1 1.18H5a1 1 0 0 1-1-1.18l1.5-6h-1a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm text-on-surface font-semibold">استفاده از تخفیف موجود</p>
+                  <p className="text-xs text-on-surface-variant">{formatPrice(discount)} تخفیف دارید</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-on-surface font-semibold">استفاده از تخفیف موجود</p>
-                <p className="text-xs text-on-surface-variant">۱۲۰,۰۰۰ تومان تخفیف دارید</p>
-              </div>
+              <button
+                onClick={() => setUseDiscount(!useDiscount)}
+                className={`w-11 h-6 rounded-full p-1 transition-all ${
+                  useDiscount ? 'bg-primary' : 'bg-surface-container'
+                }`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full transition-transform ${
+                  useDiscount ? 'translate-x-5' : 'translate-x-0'
+                }`} />
+              </button>
             </div>
-            <button
-              onClick={() => setUseDiscount(!useDiscount)}
-              className={`w-11 h-6 rounded-full p-1 transition-all ${
-                useDiscount ? 'bg-primary' : 'bg-surface-container'
-              }`}
-            >
-              <div className={`w-4 h-4 bg-white rounded-full transition-transform ${
-                useDiscount ? 'translate-x-5' : 'translate-x-0'
-              }`} />
-            </button>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Order Summary */}
         <section className="mb-8">
@@ -226,23 +269,21 @@ export function PaymentPage() {
           <div className="glass-panel rounded-xl p-5 space-y-3">
             <div className="flex justify-between items-center pb-3 border-b border-white/10">
               <span className="text-on-surface-variant">قیمت پلن</span>
-              <span className="font-semibold text-white">۲۰۰,۰۰۰ تومان</span>
+              <span className="font-semibold text-white">{formatPrice(plan.price)}</span>
             </div>
             <div className="flex justify-between items-center pb-3 border-b border-white/10">
               <span className="text-on-surface-variant">روش پرداخت</span>
               <span className="font-semibold text-white capitalize">{selectedMethod}</span>
             </div>
-            {useDiscount && (
+            {useDiscount && discount > 0 && (
               <div className="flex justify-between items-center pb-3 border-b border-white/10 text-green-400">
                 <span>تخفیف</span>
-                <span className="font-semibold">-۱۲۰,۰۰۰ تومان</span>
+                <span className="font-semibold">-{formatPrice(discount)}</span>
               </div>
             )}
             <div className="flex justify-between items-center pt-3 bg-gradient-to-r from-primary/10 to-transparent p-3 rounded-lg">
               <span className="font-semibold text-white">مبلغ نهایی</span>
-              <span className="text-xl font-bold text-primary">
-                {useDiscount ? '۸۰,۰۰۰' : '۲۰۰,۰۰۰'} تومان
-              </span>
+              <span className="text-xl font-bold text-primary">{formatPrice(finalPrice)}</span>
             </div>
           </div>
         </section>
@@ -257,7 +298,7 @@ export function PaymentPage() {
           </button>
           <button
             onClick={handlePayment}
-            disabled={loading || !planId}
+            disabled={loading}
             className="flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-yellow-500 text-on-primary font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
@@ -268,7 +309,7 @@ export function PaymentPage() {
             ) : (
               <>
                 <CreditCard className="w-5 h-5" />
-                ادامه پرداخت
+                تأیید و پرداخت
               </>
             )}
           </button>
