@@ -106,9 +106,9 @@ export function PaymentPage() {
       // ✅ بهتر: Body صحیح شامل تمام فیلدهای مورد نیاز
       const paymentData = {
         plan_id: Number(plan.id), // اطمینان حاصل کن که عدد است
-        payment_method: selectedMethod, // اضافه کن روش پرداخت
+        payment_method: selectedMethod, // ✅ اضافه کن روش پرداخت
         use_discount: useDiscount,
-        discount_amount: useDiscount ? discount : 0, // اضافه کن میزان تخفیف
+        discount_amount: useDiscount ? discount : 0, // ✅ اضافه کن میزان تخفیف
       };
 
       console.log('📤 Sending payment request:', paymentData);
