@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Copy, QrCode, CheckCircle, AlertCircle, Clock, Download, Share2, Loader } from 'lucide-react';
+import { ArrowLeft, Copy, QrCode, CheckCircle, AlertCircle, Clock, Download, Loader } from 'lucide-react';
 import { Header } from '../components/Header';
 import { BottomNavigation } from '../components/BottomNavigation';
 import { ShaderBackground } from '../components/ShaderBackground';
@@ -37,42 +37,83 @@ interface ExpandedToken extends Token {
   displayTime: string;
 }
 
+interface Gym {
+  id: number;
+  name: string;
+  address: string;
+  phone: string;
+}
+
+interface GymWithToken {
+  gym: Gym;
+  activeToken: ExpandedToken | null;
+  inactiveTokens: ExpandedToken[];
+}
+
 export function GymAccessTokenPage() {
   const navigate = useNavigate();
-  const [tokens, setTokens] = useState<ExpandedToken[]>([]);
+  const [gyms, setGyms] = useState<GymWithToken[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedToken, setSelectedToken] = useState<ExpandedToken | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
   const [requestingToken, setRequestingToken] = useState<number | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<number | null>(null);
+  const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
 
   useEffect(() => {
     document.title = 'FITOPIA | توکن‌های دسترسی';
-    loadTokens();
+    loadData();
     
     // بروزرسانی مقدار زمان باقیمانده هر 10 ثانیه
     const interval = setInterval(updateTimeRemaining, 10000);
     return () => clearInterval(interval);
   }, []);
 
-  const loadTokens = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiService.get<Token[]>('/tokens/my/');
-      console.log('📤 Tokens loaded:', data);
+
+      // 1. دریافت اشتراک و باشگاه‌های آن
+      const subscriptionGymsData = await apiService.get<any>('/subscriptions/subscriptions/me/gyms/');
+      console.log('📦 Subscription Gyms:', subscriptionGymsData);
       
-      const expandedTokens = data.map(token => ({
+      if (!subscriptionGymsData || !subscriptionGymsData.gyms || subscriptionGymsData.gyms.length === 0) {
+        setError('هیچ باشگاهی برای این اشتراک موجود نیست');
+        setLoading(false);
+        return;
+      }
+
+      setSubscriptionInfo(subscriptionGymsData);
+
+      // 2. دریافت تمام توکن‌های کاربر
+      const tokens = await apiService.get<Token[]>('/tokens/my/');
+      console.log('📤 Tokens:', tokens);
+
+      const expandedTokens: ExpandedToken[] = (tokens || []).map(token => ({
         ...token,
         timeRemaining: calculateTimeRemaining(token.valid_until),
         displayTime: formatDisplayTime(token.valid_until),
       }));
-      
-      setTokens(expandedTokens);
+
+      // 3. ترکیب اطلاعات: برای هر باشگاه توکن‌های آن رو پیدا کن
+      const gymsWithTokens: GymWithToken[] = subscriptionGymsData.gyms.map((gym: Gym) => {
+        const gymTokens = expandedTokens.filter(t => t.gym === gym.id);
+        const activeToken = gymTokens.find(t => t.status === 'active') || null;
+        const inactiveTokens = gymTokens.filter(t => t.status !== 'active');
+
+        return {
+          gym,
+          activeToken,
+          inactiveTokens,
+        };
+      });
+
+      setGyms(gymsWithTokens);
     } catch (err: any) {
-      console.error('❌ Error loading tokens:', err);
-      setError(err.message || 'خطا در بارگذاری توکن‌ها');
+      console.error('❌ Error loading data:', err);
+      setError(err.message || 'خطا در بارگذاری اطلاعات');
     } finally {
       setLoading(false);
     }
@@ -89,14 +130,21 @@ export function GymAccessTokenPage() {
       
       console.log('✅ Token requested:', newToken);
       
-      // اضافه کردن توکن جدید به لیست
-      const expandedToken = {
+      // اضافه کردن توکن جدید و بروزرسانی لیست
+      const expandedToken: ExpandedToken = {
         ...newToken,
         timeRemaining: calculateTimeRemaining(newToken.valid_until),
         displayTime: formatDisplayTime(newToken.valid_until),
       };
-      
-      setTokens(prev => [expandedToken, ...prev]);
+
+      setGyms(prev => 
+        prev.map(item => 
+          item.gym.id === gymId 
+            ? { ...item, activeToken: expandedToken, inactiveTokens: [] }
+            : item
+        )
+      );
+
       setSelectedToken(expandedToken);
       setShowQRModal(true);
       
@@ -142,10 +190,15 @@ export function GymAccessTokenPage() {
   };
 
   const updateTimeRemaining = () => {
-    setTokens(prev => 
-      prev.map(token => ({
-        ...token,
-        timeRemaining: calculateTimeRemaining(token.valid_until),
+    setGyms(prev => 
+      prev.map(item => ({
+        ...item,
+        activeToken: item.activeToken 
+          ? {
+              ...item.activeToken,
+              timeRemaining: calculateTimeRemaining(item.activeToken.valid_until),
+            }
+          : null,
       }))
     );
   };
@@ -199,26 +252,6 @@ export function GymAccessTokenPage() {
     }
   };
 
-  const activeTokensByGym = tokens.reduce((acc: Record<number, Token[]>, token) => {
-    if (!acc[token.gym]) acc[token.gym] = [];
-    acc[token.gym].push(token);
-    return acc;
-  }, {});
-
-  // گروه‌بندی توکن‌ها به صورت: یک توکن فعال برای هر باشگاه + بقیه در تب منقضی
-  const gymList = Object.entries(activeTokensByGym).map(([gymId, gymTokens]) => {
-    const activeToken = gymTokens.find(t => t.status === 'active');
-    const inactiveTokens = gymTokens.filter(t => t.status !== 'active');
-    
-    return {
-      gymId: parseInt(gymId),
-      gym_name: gymTokens[0]?.gym_name || 'باشگاه نامعلوم',
-      gym_address: gymTokens[0]?.gym_address || '',
-      activeToken: activeToken || null,
-      inactiveTokens: inactiveTokens,
-    };
-  });
-
   if (loading) {
     return (
       <div className="fixed inset-0 bg-[#07070A] z-50 flex flex-col justify-center items-center">
@@ -248,11 +281,33 @@ export function GymAccessTokenPage() {
           >
             <ArrowLeft className="w-6 h-6 text-on-surface" />
           </button>
-          <div>
+          <div className="flex-1">
             <h1 className="text-display-lg-mobile font-bold text-white">دریافت توکن</h1>
-            <p className="text-body-md text-on-surface-variant">ورود به باشگاه‌های عضو اشتراک خود</p>
+            <p className="text-body-md text-on-surface-variant">
+              اشتراک: {subscriptionInfo?.plan_name || '...'}
+            </p>
           </div>
         </div>
+
+        {/* Subscription Info */}
+        {subscriptionInfo && (
+          <div className="mb-6 glass-panel rounded-2xl p-4 border border-primary/20 space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-label-sm text-on-surface-variant">توکن باقی‌مانده:</span>
+              <span className="text-headline-md text-primary font-bold">
+                {subscriptionInfo.tokens_remaining || 0} / {subscriptionInfo.tokens_total || 0}
+              </span>
+            </div>
+            <div className="w-full bg-surface-container rounded-full h-2">
+              <div 
+                className="bg-gradient-to-r from-primary to-[#FFB000] h-2 rounded-full transition-all"
+                style={{
+                  width: `${subscriptionInfo.tokens_total ? (subscriptionInfo.tokens_remaining / subscriptionInfo.tokens_total * 100) : 0}%`
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Error Alert */}
         {error && (
@@ -263,31 +318,42 @@ export function GymAccessTokenPage() {
         )}
 
         {/* Empty State */}
-        {tokens.length === 0 ? (
+        {gyms.length === 0 ? (
           <div className="text-center py-12 space-y-4">
             <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
               <QrCode className="w-8 h-8 text-primary" />
             </div>
-            <h2 className="text-headline-md text-white">هنوز توکنی دریافت نکرده‌ای</h2>
+            <h2 className="text-headline-md text-white">هیچ باشگاهی دسترسی‌دار نیست</h2>
             <p className="text-body-md text-on-surface-variant max-w-xs mx-auto">
-              برای دسترسی به باشگاه، یک توکن روزانه دریافت کن. هر توکن ۲۴ ساعت اعتبار دارد.
+              برای این اشتراک هیچ باشگاهی تعریف نشده است.
             </p>
           </div>
         ) : (
           <div className="space-y-6">
             {/* Gym Cards */}
-            {gymList.map((gym) => (
-              <div key={gym.gymId} className="glass-panel rounded-2xl p-6 space-y-4 border border-white/5">
+            {gyms.map((item) => (
+              <div key={item.gym.id} className="glass-panel rounded-2xl p-6 space-y-4 border border-white/5">
                 {/* Gym Header */}
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h3 className="text-headline-md text-white font-bold">{gym.gym_name}</h3>
-                    <p className="text-label-sm text-on-surface-variant mt-1">{gym.gym_address}</p>
+                    <h3 className="text-headline-md text-white font-bold">{item.gym.name}</h3>
+                    <div className="flex items-start gap-2 mt-1">
+                      <span className="text-label-sm text-on-surface-variant mt-0.5">📍</span>
+                      <p className="text-label-sm text-on-surface-variant">{item.gym.address}</p>
+                    </div>
+                    {item.gym.phone && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-label-sm text-on-surface-variant">📞</span>
+                        <a href={`tel:${item.gym.phone}`} className="text-label-sm text-primary hover:text-primary/80">
+                          {item.gym.phone}
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Active Token */}
-                {gym.activeToken ? (
+                {item.activeToken ? (
                   <div className="bg-gradient-to-r from-green-500/5 to-emerald-500/5 border border-green-500/20 rounded-xl p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -295,7 +361,7 @@ export function GymAccessTokenPage() {
                         <span className="text-label-sm font-bold text-green-400">توکن فعال</span>
                       </div>
                       <span className="text-label-sm text-on-surface-variant">
-                        {gym.activeToken.timeRemaining}
+                        {item.activeToken.timeRemaining}
                       </span>
                     </div>
 
@@ -303,15 +369,15 @@ export function GymAccessTokenPage() {
                     <div className="flex items-center gap-2 bg-surface-container rounded-lg p-3">
                       <input
                         type="text"
-                        value={gym.activeToken.token_code}
+                        value={item.activeToken.token_code}
                         readOnly
-                        className="flex-1 bg-transparent text-body-md text-white font-mono outline-none"
+                        className="flex-1 bg-transparent text-body-md text-white font-mono outline-none text-xs md:text-sm"
                       />
                       <button
-                        onClick={() => copyToClipboard(gym.activeToken!.token_code, gym.activeToken!.id)}
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors text-primary"
+                        onClick={() => copyToClipboard(item.activeToken!.token_code, item.activeToken!.id)}
+                        className="p-2 hover:bg-white/10 rounded-lg transition-colors text-primary flex-shrink-0"
                       >
-                        {copyFeedback === gym.activeToken.id ? (
+                        {copyFeedback === item.activeToken.id ? (
                           <CheckCircle className="w-5 h-5" />
                         ) : (
                           <Copy className="w-5 h-5" />
@@ -323,7 +389,7 @@ export function GymAccessTokenPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => {
-                          setSelectedToken(gym.activeToken!);
+                          setSelectedToken(item.activeToken!);
                           setShowQRModal(true);
                         }}
                         className="flex-1 flex items-center justify-center gap-2 bg-primary/20 text-primary py-2.5 rounded-lg hover:bg-primary/30 transition-colors font-label-sm"
@@ -333,10 +399,10 @@ export function GymAccessTokenPage() {
                       </button>
                       <button
                         onClick={() => {
-                          if (gym.activeToken?.qr_code) {
+                          if (item.activeToken?.qr_code) {
                             const link = document.createElement('a');
-                            link.href = gym.activeToken.qr_code;
-                            link.download = `token-${gym.activeToken.token_code}.png`;
+                            link.href = item.activeToken.qr_code;
+                            link.download = `token-${item.activeToken.token_code}.png`;
                             link.click();
                           }
                         }}
@@ -350,25 +416,30 @@ export function GymAccessTokenPage() {
                     <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5 text-xs text-on-surface-variant">
                       <div>
                         <p className="text-on-surface-variant/70">صادر شده:</p>
-                        <p className="text-white font-vazir">{formatPersianDate(gym.activeToken.issued_at)}</p>
+                        <p className="text-white font-vazir">{formatPersianDate(item.activeToken.issued_at)}</p>
                       </div>
                       <div className="text-left">
                         <p className="text-on-surface-variant/70">منقضی شدن:</p>
-                        <p className="text-white font-vazir">{formatPersianDate(gym.activeToken.valid_until)}</p>
+                        <p className="text-white font-vazir">{formatPersianDate(item.activeToken.valid_until)}</p>
                       </div>
                     </div>
                   </div>
                 ) : (
                   /* Request Token Button */
                   <button
-                    onClick={() => requestToken(gym.gymId)}
-                    disabled={requestingToken === gym.gymId}
+                    onClick={() => requestToken(item.gym.id)}
+                    disabled={requestingToken === item.gym.id || (subscriptionInfo?.tokens_remaining || 0) <= 0}
                     className="w-full amber-gradient py-3 rounded-xl font-headline-md text-white hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    {requestingToken === gym.gymId ? (
+                    {requestingToken === item.gym.id ? (
                       <>
                         <Loader className="w-5 h-5 animate-spin" />
                         در حال دریافت...
+                      </>
+                    ) : (subscriptionInfo?.tokens_remaining || 0) <= 0 ? (
+                      <>
+                        <AlertCircle className="w-5 h-5" />
+                        توکن باقی‌مانده نیست
                       </>
                     ) : (
                       <>
@@ -380,26 +451,26 @@ export function GymAccessTokenPage() {
                 )}
 
                 {/* Inactive Tokens */}
-                {gym.inactiveTokens.length > 0 && (
+                {item.inactiveTokens.length > 0 && (
                   <details className="pt-2 border-t border-white/5">
                     <summary className="cursor-pointer text-label-sm text-on-surface-variant hover:text-on-surface transition-colors">
-                      {gym.inactiveTokens.length} توکن منقضی‌شده
+                      {item.inactiveTokens.length} توکن منقضی‌شده
                     </summary>
                     <div className="mt-3 space-y-2">
-                      {gym.inactiveTokens.map((token) => (
+                      {item.inactiveTokens.map((token) => (
                         <div
                           key={token.id}
                           className={`flex items-center justify-between p-3 rounded-lg border ${getStatusColor(
                             token.status
                           )}`}
                         >
-                          <div className="flex items-center gap-2 flex-1">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
                             {getStatusIcon(token.status)}
-                            <span className="text-label-sm font-mono text-xs">
+                            <span className="text-label-sm font-mono text-xs truncate">
                               {token.token_code.substring(0, 8)}...
                             </span>
                           </div>
-                          <span className="text-label-sm">{getStatusLabel(token.status)}</span>
+                          <span className="text-label-sm flex-shrink-0">{getStatusLabel(token.status)}</span>
                         </div>
                       ))}
                     </div>
@@ -429,7 +500,7 @@ export function GymAccessTokenPage() {
             <div className="text-center space-y-2">
               <h3 className="text-display-lg-mobile text-white font-bold">تأییدیه ورود</h3>
               <p className="text-body-md text-on-surface-variant">
-                QR کد را مقابل اسکنر باشگاه {selectedToken.gym_name} قرار دهید
+                QR کد را مقابل اسکنر باشگاه قرار دهید
               </p>
             </div>
 
