@@ -50,6 +50,17 @@ interface GymWithToken {
   inactiveTokens: ExpandedToken[];
 }
 
+interface Subscription {
+  id: number;
+  plan_name: string;
+  status: string;
+  tokens_total: number;
+  tokens_used: number;
+  tokens_remaining: number;
+  is_active: boolean;
+  days_remaining: number;
+}
+
 export function GymAccessTokenPage() {
   const navigate = useNavigate();
   const [gyms, setGyms] = useState<GymWithToken[]>([]);
@@ -59,7 +70,7 @@ export function GymAccessTokenPage() {
   const [showQRModal, setShowQRModal] = useState(false);
   const [requestingToken, setRequestingToken] = useState<number | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<number | null>(null);
-  const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
+  const [subscriptionInfo, setSubscriptionInfo] = useState<Subscription | null>(null);
 
   useEffect(() => {
     document.title = 'FITOPIA | توکن‌های دسترسی';
@@ -75,9 +86,21 @@ export function GymAccessTokenPage() {
       setLoading(true);
       setError(null);
 
-      // 1. دریافت اشتراک و باشگاه‌های آن
+      // 1. دریافت اطلاعات اشتراک فعال
+      const subscription = await apiService.get<Subscription>('/subscriptions/my/');
+      console.log('📦 Subscription:', subscription);
+      
+      if (!subscription || !subscription.is_active) {
+        setError('هیچ اشتراک فعالی وجود ندارد');
+        setLoading(false);
+        return;
+      }
+
+      setSubscriptionInfo(subscription);
+
+      // 2. دریافت باشگاه‌های اشتراک
       const subscriptionGymsData = await apiService.get<any>('/subscriptions/subscriptions/me/gyms/');
-      console.log('📦 Subscription Gyms:', subscriptionGymsData);
+      console.log('🏢 Subscription Gyms:', subscriptionGymsData);
       
       if (!subscriptionGymsData || !subscriptionGymsData.gyms || subscriptionGymsData.gyms.length === 0) {
         setError('هیچ باشگاهی برای این اشتراک موجود نیست');
@@ -85,9 +108,7 @@ export function GymAccessTokenPage() {
         return;
       }
 
-      setSubscriptionInfo(subscriptionGymsData);
-
-      // 2. دریافت تمام توکن‌های کاربر
+      // 3. دریافت تمام توکن‌های کاربر
       const tokens = await apiService.get<Token[]>('/tokens/my/');
       console.log('📤 Tokens:', tokens);
 
@@ -97,7 +118,7 @@ export function GymAccessTokenPage() {
         displayTime: formatDisplayTime(token.valid_until),
       }));
 
-      // 3. ترکیب اطلاعات: برای هر باشگاه توکن‌های آن رو پیدا کن
+      // 4. ترکیب اطلاعات: برای هر باشگاه توکن‌های آن رو پیدا کن
       const gymsWithTokens: GymWithToken[] = subscriptionGymsData.gyms.map((gym: Gym) => {
         const gymTokens = expandedTokens.filter(t => t.gym === gym.id);
         const activeToken = gymTokens.find(t => t.status === 'active') || null;
@@ -144,6 +165,15 @@ export function GymAccessTokenPage() {
             : item
         )
       );
+
+      // بروزرسانی توکن‌های باقی‌مانده
+      if (subscriptionInfo) {
+        setSubscriptionInfo({
+          ...subscriptionInfo,
+          tokens_remaining: Math.max(0, subscriptionInfo.tokens_remaining - 1),
+          tokens_used: subscriptionInfo.tokens_used + 1,
+        });
+      }
 
       setSelectedToken(expandedToken);
       setShowQRModal(true);
@@ -295,7 +325,7 @@ export function GymAccessTokenPage() {
             <div className="flex justify-between items-center">
               <span className="text-label-sm text-on-surface-variant">توکن باقی‌مانده:</span>
               <span className="text-headline-md text-primary font-bold">
-                {subscriptionInfo.tokens_remaining || 0} / {subscriptionInfo.tokens_total || 0}
+                {formatPersianNumber(subscriptionInfo.tokens_remaining || 0)} / {formatPersianNumber(subscriptionInfo.tokens_total || 0)}
               </span>
             </div>
             <div className="w-full bg-surface-container rounded-full h-2">
@@ -305,6 +335,10 @@ export function GymAccessTokenPage() {
                   width: `${subscriptionInfo.tokens_total ? (subscriptionInfo.tokens_remaining / subscriptionInfo.tokens_total * 100) : 0}%`
                 }}
               />
+            </div>
+            <div className="flex justify-between text-xs text-on-surface-variant pt-2">
+              <span>استفاده شده: {formatPersianNumber(subscriptionInfo.tokens_used || 0)}</span>
+              <span>روزهای باقی: {formatPersianNumber(subscriptionInfo.days_remaining || 0)}</span>
             </div>
           </div>
         )}
@@ -376,6 +410,7 @@ export function GymAccessTokenPage() {
                       <button
                         onClick={() => copyToClipboard(item.activeToken!.token_code, item.activeToken!.id)}
                         className="p-2 hover:bg-white/10 rounded-lg transition-colors text-primary flex-shrink-0"
+                        title="کپی توکن"
                       >
                         {copyFeedback === item.activeToken.id ? (
                           <CheckCircle className="w-5 h-5" />
@@ -407,6 +442,7 @@ export function GymAccessTokenPage() {
                           }
                         }}
                         className="p-2.5 hover:bg-white/10 rounded-lg transition-colors text-on-surface-variant"
+                        title="دانلود QR"
                       >
                         <Download className="w-5 h-5" />
                       </button>
