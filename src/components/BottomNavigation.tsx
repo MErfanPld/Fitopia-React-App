@@ -4,7 +4,7 @@
  * Tracks location path from react-router-dom to highlight the selected main view segment.
  */
 
-import { Home, Search, Award, User } from "lucide-react";
+import { Home, Search, Ticket, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 export function BottomNavigation() {
@@ -31,6 +31,20 @@ export function BottomNavigation() {
         <span className="font-label-sm text-label-sm mt-1">خانه</span>
       </Link>
 
+      {/* Gym Access Tokens Button */}
+      <Link
+        id="nav-tokens"
+        to="/gym-access/tokens"
+        className={`flex flex-col items-center justify-center rounded-xl px-4 py-1.5 transition-all duration-300 ease-out active:scale-90 ${
+          location.pathname === "/gym-access/tokens"
+            ? "text-primary bg-primary/10"
+            : "text-on-surface-variant/60 hover:text-primary/80"
+        }`}
+      >
+        <Ticket size={20} className={location.pathname === "/gym-access/tokens" ? "fill-current" : ""} />
+        <span className="font-label-sm text-label-sm mt-1">توکن</span>
+      </Link>
+
       {/* Search Button */}
       <button
         id="nav-search"
@@ -40,20 +54,6 @@ export function BottomNavigation() {
         <Search size={20} />
         <span className="font-label-sm text-label-sm mt-1">جستجو</span>
       </button>
-
-      {/* Subscription Button */}
-      <Link
-        id="nav-subscribe"
-        to="/subscriptions"
-        className={`flex flex-col items-center justify-center rounded-xl px-4 py-1.5 transition-all duration-300 ease-out active:scale-90 ${
-          location.pathname === "/subscriptions"
-            ? "text-primary bg-primary/10"
-            : "text-on-surface-variant/60 hover:text-primary/80"
-        }`}
-      >
-        <Award size={20} className={location.pathname === "/subscriptions" ? "fill-current" : ""} />
-        <span className="font-label-sm text-label-sm mt-1">اشتراک</span>
-      </Link>
 
       {/* Profile Button */}
       <Link
