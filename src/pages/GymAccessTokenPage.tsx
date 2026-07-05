@@ -9,13 +9,13 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Copy, QrCode, CheckCircle, AlertCircle, Clock, Download, Loader } from 'lucide-react';
+import { ArrowLeft, Copy, QrCode, CheckCircle, AlertCircle, Clock, Download, Loader, X } from 'lucide-react';
 import { Header } from '../components/Header';
 import { BottomNavigation } from '../components/BottomNavigation';
 import { ShaderBackground } from '../components/ShaderBackground';
 import { ParticleOverlay } from '../components/ParticleOverlay';
 import apiService from '../services/api';
-import { formatPersianNumber, formatPersianDate } from '../utils/formatting';
+import { formatPersianNumber, formatPersianDate, formatPersianDateShort } from '../utils/formatting';
 
 interface Token {
   id: number;
@@ -68,6 +68,8 @@ export function GymAccessTokenPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedToken, setSelectedToken] = useState<ExpandedToken | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [copyModalToken, setCopyModalToken] = useState<ExpandedToken | null>(null);
   const [requestingToken, setRequestingToken] = useState<number | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<number | null>(null);
   const [subscriptionInfo, setSubscriptionInfo] = useState<Subscription | null>(null);
@@ -233,11 +235,21 @@ export function GymAccessTokenPage() {
     );
   };
 
-  const copyToClipboard = async (tokenCode: string, tokenId: number) => {
+  const openCopyModal = (token: ExpandedToken) => {
+    setCopyModalToken(token);
+    setShowCopyModal(true);
+  };
+
+  const copyToClipboard = async () => {
+    if (!copyModalToken) return;
+    
     try {
-      await navigator.clipboard.writeText(tokenCode);
-      setCopyFeedback(tokenId);
-      setTimeout(() => setCopyFeedback(null), 2000);
+      await navigator.clipboard.writeText(copyModalToken.token_code);
+      setCopyFeedback(copyModalToken.id);
+      setTimeout(() => {
+        setCopyFeedback(null);
+        setShowCopyModal(false);
+      }, 1500);
     } catch (err) {
       console.error('Error copying to clipboard:', err);
     }
@@ -408,15 +420,11 @@ export function GymAccessTokenPage() {
                         className="flex-1 bg-transparent text-body-md text-white font-mono outline-none text-xs md:text-sm"
                       />
                       <button
-                        onClick={() => copyToClipboard(item.activeToken!.token_code, item.activeToken!.id)}
+                        onClick={() => openCopyModal(item.activeToken!)}
                         className="p-2 hover:bg-white/10 rounded-lg transition-colors text-primary flex-shrink-0"
                         title="کپی توکن"
                       >
-                        {copyFeedback === item.activeToken.id ? (
-                          <CheckCircle className="w-5 h-5" />
-                        ) : (
-                          <Copy className="w-5 h-5" />
-                        )}
+                        <Copy className="w-5 h-5" />
                       </button>
                     </div>
 
@@ -452,11 +460,11 @@ export function GymAccessTokenPage() {
                     <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5 text-xs text-on-surface-variant">
                       <div>
                         <p className="text-on-surface-variant/70">صادر شده:</p>
-                        <p className="text-white font-vazir">{formatPersianDate(item.activeToken.issued_at)}</p>
+                        <p className="text-white font-vazir">{formatPersianDateShort(item.activeToken.issued_at)}</p>
                       </div>
                       <div className="text-left">
                         <p className="text-on-surface-variant/70">منقضی شدن:</p>
-                        <p className="text-white font-vazir">{formatPersianDate(item.activeToken.valid_until)}</p>
+                        <p className="text-white font-vazir">{formatPersianDateShort(item.activeToken.valid_until)}</p>
                       </div>
                     </div>
                   </div>
@@ -596,7 +604,7 @@ export function GymAccessTokenPage() {
             {/* Action Buttons */}
             <div className="flex gap-3">
               <button
-                onClick={() => copyToClipboard(selectedToken.token_code, selectedToken.id)}
+                onClick={() => openCopyModal(selectedToken)}
                 className="flex-1 bg-surface-container-high text-white py-3 rounded-lg font-label-sm flex items-center justify-center gap-2 hover:bg-surface-variant transition-colors border border-white/5"
               >
                 <Copy className="w-4 h-4" />
@@ -625,6 +633,94 @@ export function GymAccessTokenPage() {
             >
               بستن
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Copy Token Modal */}
+      {copyModalToken && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${
+            showCopyModal ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            onClick={() => setShowCopyModal(false)}
+          />
+          <div className="relative w-full max-w-sm glass-panel rounded-3xl p-6 space-y-6 transform transition-transform duration-300">
+            <div className="flex items-center justify-between">
+              <h3 className="text-headline-md text-white font-bold">کپی توکن</h3>
+              <button
+                onClick={() => setShowCopyModal(false)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-on-surface" />
+              </button>
+            </div>
+
+            {/* Token Code Display */}
+            <div className="space-y-3">
+              <p className="text-label-sm text-on-surface-variant">کد توکن ورود به باشگاه:</p>
+              <div className="bg-surface-container rounded-xl p-4 space-y-3">
+                <input
+                  type="text"
+                  value={copyModalToken.token_code}
+                  readOnly
+                  className="w-full bg-surface-container-high text-white font-mono text-sm p-3 rounded-lg border border-white/10 outline-none"
+                  onClick={(e) => e.currentTarget.select()}
+                />
+                <p className="text-xs text-on-surface-variant text-center">
+                  برای انتخاب تمام متن روی input کلیک کن
+                </p>
+              </div>
+            </div>
+
+            {/* Token Info */}
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-on-surface-variant">وضعیت:</span>
+                <span className="text-green-400 font-bold">فعال</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-on-surface-variant">زمان باقی:</span>
+                <span className="text-white font-mono">{copyModalToken.timeRemaining}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-on-surface-variant">باشگاه:</span>
+                <span className="text-white font-vazir">{copyModalToken.gym_name}</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={copyToClipboard}
+                className={`flex-1 py-3 rounded-lg font-label-sm flex items-center justify-center gap-2 transition-all ${
+                  copyFeedback === copyModalToken.id
+                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                    : 'amber-gradient text-white hover:shadow-lg hover:shadow-primary/30'
+                }`}
+              >
+                {copyFeedback === copyModalToken.id ? (
+                  <>
+                    <CheckCircle className="w-5 h-5" />
+                    کپی شد ✓
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-5 h-5" />
+                    کپی کن
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setShowCopyModal(false)}
+                className="flex-1 bg-surface-container text-on-surface py-3 rounded-lg font-label-sm hover:bg-surface-container-high transition-colors"
+              >
+                بستن
+              </button>
+            </div>
           </div>
         </div>
       )}
