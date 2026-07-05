@@ -14,6 +14,7 @@ const ProfilePage = lazy(() => import("./pages/ProfilePage").then((module) => ({
 const Subscriptions = lazy(() => import("./pages/Subscriptions").then((module) => ({ default: module.default })));
 const SubscriptionHistoryPage = lazy(() => import("./pages/SubscriptionHistoryPage").then((module) => ({ default: module.SubscriptionHistoryPage })));
 const PaymentPage = lazy(() => import("./pages/PaymentPage").then((module) => ({ default: module.PaymentPage })));
+const GymAccessTokenPage = lazy(() => import("./pages/GymAccessTokenPage").then((module) => ({ default: module.GymAccessTokenPage })));
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -76,6 +77,11 @@ function AppContent() {
         <Route path="/subscriptions/payment" element={
           <ProtectedRoute>
             <PaymentPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/gym-access/tokens" element={
+          <ProtectedRoute>
+            <GymAccessTokenPage />
           </ProtectedRoute>
         } />
         <Route path="/offline" element={<OfflinePage />} />
