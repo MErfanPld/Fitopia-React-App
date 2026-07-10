@@ -19,11 +19,11 @@ const PlanCard = ({ plan, onSelect, isPopular, isBestValue }: PlanCardProps) => 
       `}
     >
       {/* بج پرطرفدار */}
-      {isPopular && (
-        <div className="absolute -left-10 top-6 -rotate-45 bg-primary px-12 py-1 text-[10px] font-bold text-on-primary shadow-lg uppercase tracking-widest">
-          پرطرفدار
-        </div>
-      )}
+{isPopular && (
+  <div className="absolute -left-8 top-4 -rotate-45 bg-primary px-8 py-0.5 text-[9px] font-semibold text-on-primary shadow uppercase tracking-wide">
+    پرطرفدار
+  </div>
+)}
 
       <div className="flex justify-between items-start">
         <div>
