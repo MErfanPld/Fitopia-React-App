@@ -1,11 +1,12 @@
 /**
  * @file CategorySlider.tsx
  * @description Horizontal scrollable filter pills for choosing gym disciplines (e.g., bodybuilding, yoga, martial arts).
- * Fetches categories from API and displays them with visual feedback on selection.
+ * Fetches categories from API and displays them with visual feedback on selection and icons.
  */
 
 import { useState } from "react";
 import { useCategories } from "../hooks/useGymAPI";
+import { Dumbbell } from "lucide-react";
 
 interface CategorySliderProps {
   onCategoryChange?: (categoryId: number, categoryName: string) => void;
@@ -24,8 +25,11 @@ export function CategorySlider({ onCategoryChange }: CategorySliderProps) {
 
   if (loading) {
     return (
-      <section className="mt-10 fade-in-up select-none" id="category-slider">
-        <h4 className="font-headline-md text-headline-md text-on-surface mb-4">دسته‌بندی باشگاه‌ها</h4>
+      <section className="mt-6 fade-in-up select-none" id="category-slider">
+        <div className="flex items-center gap-2 mb-3">
+          <Dumbbell size={18} className="text-primary" />
+          <h4 className="font-title text-title text-on-surface">دسته‌بندی باشگاه‌ها</h4>
+        </div>
         <div className="flex gap-3 pb-2">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="h-10 w-24 bg-surface-variant/20 rounded-full animate-pulse" />
@@ -37,8 +41,11 @@ export function CategorySlider({ onCategoryChange }: CategorySliderProps) {
 
   if (error) {
     return (
-      <section className="mt-10 fade-in-up select-none" id="category-slider">
-        <h4 className="font-headline-md text-headline-md text-on-surface mb-4">دسته‌بندی باشگاه‌ها</h4>
+      <section className="mt-6 fade-in-up select-none" id="category-slider">
+        <div className="flex items-center gap-2 mb-3">
+          <Dumbbell size={18} className="text-primary" />
+          <h4 className="font-title text-title text-on-surface">دسته‌بندی باشگاه‌ها</h4>
+        </div>
         <div className="p-4 bg-error/10 rounded-lg text-error text-sm">
           خطا در بارگذاری دسته‌بندی‌ها: {error}
         </div>
@@ -47,8 +54,11 @@ export function CategorySlider({ onCategoryChange }: CategorySliderProps) {
   }
 
   return (
-    <section className="mt-10 fade-in-up select-none" style={{ animationDelay: "0.3s" }} id="category-slider">
-      <h4 className="font-headline-md text-headline-md text-on-surface mb-4">دسته‌بندی باشگاه‌ها</h4>
+    <section className="mt-6 fade-in-up select-none" style={{ animationDelay: "0.3s" }} id="category-slider">
+      <div className="flex items-center gap-2 mb-3">
+        <Dumbbell size={18} className="text-primary" />
+        <h4 className="font-title text-title text-on-surface">دسته‌بندی باشگاه‌ها</h4>
+      </div>
       
       <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2 relative z-10 md:flex-wrap md:overflow-visible">
         {categories.length === 0 ? (
