@@ -27,21 +27,18 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
       label: 'تاریخچه اشتراک‌ها',
       icon: Smartphone,
       path: '/subscriptions/history',
-      color: 'from-blue-500 to-blue-600',
     },
     {
       id: 'payment',
       label: 'درخواست پرداخت',
       icon: CreditCard,
       path: '/subscriptions/payment',
-      color: 'from-green-500 to-green-600',
     },
     {
       id: 'profile',
       label: 'پروفایل',
       icon: User,
       path: '/profile',
-      color: 'from-purple-500 to-purple-600',
     },
     {
       id: 'bookings',
@@ -49,7 +46,6 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
       icon: Calendar,
       path: '#',
       soon: true,
-      color: 'from-pink-500 to-pink-600',
     },
     {
       id: 'favorites',
@@ -57,7 +53,6 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
       icon: Heart,
       path: '#',
       soon: true,
-      color: 'from-red-500 to-red-600',
     },
     {
       id: 'stats',
@@ -65,7 +60,6 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
       icon: BarChart3,
       path: '#',
       soon: true,
-      color: 'from-cyan-500 to-cyan-600',
     },
     {
       id: 'settings',
@@ -73,7 +67,6 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
       icon: Settings,
       path: '#',
       soon: true,
-      color: 'from-orange-500 to-orange-600',
     },
   ];
 
@@ -101,12 +94,12 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
         {/* Header Section */}
         <div className="flex-shrink-0 pt-6 px-6 pb-4 border-b border-white/10 bg-gradient-to-b from-primary/10 to-transparent">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-yellow-500/10 flex items-center justify-center flex-shrink-0 border border-primary/20 shadow-lg shadow-primary/10">
-              <User className="text-primary w-7 h-7" />
+            <div className="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center flex-shrink-0 border border-white/10">
+              <User className="text-on-surface-variant w-7 h-7" strokeWidth={1.5} />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs text-on-surface-variant font-medium tracking-wide">خوش‌آمدید به</p>
-              <p className="font-black text-on-surface text-sm mt-0.5 truncate bg-gradient-to-r from-primary to-yellow-400 bg-clip-text text-transparent">
+              <p className="font-black text-on-surface text-sm mt-0.5 truncate">
                 {displayName}
               </p>
             </div>
@@ -128,12 +121,12 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
                 className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300 ${
                   item.soon
                     ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-gradient-to-r hover:from-primary/10 hover:to-transparent text-on-surface hover:text-primary hover:pl-5'
+                    : 'hover:bg-white/5 text-on-surface hover:text-primary hover:pl-5'
                 } ${isOpen ? 'animate-in fade-in slide-in-from-right-4' : ''}`}
               >
-                {/* Icon Background */}
-                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${item.color} flex items-center justify-center flex-shrink-0 shadow-md transition-all group-hover:shadow-lg group-hover:scale-110 ${item.soon ? 'opacity-40' : ''}`}>
-                  <Icon className="w-5 h-5 text-white" />
+                {/* Icon - Simple and clean */}
+                <div className="flex-shrink-0">
+                  <Icon className="w-5 h-5 text-on-surface-variant group-hover:text-primary transition-colors" strokeWidth={1.5} />
                 </div>
 
                 {/* Label */}
@@ -147,7 +140,7 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
                     به زودی
                   </span>
                 ) : (
-                  <ChevronLeft className="w-5 h-5 text-on-surface-variant group-hover:text-primary group-hover:translate-x-1 transition-all opacity-0 group-hover:opacity-100 flex-shrink-0" />
+                  <ChevronLeft className="w-5 h-5 text-on-surface-variant group-hover:text-primary group-hover:translate-x-1 transition-all opacity-0 group-hover:opacity-100 flex-shrink-0" strokeWidth={1.5} />
                 )}
               </Link>
             );
@@ -161,13 +154,13 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
         <div className="p-4 space-y-2 bg-gradient-to-t from-surface-container/50 to-transparent">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-gradient-to-r from-red-500/10 to-red-600/5 hover:from-red-500/20 hover:to-red-600/15 text-red-400 hover:text-red-300 transition-all group border border-red-500/20 hover:border-red-500/40"
+            className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-on-surface-variant hover:text-on-surface transition-all"
           >
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform">
-              <LogOut className="w-5 h-5 text-white" />
+            <div className="flex-shrink-0">
+              <LogOut className="w-5 h-5 text-on-surface-variant hover:text-on-surface transition-colors" strokeWidth={1.5} />
             </div>
             <span className="text-sm font-semibold flex-1 text-right">خروج از حساب</span>
-            <ChevronLeft className="w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+            <ChevronLeft className="w-5 h-5 transition-transform flex-shrink-0" strokeWidth={1.5} />
           </button>
         </div>
       </div>
