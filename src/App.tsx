@@ -61,15 +61,14 @@ function AppContent() {
             <GymDetailPage />
           </ProtectedRoute>
         } />
-<<<<<<< HEAD
         <Route path="/gym/all" element={
           <ProtectedRoute>
             <AllGymsPage />
-=======
+          </ProtectedRoute>
+        } />
         <Route path="/gym-map" element={
           <ProtectedRoute>
             <GymMapPage />
->>>>>>> 98f4c1cd7d2c624370567ee85577d63d6bab2333
           </ProtectedRoute>
         } />
         <Route path="/profile" element={
