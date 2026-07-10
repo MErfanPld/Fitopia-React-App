@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Bell, Menu, X } from "lucide-react";
+import { Bell, Menu, X, User, LogOut } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import SidebarMenu from "./SidebarMenu";
@@ -10,17 +10,9 @@ export function Header() {
 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const ref = useRef<HTMLDivElement>(null);
-
-  // Load avatar from userData
-  useEffect(() => {
-    if (userData?.avatar) {
-      setAvatarUrl(userData.avatar);
-    }
-  }, [userData?.avatar]);
 
   // close outside click
   useEffect(() => {
@@ -97,36 +89,27 @@ export function Header() {
             className="p-2.5 hover:bg-white/10 rounded-lg transition-all hover:scale-105 active:scale-95 relative group"
             title="اعلان‌ها"
           >
-            <Bell size={20} className="text-on-surface group-hover:text-primary transition" />
+            <Bell size={20} className="text-on-surface group-hover:text-primary transition" strokeWidth={1.5} />
             <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
           </button>
 
           {/* Profile Dropdown */}
           <div className="relative" ref={ref}>
-            {/* Avatar Button */}
+            {/* Avatar Button - Simple Icon */}
             <button
               onClick={() => setOpen(!open)}
-              className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-primary to-yellow-500 cursor-pointer overflow-hidden flex items-center justify-center hover:ring-2 hover:ring-primary/50 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/20"
+              className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-surface-container border border-on-surface-variant/20 cursor-pointer overflow-hidden flex items-center justify-center hover:border-primary/50 hover:bg-on-surface-variant/10 transition-all"
+              title="منو کاربر"
             >
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt="User Avatar"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                </svg>
-              )}
+              <User className="w-5 h-5 md:w-6 md:h-6 text-on-surface-variant" strokeWidth={1.5} />
             </button>
 
             {/* Dropdown Menu */}
             {open && (
-              <div className="absolute left-0 md:left-auto md:right-0 top-12 w-56 bg-surface-container-high border border-primary/20 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-sm z-50 animate-in fade-in slide-in-from-top-2">
+              <div className="absolute left-0 md:left-auto md:right-0 top-12 w-56 bg-surface-container-high border border-white/10 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-sm z-50 animate-in fade-in slide-in-from-top-2">
                 
                 {/* Header */}
-                <div className="px-4 py-4 border-b border-white/10 text-right bg-gradient-to-b from-primary/10 to-transparent">
+                <div className="px-4 py-4 border-b border-white/10 text-right bg-surface-container/50">
                   <p className="text-xs text-on-surface-variant font-medium">حساب کاربری</p>
                   <p className="text-sm text-white font-bold mt-1">{userData?.full_name || "کاربر فیتوپیا"}</p>
                 </div>
@@ -137,23 +120,19 @@ export function Header() {
                   className="w-full flex items-center justify-end gap-3 px-4 py-3 text-on-surface hover:bg-primary/10 hover:text-primary transition-all text-right border-b border-white/10 group"
                 >
                   <span className="text-sm font-medium">پنل کاربر</span>
-                  <svg className="w-5 h-5 text-on-surface-variant group-hover:text-primary transition" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                  </svg>
+                  <User className="w-5 h-5 text-on-surface-variant group-hover:text-primary transition" strokeWidth={1.5} />
                 </button>
 
                 {/* Logout Button */}
                 <button
                   onClick={handleLogoutClick}
                   disabled={loading}
-                  className="w-full flex items-center justify-end gap-3 px-4 py-3 text-red-400 hover:bg-red-500/15 hover:text-red-300 transition-all text-right disabled:opacity-50 group"
+                  className="w-full flex items-center justify-end gap-3 px-4 py-3 text-on-surface hover:bg-white/5 hover:text-on-surface transition-all text-right disabled:opacity-50 group"
                 >
                   <span className="text-sm font-medium">
                     {loading ? "در حال خروج..." : "خروج"}
                   </span>
-                  <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
+                  <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
                 </button>
               </div>
             )}
