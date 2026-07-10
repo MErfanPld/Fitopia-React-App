@@ -4,9 +4,10 @@
  * - Fluid WebGL Shader background simulations
  * - Greeting headings
  * - PWA native app install campaigns
- * - Virtual token balances
- * - Partner fitness sports complex maps and filters
- * - Recent fitness/activity logs
+ * - Category filters for gyms
+ * - Popular gyms showcase
+ * - Nearby gyms map
+ * - Token balance card
  * - Dynamic bottom sticky hot navigation
  */
 
@@ -18,8 +19,6 @@ import { TokenCard } from "../components/TokenCard";
 import { CategorySlider } from "../components/CategorySlider";
 import { PopularGyms } from "../components/PopularGyms";
 import { NearbyGymsMap } from "../components/NearbyGymsMap";
-import { QuickActions } from "../components/QuickActions";
-import { ActivityList } from "../components/ActivityList";
 import { BottomNavigation } from "../components/BottomNavigation";
 import { ShaderBackground } from "../components/ShaderBackground";
 import { ParticleOverlay } from "../components/ParticleOverlay";
@@ -44,28 +43,27 @@ export function HomePage() {
       {/* 4. Main wellness workspace feed */}
       <main className="relative z-10 pt-24 pb-36 px-4 md:px-8 max-w-7xl mx-auto w-full select-none text-right">
         {/* Top greeting dashboard entry */}
-        <div className="mb-8" id="home-greeting-wrapper">
+        <div id="home-greeting-wrapper">
           <GreetingSection />
         </div>
 
-        {/* Responsive grid: Stack on mobile, side-by-side bento blocks on desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start" id="home-dashboard-layout">
-          
-          {/* Main workout-related selectors & logs (Span 8 on desktop, ordered 2nd for semantic RTL alignment) */}
-          <div className="lg:col-span-8 lg:order-2 space-y-10 w-full overflow-hidden">
-            <PWAInstallButton />
-            <CategorySlider />
-            <PopularGyms />
-            <ActivityList />
-          </div>
+        {/* PWA Install Button */}
+        <div className="mb-6">
+          <PWAInstallButton />
+        </div>
 
-          {/* Quick Balance, Actions, & Location widgets (Span 4 on desktop, ordered 1st for LHS placement) */}
-          <div className="lg:col-span-4 lg:order-1 space-y-10 w-full lg:sticky lg:top-24">
-            <TokenCard />
-            <QuickActions />
-            <NearbyGymsMap />
-          </div>
+        {/* Category Slider */}
+        <CategorySlider />
 
+        {/* Popular Gyms */}
+        <PopularGyms />
+
+        {/* Nearby Gyms Map */}
+        <NearbyGymsMap />
+
+        {/* Token Card - at the bottom */}
+        <div className="mt-8">
+          <TokenCard />
         </div>
       </main>
 
