@@ -10,6 +10,7 @@ const LoginPage = lazy(() => import("./pages/LoginPage").then((module) => ({ def
 const RegisterPage = lazy(() => import("./pages/RegisterPage").then((module) => ({ default: module.RegisterPage })));
 const OfflinePage = lazy(() => import("./pages/OfflinePage").then((module) => ({ default: module.OfflinePage })));
 const GymDetailPage = lazy(() => import("./pages/GymDetailPage").then((module) => ({ default: module.GymDetailPage })));
+const AllGymsPage = lazy(() => import("./pages/AllGymsPage").then((module) => ({ default: module.AllGymsPage })));
 const ProfilePage = lazy(() => import("./pages/ProfilePage").then((module) => ({ default: module.ProfilePage })));
 const Subscriptions = lazy(() => import("./pages/Subscriptions").then((module) => ({ default: module.default })));
 const SubscriptionHistoryPage = lazy(() => import("./pages/SubscriptionHistoryPage").then((module) => ({ default: module.SubscriptionHistoryPage })));
@@ -57,6 +58,11 @@ function AppContent() {
         <Route path="/gym/:gymId" element={
           <ProtectedRoute>
             <GymDetailPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/gym/all" element={
+          <ProtectedRoute>
+            <AllGymsPage />
           </ProtectedRoute>
         } />
         <Route path="/profile" element={
