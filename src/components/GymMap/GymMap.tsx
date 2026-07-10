@@ -57,6 +57,11 @@ const GymMap = () => {
         <p className="gym-count">
           {gymsLoading ? 'درحال جستجو...' : `${gyms.length} باشگاه یافت شد`}
         </p>
+        {location.lat && location.lon && (
+          <p className="location-coords">
+            📍 موقعیت شما: {location.lat.toFixed(4)}, {location.lon.toFixed(4)}
+          </p>
+        )}
       </div>
 
       <div className="map-wrapper">
