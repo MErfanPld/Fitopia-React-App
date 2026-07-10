@@ -1,12 +1,13 @@
 /**
  * @file PopularGyms.tsx
  * @description Horizontal list component rendering a list of best-rated partner gyms
- * from API. Filters popular gyms and displays them in card overlays.
+ * from API. Displays them with 2.5 card width for better showcase with snap scrolling.
  */
 
 import { useNavigate } from "react-router-dom";
 import { useGyms, Gym } from "../hooks/useGymAPI";
 import { GymCard } from "./GymCard";
+import { Star } from "lucide-react";
 
 interface PopularGymsProps {
   onGymSelect?: (gym: Gym) => void;
@@ -27,9 +28,10 @@ export function PopularGyms({ onGymSelect }: PopularGymsProps) {
 
   if (loading) {
     return (
-      <section className="mt-10 fade-in-up select-none" id="popular-gyms-section">
-        <div className="flex justify-between items-center mb-4">
-          <h4 className="font-headline-md text-headline-md text-on-surface">باشگاه‌های محبوب</h4>
+      <section className="mt-8 fade-in-up select-none" id="popular-gyms-section">
+        <div className="flex items-center gap-2 mb-4">
+          <Star size={18} className="text-primary" />
+          <h4 className="font-title text-title text-on-surface">باشگاه‌های محبوب</h4>
         </div>
         <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4">
           {[...Array(3)].map((_, i) => (
@@ -42,8 +44,11 @@ export function PopularGyms({ onGymSelect }: PopularGymsProps) {
 
   if (error) {
     return (
-      <section className="mt-10 fade-in-up select-none" id="popular-gyms-section">
-        <h4 className="font-headline-md text-headline-md text-on-surface mb-4">باشگاه‌های محبوب</h4>
+      <section className="mt-8 fade-in-up select-none" id="popular-gyms-section">
+        <div className="flex items-center gap-2 mb-4">
+          <Star size={18} className="text-primary" />
+          <h4 className="font-title text-title text-on-surface">باشگاه‌های محبوب</h4>
+        </div>
         <div className="p-4 bg-error/10 rounded-lg text-error text-sm">
           خطا در بارگذاری باشگاه‌ها: {error}
         </div>
@@ -58,9 +63,12 @@ export function PopularGyms({ onGymSelect }: PopularGymsProps) {
     .slice(0, 6); // Show max 6 gyms
 
   return (
-    <section className="mt-10 fade-in-up select-none" style={{ animationDelay: "0.4s" }} id="popular-gyms-section">
+    <section className="mt-8 fade-in-up select-none" style={{ animationDelay: "0.4s" }} id="popular-gyms-section">
       <div className="flex justify-between items-center mb-4">
-        <h4 className="font-headline-md text-headline-md text-on-surface">باشگاه‌های محبوب</h4>
+        <div className="flex items-center gap-2">
+          <Star size={18} className="text-primary" />
+          <h4 className="font-title text-title text-on-surface">باشگاه‌های محبوب</h4>
+        </div>
         <button
           onClick={() => navigate("/gym/all")}
           className="text-primary font-label-sm hover:underline cursor-pointer bg-transparent border-none"
@@ -74,13 +82,17 @@ export function PopularGyms({ onGymSelect }: PopularGymsProps) {
           هیچ باشگاه محبوبی یافت نشد
         </div>
       ) : (
-        <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 md:grid md:grid-cols-2 xl:grid-cols-3 md:gap-6 md:pb-0 md:overflow-visible">
+        <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 snap-x snap-mandatory">
           {popularGyms.map((gym) => (
-            <GymCard
+            <div
               key={gym.id}
-              gym={gym}
-              onClick={() => handleGymClick(gym)}
-            />
+              className="flex-shrink-0 w-[calc(50vw-12px)] md:w-[calc((100vw-80px)/2.5)] lg:w-[calc((100vw-96px)/2.5)] snap-center"
+            >
+              <GymCard
+                gym={gym}
+                onClick={() => handleGymClick(gym)}
+              />
+            </div>
           ))}
         </div>
       )}
