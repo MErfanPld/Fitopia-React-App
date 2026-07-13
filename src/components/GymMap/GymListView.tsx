@@ -1,3 +1,4 @@
+// src/components/GymMap/GymListView.tsx
 import type { Gym } from '../../types/gym';
 import './list.css';
 
@@ -5,13 +6,19 @@ interface GymListViewProps {
   gyms: Gym[];
   loading: boolean;
   error: string | null;
+  onRetry?: () => void;
 }
 
-const GymListView = ({ gyms, loading, error }: GymListViewProps) => {
+const GymListView = ({ gyms, loading, error, onRetry }: GymListViewProps) => {
   if (error) {
     return (
       <div className="gym-list-error">
         <p>⚠️ {error}</p>
+        {onRetry && (
+          <button onClick={onRetry} className="retry-btn">
+            تلاش مجدد
+          </button>
+        )}
       </div>
     );
   }
@@ -19,6 +26,7 @@ const GymListView = ({ gyms, loading, error }: GymListViewProps) => {
   if (loading) {
     return (
       <div className="gym-list-loading">
+        <div className="spinner-small"></div>
         <p>درحال بارگذاری باشگاه‌ها...</p>
       </div>
     );
@@ -27,7 +35,8 @@ const GymListView = ({ gyms, loading, error }: GymListViewProps) => {
   if (gyms.length === 0) {
     return (
       <div className="gym-list-empty">
-        <p>متاسفانه باشگاهی در نزدیکی شما یافت نشد</p>
+        <p>😕 متاسفانه باشگاهی در نزدیکی شما یافت نشد</p>
+        <p className="empty-hint">شعاع جستجو را افزایش دهید یا موقعیت خود را تغییر دهید</p>
       </div>
     );
   }
@@ -39,7 +48,7 @@ const GymListView = ({ gyms, loading, error }: GymListViewProps) => {
         {gyms.map((gym) => (
           <div key={gym.id} className="gym-card">
             <div className="gym-card-image">
-              <img src={gym.cover_image} alt={gym.name} />
+              <img src={gym.cover_image || '/placeholder-gym.jpg'} alt={gym.name} />
               {gym.is_popular && <div className="popular-badge">🔥 محبوب</div>}
             </div>
             <div className="gym-card-content">
@@ -49,7 +58,9 @@ const GymListView = ({ gyms, loading, error }: GymListViewProps) => {
               <p className="gym-hours">⏰ {gym.working_hours}</p>
               <div className="gym-score">
                 <span>⭐ {gym.popularity_score.toFixed(1)}</span>
-                <span className="facilities-count">{gym.facilities.length} تجهیزات</span>
+                <span className="facilities-count">
+                  {gym.facilities?.length || 0} تجهیزات
+                </span>
               </div>
               <div className="gym-card-actions">
                 <a href={`tel:${gym.phone}`} className="action-btn call-btn">

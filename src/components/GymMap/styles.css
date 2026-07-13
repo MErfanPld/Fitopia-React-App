@@ -1,249 +1,123 @@
-.gym-map-container {
-  width: 100%;
-  padding: 20px;
-  background: linear-gradient(135deg, #1a1a1f 0%, #2d2d35 100%);
-  border-radius: 16px;
-  margin-bottom: 30px;
-  border: 1px solid rgba(255, 106, 0, 0.2);
-}
+/* اضافه کردن به انتهای فایل styles.css */
 
-.map-header {
-  margin-bottom: 20px;
-  text-align: right;
-  direction: rtl;
-}
-
-.map-header h2 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  color: #ff6a00;
-  font-weight: 700;
-  text-shadow: 0 2px 8px rgba(255, 106, 0, 0.3);
-}
-
-.gym-count {
-  margin: 0 0 8px 0;
-  color: #999;
+/* دکمه تلاش مجدد */
+.retry-btn {
+  margin-top: 12px;
+  padding: 8px 24px;
+  background: linear-gradient(135deg, #ff6a00 0%, #ff8c1a 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
   font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.location-coords {
-  margin: 0;
-  color: #666;
-  font-size: 12px;
-  font-family: 'Courier New', monospace;
+.retry-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 106, 0, 0.4);
 }
 
-.map-wrapper {
-  margin-bottom: 20px;
-  box-shadow: 0 8px 32px rgba(255, 106, 0, 0.15), 0 0 20px rgba(255, 106, 0, 0.1);
-  border-radius: 12px;
-  overflow: hidden;
+.gyms-error-banner {
+  margin-top: 10px;
+  padding: 10px 16px;
+  background: rgba(255, 106, 0, 0.15);
   border: 1px solid rgba(255, 106, 0, 0.3);
-}
-
-.gym-map {
-  background: #0f0f12;
-}
-
-.gym-map-tiles {
-  filter: saturate(1.2) hue-rotate(15deg) brightness(0.9);
-}
-
-/* User Location Marker */
-.user-location-icon {
-  position: relative;
-  width: 40px;
-  height: 40px;
-}
-
-.user-location-icon .pulse {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(255, 106, 0, 0.3);
-  animation: user-pulse 2s infinite;
-}
-
-.user-location-icon .inner {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #ff6a00;
-  border: 3px solid white;
-  box-shadow: 0 2px 8px rgba(255, 106, 0, 0.6);
-  z-index: 10;
-}
-
-@keyframes user-pulse {
-  0% {
-    width: 40px;
-    height: 40px;
-    opacity: 1;
-  }
-  100% {
-    width: 80px;
-    height: 80px;
-    opacity: 0;
-  }
-}
-
-/* Gym Marker */
-.gym-marker {
-  filter: drop-shadow(0 2px 4px rgba(255, 106, 0, 0.3));
-}
-
-.marker-icon {
-  width: 50px;
-  height: 50px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #ff6a00 0%, #ff8c1a 100%);
-  border-radius: 50%;
-  border: 4px solid white;
-  box-shadow: 0 2px 12px rgba(255, 106, 0, 0.5);
-  position: relative;
-}
-
-.marker-icon::after {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 106, 0, 0.4);
-  animation: marker-pulse 1.5s infinite;
-}
-
-.marker-content {
-  font-size: 24px;
-  z-index: 1;
-  animation: marker-bounce 1s infinite;
-}
-
-@keyframes marker-pulse {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.3);
-    opacity: 0;
-  }
-}
-
-@keyframes marker-bounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-3px);
-  }
-}
-
-.gym-marker.popular .marker-icon {
-  background: linear-gradient(135deg, #ff6a00 0%, #ffb300 100%);
-  animation: popular-glow 1.5s infinite;
-}
-
-@keyframes popular-glow {
-  0%, 100% {
-    box-shadow: 0 2px 12px rgba(255, 106, 0, 0.5);
-  }
-  50% {
-    box-shadow: 0 4px 20px rgba(255, 106, 0, 0.8);
-  }
-}
-
-/* Popup Styles */
-.user-popup .leaflet-popup-content {
-  margin: 0;
-  padding: 0;
-}
-
-.user-popup .popup-content {
-  padding: 10px 15px;
-  text-align: center;
-  color: #ff6a00;
-  font-weight: 600;
+  justify-content: space-between;
+  gap: 12px;
+  color: #ff8c1a;
   font-size: 13px;
 }
 
-/* Loading State */
-.gym-map-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 500px;
-  gap: 15px;
-  background: linear-gradient(135deg, #1a1a1f 0%, #2d2d35 100%);
-  border-radius: 12px;
-  color: #ff6a00;
-  font-size: 16px;
-  border: 1px solid rgba(255, 106, 0, 0.2);
+.retry-small-btn {
+  padding: 4px 16px;
+  background: #ff6a00;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.3s ease;
 }
 
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(255, 106, 0, 0.2);
+.retry-small-btn:hover {
+  background: #e55d00;
+}
+
+/* اسپینر کوچک برای لیست */
+.spinner-small {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 106, 0, 0.2);
   border-top-color: #ff6a00;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+.empty-hint {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* اضافه کردن به انتهای فایل styles.css */
+
+/* استایل برای حالت پیش‌فرض */
+.user-marker.fallback .inner {
+  background: #ff6a00;
+  border-color: #ff8c1a;
+  animation: fallback-pulse 1.5s infinite;
+}
+
+.fallback-badge {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 106, 0, 0.9);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 8px;
+  white-space: nowrap;
+  font-weight: 700;
+  z-index: 20;
+}
+
+@keyframes fallback-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 106, 0, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(255, 106, 0, 0);
   }
 }
 
-/* Error State */
-.gym-map-error {
-  padding: 30px 20px;
-  background: #2d1a1a;
-  border: 2px solid #ff6a00;
-  border-radius: 12px;
-  text-align: center;
-  direction: rtl;
-}
-
-.gym-map-error p {
-  margin: 0 0 10px 0;
-  color: #ff8c1a;
-  font-size: 14px;
-}
-
-.gym-map-error .error-hint {
+.loading-hint {
   font-size: 12px;
-  color: #ff6a00;
-  margin: 0;
+  color: #666;
+  margin-top: 8px;
 }
 
-/* Leaflet overrides */
-.leaflet-popup-content-wrapper {
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+/* استایل برای دکمه تلاش مجدد داخل پاپ‌آپ */
+.user-popup .retry-small-btn {
+  margin-top: 8px;
+  padding: 4px 12px;
+  background: #ff6a00;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.leaflet-popup {
-  direction: rtl;
-}
-
-.leaflet-popup-tip {
-  background: white;
-}
-
-.leaflet-container {
-  background: #0f0f12;
+.user-popup .retry-small-btn:hover {
+  background: #e55d00;
 }

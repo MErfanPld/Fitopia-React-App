@@ -62,9 +62,9 @@ export function HomePage() {
         <NearbyGymsMap />
 
         {/* Token Card - at the bottom */}
-        <div className="mt-8">
+        {/* <div className="mt-8">
           <TokenCard />
-        </div>
+        </div> */}
       </main>
 
       {/* 5. Bottom floating sticky action menu */}

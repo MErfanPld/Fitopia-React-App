@@ -1,3 +1,4 @@
+// src/components/GymMap/GymMap.tsx
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { useUserLocation } from '../../hooks/useUserLocation';
@@ -8,41 +9,65 @@ import GymListView from './GymListView';
 import './styles.css';
 
 const GymMap = () => {
-  const { location, loading: locLoading, error: locError } = useUserLocation();
-  const { gyms, loading: gymsLoading, error: gymsError } = useNearbyGyms(
-    location.lat,
-    location.lon
-  );
+  const { 
+    location, 
+    loading: locLoading, 
+    error: locError, 
+    retry: retryLocation,
+    isFallback 
+  } = useUserLocation();
+  
+  const { 
+    gyms, 
+    loading: gymsLoading, 
+    error: gymsError, 
+    refetch 
+  } = useNearbyGyms(location.lat, location.lon);
 
+  const handleRetry = () => {
+    retryLocation();
+    refetch();
+  };
+
+  // نمایش پیام خطا با گزینه تلاش مجدد
   if (locLoading) {
     return (
       <div className="gym-map-loading">
         <div className="spinner"></div>
-        <p>درحال بارگذاری موقعیت...</p>
+        <p>درحال دریافت موقعیت شما...</p>
+        <p className="loading-hint">لطفاً دسترسی به موقعیت را در مرورگر مجاز کنید</p>
       </div>
     );
   }
 
+  // نمایش پیام خطا
   if (locError) {
     return (
       <div className="gym-map-error">
         <p>⚠️ {locError}</p>
-        <p className="error-hint">لطفاً مرورگر را دوباره بارگذاری کرده و دسترسی را مجاز کنید</p>
+        <p className="error-hint">
+          {isFallback 
+            ? 'موقعیت پیش‌فرض (تهران) استفاده شده است.' 
+            : 'لطفاً مجدداً تلاش کنید یا موقعیت را به صورت دستی وارد کنید.'}
+        </p>
+        <button onClick={handleRetry} className="retry-btn">
+          🔄 تلاش مجدد
+        </button>
       </div>
     );
   }
 
-  const defaultCenter: [number, number] = location.lat && location.lon
-    ? [location.lat, location.lon]
-    : [35.6892, 51.389]; // Tehran default
+  // موقعیت پیش‌فرض
+  const defaultCenter: [number, number] = [location.lat, location.lon];
 
-  // User location marker icon
+  // آیکون موقعیت کاربر
   const userIcon = L.divIcon({
-    className: 'user-marker',
+    className: `user-marker ${isFallback ? 'fallback' : ''}`,
     html: `
       <div class="user-location-icon">
         <div class="pulse"></div>
         <div class="inner"></div>
+        ${isFallback ? '<div class="fallback-badge">پیش‌فرض</div>' : ''}
       </div>
     `,
     iconSize: [40, 40],
@@ -57,10 +82,22 @@ const GymMap = () => {
         <p className="gym-count">
           {gymsLoading ? 'درحال جستجو...' : `${gyms.length} باشگاه یافت شد`}
         </p>
-        {location.lat && location.lon && (
-          <p className="location-coords">
-            📍 موقعیت شما: {location.lat.toFixed(4)}, {location.lon.toFixed(4)}
-          </p>
+        <p className="location-coords">
+          📍 {isFallback ? 'موقعیت پیش‌فرض' : 'موقعیت شما'}: 
+          {location.lat.toFixed(4)}, {location.lon.toFixed(4)}
+        </p>
+        {isFallback && (
+          <button onClick={handleRetry} className="retry-small-btn">
+            دریافت موقعیت واقعی
+          </button>
+        )}
+        {gymsError && (
+          <div className="gyms-error-banner">
+            <span>⚠️ {gymsError}</span>
+            <button onClick={handleRetry} className="retry-small-btn">
+              تلاش مجدد
+            </button>
+          </div>
         )}
       </div>
 
@@ -75,25 +112,27 @@ const GymMap = () => {
             borderRadius: '12px',
           }}
         >
-          {/* OSM Tile Layer */}
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; OpenStreetMap contributors'
             className="gym-map-tiles"
           />
 
-          {/* User location marker */}
-          {location.lat && location.lon && (
-            <Marker position={[location.lat, location.lon]} icon={userIcon}>
-              <Popup className="user-popup">
-                <div className="popup-content">
-                  <p>📍 موقعیت شما</p>
-                </div>
-              </Popup>
-            </Marker>
-          )}
+          {/* نشانگر موقعیت کاربر */}
+          <Marker position={defaultCenter} icon={userIcon}>
+            <Popup className="user-popup">
+              <div className="popup-content">
+                <p>📍 {isFallback ? 'موقعیت پیش‌فرض (تهران)' : 'موقعیت شما'}</p>
+                {isFallback && (
+                  <button onClick={handleRetry} className="retry-small-btn">
+                    دریافت موقعیت دقیق
+                  </button>
+                )}
+              </div>
+            </Popup>
+          </Marker>
 
-          {/* Gym markers */}
+          {/* نشانگرهای باشگاه‌ها */}
           {gyms.map((gym) => (
             <GymMarker key={gym.id} gym={gym}>
               <GymInfoPopup gym={gym} />
@@ -102,8 +141,13 @@ const GymMap = () => {
         </MapContainer>
       </div>
 
-      {/* List view */}
-      <GymListView gyms={gyms} loading={gymsLoading} error={gymsError} />
+      {/* نمایش لیست باشگاه‌ها */}
+      <GymListView 
+        gyms={gyms} 
+        loading={gymsLoading} 
+        error={gymsError} 
+        onRetry={handleRetry}
+      />
     </div>
   );
 };
