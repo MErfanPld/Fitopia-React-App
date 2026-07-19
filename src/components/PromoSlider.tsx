@@ -42,17 +42,18 @@ export default function PromoSlider({ slides = promoSlides, intervalMs = 5000 }:
 
   return (
     <section className="w-full mb-6">
-      <div className="relative rounded-xl overflow-hidden shadow-lg">
+      {/* Ensure the container has explicit height so absolute children don't collapse it */}
+      <div className="relative rounded-xl overflow-hidden shadow-lg h-44 md:h-56 lg:h-64">
         {/* Background image (absolute, dimmed) */}
         {slide.image ? (
           <img
             src={slide.image}
             alt={slide.title}
-            className="absolute inset-0 w-full h-44 md:h-56 lg:h-64 object-cover filter brightness-60 z-0"
+            className="absolute inset-0 w-full h-full object-cover filter brightness-60 z-0"
             loading="lazy"
           />
         ) : (
-          <div className="absolute inset-0 w-full h-44 md:h-56 lg:h-64 bg-gradient-to-r from-primary/40 to-primary/10 z-0" />
+          <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-primary/40 to-primary/10 z-0" />
         )}
 
         {/* Pastel gradient overlay (above image) */}
