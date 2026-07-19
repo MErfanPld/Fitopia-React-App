@@ -10,6 +10,7 @@ import { promoSlides } from "../data/promo";
  * - طراحی با Tailwind (سفارشی‌سازی آسان)
  *
  * تغییر: استفاده از گرادینت پاستیلی برای پس‌زمینهٔ اسلایدها
+ *         + بنر دیباگ موقتی برای تشخیص اینکه آیا کامپوننت رندر می‌شود
  */
 
 type Props = {
@@ -29,6 +30,9 @@ export default function PromoSlider({ slides = promoSlides, intervalMs = 5000 }:
     return () => clearInterval(t);
   }, [count, intervalMs]);
 
+  // Debug flag - temporary. Will render a visible banner when true.
+  const DEBUG_BANNER = true;
+
   if (count === 0) return null;
 
   const go = (i: number) => {
@@ -42,6 +46,13 @@ export default function PromoSlider({ slides = promoSlides, intervalMs = 5000 }:
 
   return (
     <section className="w-full mb-6">
+      {/* Debug banner (visible only when DEBUG_BANNER=true) */}
+      {DEBUG_BANNER && (
+        <div className="mb-2 p-2 rounded-md bg-rose-200 text-rose-900 text-sm font-medium text-right">
+          DEBUG: PromoSlider mounted — index: {index} / {count}
+        </div>
+      )}
+
       {/* Ensure the container has explicit height so absolute children don't collapse it */}
       <div className="relative rounded-xl overflow-hidden shadow-lg h-44 md:h-56 lg:h-64">
         {/* Background image (absolute, dimmed) */}
