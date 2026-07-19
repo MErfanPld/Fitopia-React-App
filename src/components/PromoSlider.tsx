@@ -8,6 +8,8 @@ import { promoSlides } from "../data/promo";
  * - auto-play با وقفهٔ 5s
  * - دکمه‌های قبلی/بعدی و دات‌هایی برای ناوبری
  * - طراحی با Tailwind (سفارشی‌سازی آسان)
+ *
+ * تغییر: افزودن لایهٔ گرادینت رنگ اپلیکیشن پشت محتوای اسلاید تا همیشه رنگ اپ مشخص باشد.
  */
 
 type Props = {
@@ -41,21 +43,27 @@ export default function PromoSlider({ slides = promoSlides, intervalMs = 5000 }:
   return (
     <section className="w-full mb-6">
       <div className="relative rounded-xl overflow-hidden shadow-lg">
-        {/* Background image */}
+        {/* Colored background layer to ensure app color is visible */}
+        <div className="absolute inset-0 amber-gradient" style={{ opacity: 0.95 }} aria-hidden />
+
+        {/* Background image (dimmed so app color shows through) */}
         {slide.image ? (
           <img
             src={slide.image}
             alt={slide.title}
-            className="w-full h-44 md:h-56 lg:h-64 object-cover"
+            className="w-full h-44 md:h-56 lg:h-64 object-cover filter brightness-75"
             loading="lazy"
           />
         ) : (
           <div className="w-full h-44 md:h-56 lg:h-64 bg-gradient-to-r from-primary/40 to-primary/10" />
         )}
 
+        {/* Soft dark overlay for contrast */}
+        <div className="absolute inset-0 bg-black/30" aria-hidden />
+
         {/* Overlay content (right-aligned for RTL) */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-l from-black/55 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-l from-black/40 via-transparent to-transparent" />
           <div className="absolute inset-y-0 right-0 flex items-center pr-4 md:pr-8 pointer-events-auto">
             <div className="text-right max-w-xl p-4 md:p-6">
               <h3 className="text-white text-xl md:text-3xl font-extrabold tracking-tight">{slide.title}</h3>
@@ -65,7 +73,7 @@ export default function PromoSlider({ slides = promoSlides, intervalMs = 5000 }:
               {slide.ctaText && slide.ctaLink && (
                 <a
                   href={slide.ctaLink}
-                  className="inline-block mt-3 md:mt-4 bg-primary text-black px-4 py-2 rounded-md font-semibold shadow-sm"
+                  className="inline-block mt-3 md:mt-4 bg-primary-container text-black px-4 py-2 rounded-md font-semibold shadow-sm"
                 >
                   {slide.ctaText}
                 </a>
