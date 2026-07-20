@@ -71,7 +71,7 @@ export function GreetingSection() {
 
   return (
     <section className="fade-in-up select-none mb-4" style={{ animationDelay: "0.1s" }} id="greeting-section">
-      <h2 className="font-title text-title text-on-surface">سلام، {userName} 👋</h2>
+      <h2 className="font-title text-body-md text-on-surface">سلام، {userName} 👋</h2>
       <p className="font-body-md text-on-surface-variant/70 mt-0.5">امروز آماده تمرین هستی؟</p>
     </section>
   );
