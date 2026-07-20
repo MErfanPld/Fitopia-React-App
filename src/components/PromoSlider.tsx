@@ -4,13 +4,8 @@ import { promoSlides } from "../data/promo";
 
 /**
  * PromoSlider
- * - دریافت آرایهٔ اسلاید (پیش‌فرض از src/data/promo.ts)
- * - auto-play با وقفهٔ 5s
- * - دکمه‌های قبلی/بعدی و دات‌هایی برای ناوبری
- * - طراحی با Tailwind (سفارشی‌سازی آسان)
- *
- * تغییر: استفاده از گرادینت پاستیلی برای پس‌زمینهٔ اسلایدها
- *         + بنر دیباگ موقتی برای تشخیص اینکه آیا کامپوننت رندر می‌شود
+ * - نمایش سادهٔ تصویر پس‌زمینه با نوشتهٔ کوچک "سلام کاربر" در بالا
+ * - استفاده از تصاویر کم‌حجم (promo.ts) برای بارگذاری سریع
  */
 
 type Props = {
@@ -24,95 +19,62 @@ export default function PromoSlider({ slides = promoSlides, intervalMs = 5000 }:
 
   useEffect(() => {
     if (count <= 1) return;
-    const t = setInterval(() => {
-      setIndex((i) => (i + 1) % count);
-    }, intervalMs);
+    const t = setInterval(() => setIndex((i) => (i + 1) % count), intervalMs);
     return () => clearInterval(t);
   }, [count, intervalMs]);
 
-  // Debug flag - temporary. Will render a visible banner when true.
-  const DEBUG_BANNER = true;
-
   if (count === 0) return null;
 
-  const go = (i: number) => {
-    setIndex(((i % count) + count) % count);
-  };
-
+  const go = (i: number) => setIndex(((i % count) + count) % count);
   const prev = () => go(index - 1);
   const next = () => go(index + 1);
-
   const slide = slides[index];
 
   return (
     <section className="w-full mb-6">
-      {/* Debug banner (visible only when DEBUG_BANNER=true) */}
-      {DEBUG_BANNER && (
-        <div className="mb-2 p-2 rounded-md bg-rose-200 text-rose-900 text-sm font-medium text-right">
-          DEBUG: PromoSlider mounted — index: {index} / {count}
-        </div>
-      )}
-
-      {/* Ensure the container has explicit height so absolute children don't collapse it */}
-      <div className="relative rounded-xl overflow-hidden shadow-lg h-44 md:h-56 lg:h-64">
-        {/* Background image (absolute, dimmed) */}
+      <div className="relative rounded-xl overflow-hidden shadow-lg h-40 md:h-48 lg:h-56">
+        {/* Background image (no overlays) */}
         {slide.image ? (
           <img
             src={slide.image}
             alt={slide.title}
-            className="absolute inset-0 w-full h-full object-cover filter brightness-60 z-0"
+            className="absolute inset-0 w-full h-full object-cover z-0"
             loading="lazy"
           />
         ) : (
-          <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-primary/40 to-primary/10 z-0" />
+          <div className="absolute inset-0 w-full h-full bg-surface z-0" />
         )}
 
-        {/* Pastel gradient overlay (above image) */}
-        <div
-          className="absolute inset-0 z-10"
-          style={{
-            background: "linear-gradient(135deg, rgba(255,230,210,0.8), rgba(255,245,230,0.8))",
-          }}
-          aria-hidden
-        />
-
-        {/* Soft dark overlay for contrast */}
-        <div className="absolute inset-0 bg-black/20 z-20" aria-hidden />
-
-        {/* Overlay content (right-aligned for RTL) */}
-        <div className="absolute inset-0 pointer-events-none z-30">
-          <div className="absolute inset-0 bg-gradient-to-l from-black/30 via-transparent to-transparent" />
-          <div className="absolute inset-y-0 right-0 flex items-center pr-4 md:pr-8 pointer-events-auto">
-            <div className="text-right max-w-xl p-4 md:p-6">
-              <h3 className="text-white text-xl md:text-3xl font-extrabold tracking-tight">{slide.title}</h3>
-              {slide.subtitle && (
-                <p className="text-white/90 mt-1 md:mt-2 text-sm md:text-base">{slide.subtitle}</p>
-              )}
-              {slide.ctaText && slide.ctaLink && (
-                <a
-                  href={slide.ctaLink}
-                  className="inline-block mt-3 md:mt-4 bg-primary-container text-black px-4 py-2 rounded-md font-semibold shadow-sm"
-                >
-                  {slide.ctaText}
-                </a>
-              )}
-            </div>
+        {/* Small greeting (top-right) */}
+        <div className="absolute top-3 right-3 z-30 pointer-events-none">
+          <div className="bg-black/30 text-white text-xs px-2 py-0.5 rounded-md backdrop-blur-sm font-medium">
+            سلام کاربر
           </div>
         </div>
 
-        {/* Prev / Next buttons */}
-        <button
-          aria-label="قبلی"
-          onClick={prev}
-          className="absolute left-3 top-1/2 -translate-y-1/2 z-40 rounded-full bg-black/30 text-white p-2 hover:bg-black/45 transition hidden md:inline-flex"
-        >
+        {/* Compact content area (bottom-right) */}
+        <div className="absolute inset-0 z-30 pointer-events-auto flex items-end">
+          <div className="w-full text-right p-3 md:p-4">
+            <h3 className="text-white text-sm md:text-base font-semibold line-clamp-1">{slide.title}</h3>
+            {slide.subtitle && (
+              <p className="text-white/90 mt-1 text-[11px] md:text-sm line-clamp-1">{slide.subtitle}</p>
+            )}
+            {slide.ctaText && slide.ctaLink && (
+              <a
+                href={slide.ctaLink}
+                className="inline-block mt-2 bg-white/90 text-primary-container text-xs md:text-sm px-3 py-1 rounded-md font-semibold shadow-sm"
+              >
+                {slide.ctaText}
+              </a>
+            )}
+          </div>
+        </div>
+
+        {/* Controls (hidden on small screens) */}
+        <button aria-label="قبلی" onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 z-40 rounded-full bg-black/30 text-white p-2 hidden md:inline-flex">
           ‹
         </button>
-        <button
-          aria-label="بعدی"
-          onClick={next}
-          className="absolute right-3 top-1/2 -translate-y-1/2 z-40 rounded-full bg-black/30 text-white p-2 hover:bg-black/45 transition hidden md:inline-flex"
-        >
+        <button aria-label="بعدی" onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 z-40 rounded-full bg-black/30 text-white p-2 hidden md:inline-flex">
           ›
         </button>
 
