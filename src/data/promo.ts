@@ -13,7 +13,7 @@ export const promoSlides: Promo[] = [
     title: "شروع تمرین امروز",
     subtitle: "برنامه‌های هوشمند شخصی‌سازی‌شده برای هر سطح",
     image:
-      "https://images.unsplash.com/photo-1558611848-73f7eb4001d7?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1558611848-73f7eb4001d7?auto=format&fit=crop&w=800&q=60",
     ctaText: "شروع کن",
     ctaLink: "/subscriptions",
   },
@@ -22,7 +22,7 @@ export const promoSlides: Promo[] = [
     title: "باشگاه‌های نزدیک به شما",
     subtitle: "نقشه تعاملی و پیشنهادات محلی",
     image:
-      "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=800&q=60",
     ctaText: "مشاهده نقشه",
     ctaLink: "/gym-map",
   },
@@ -31,7 +31,7 @@ export const promoSlides: Promo[] = [
     title: "عضویت ویژه ماهیانه",
     subtitle: "دسترسی نامحدود به همه تمرین‌ها و تخفیف‌های اختصاصی",
     image:
-      "https://images.unsplash.com/photo-1546484959-f9a1a38646f5?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1546484959-f9a1a38646f5?auto=format&fit=crop&w=800&q=60",
     ctaText: "اکنون بخرید",
     ctaLink: "/subscriptions/payment",
   },
