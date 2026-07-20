@@ -38,13 +38,13 @@ export function GymCard({ gym, onClick }: GymCardProps) {
       aria-label={gym.name}
       className="flex-shrink-0 w-full rounded-2xl overflow-hidden glass-card group cursor-pointer select-none transition-all duration-300 hover:border-primary/30 active:scale-[0.98] border border-white/5"
     >
-      {/* Cover Image */}
+      {/* Cover Image - reduced height for compact layout */}
       {gym.cover_image && (
-        <div className="h-40 relative overflow-hidden">
+        <div className="h-32 relative overflow-hidden">
           <img
             alt={gym.name}
             referrerPolicy="no-referrer"
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-400"
             src={gym.cover_image}
             onError={(e) => {
               e.currentTarget.src = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=350&q=80";
@@ -55,9 +55,9 @@ export function GymCard({ gym, onClick }: GymCardProps) {
       )}
       
       {/* Content */}
-      <div className="p-4 space-y-3">
+      <div className="p-3 space-y-2">
         {/* Gym Name */}
-        <h5 className="font-headline-md text-base text-on-surface line-clamp-1">
+        <h5 className="font-headline-md text-sm text-on-surface line-clamp-1">
           {gym.name}
         </h5>
         
@@ -67,7 +67,7 @@ export function GymCard({ gym, onClick }: GymCardProps) {
             {mainSports.map((sport) => (
               <div
                 key={sport.id}
-                className="flex items-center gap-1 bg-primary/15 px-2.5 py-1 rounded-full text-xs"
+                className="flex items-center gap-1 bg-primary/15 px-2 py-0.5 rounded-full text-xs"
               >
                 <Dumbbell size={12} className="text-primary" />
                 <span className="text-primary font-vazir font-semibold">
@@ -76,7 +76,7 @@ export function GymCard({ gym, onClick }: GymCardProps) {
               </div>
             ))}
             {gym.sports.length > 2 && (
-              <div className="text-xs text-on-surface-variant/70 px-2 py-1">
+              <div className="text-xs text-on-surface-variant/70 px-2 py-0.5">
                 +{gym.sports.length - 2}
               </div>
             )}
@@ -96,7 +96,7 @@ export function GymCard({ gym, onClick }: GymCardProps) {
           
           {/* Monthly Price */}
           {monthlyPrice && (
-            <div className="flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-lg">
+            <div className="flex items-center gap-1.5 bg-primary/10 px-3 py-1 rounded-lg">
               <span className="font-vazir font-semibold text-primary text-sm">
                 {monthlyPrice.toLocaleString('fa-IR')}
               </span>
