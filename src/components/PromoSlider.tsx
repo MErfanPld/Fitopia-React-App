@@ -4,8 +4,8 @@ import { promoSlides } from "../data/promo";
 
 /**
  * PromoSlider
- * - نمایش سادهٔ تصویر پس‌زمینه با نوشتهٔ کوچک "سلام کاربر" در بالا
- * - استفاده از تصاویر کم‌حجم (promo.ts) برای بارگذاری سریع
+ * - نمایش سادهٔ تصویر پس‌زمینه با محتوای کوچک در پایین
+ * - تصاویر با referrerPolicy و onError fallback برای اطمینان از لود
  */
 
 type Props = {
@@ -40,17 +40,20 @@ export default function PromoSlider({ slides = promoSlides, intervalMs = 5000 }:
             alt={slide.title}
             className="absolute inset-0 w-full h-full object-cover z-0"
             loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              // Fallback to a lightweight placeholder if the image fails to load
+              const target = e.currentTarget as HTMLImageElement;
+              if (!target.dataset.fallbackApplied) {
+                target.dataset.fallbackApplied = "1";
+                target.src = "https://via.placeholder.com/800x400?text=Fitopia";
+              }
+            }}
           />
         ) : (
           <div className="absolute inset-0 w-full h-full bg-surface z-0" />
         )}
-
-        {/* Small greeting (top-right) */}
-        <div className="absolute top-3 right-3 z-30 pointer-events-none">
-          <div className="bg-black/30 text-white text-xs px-2 py-0.5 rounded-md backdrop-blur-sm font-medium">
-            سلام کاربر
-          </div>
-        </div>
 
         {/* Compact content area (bottom-right) */}
         <div className="absolute inset-0 z-30 pointer-events-auto flex items-end">
