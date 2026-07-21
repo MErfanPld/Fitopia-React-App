@@ -13,6 +13,9 @@ type Props = {
   intervalMs?: number;
 };
 
+// API base URL for constructing full image paths
+const API_BASE_URL = 'https://fitopiaapi.pythonanywhere.com';
+
 export default function PromoSlider({ intervalMs = 5000 }: Props) {
   const { sliders, loading, error } = useHomeSliders();
   const [index, setIndex] = useState(0);
@@ -45,13 +48,22 @@ export default function PromoSlider({ intervalMs = 5000 }: Props) {
   const next = () => go(index + 1);
   const slide = sliders[index];
 
+  // Construct full image URL from relative path
+  const getImageUrl = (imagePath: string) => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith('http')) return imagePath; // Already absolute
+    return `${API_BASE_URL}${imagePath}`; // Prepend API base URL
+  };
+
+  const imageUrl = getImageUrl(slide.image);
+
   return (
     <section className="w-full mb-6">
       <div className="relative rounded-xl overflow-hidden shadow-lg h-40 md:h-48 lg:h-56">
         {/* Background image */}
-        {slide.image ? (
+        {imageUrl ? (
           <img
-            src={slide.image}
+            src={imageUrl}
             alt={slide.title}
             className="absolute inset-0 w-full h-full object-cover z-0"
             loading="lazy"
@@ -67,7 +79,7 @@ export default function PromoSlider({ intervalMs = 5000 }: Props) {
             }}
           />
         ) : (
-          <div className="absolute inset-0 w-full h-full bg-surface z-0" />
+          <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-primary/20 to-primary-container/20 z-0" />
         )}
 
         {/* Compact content area (bottom-right) */}
