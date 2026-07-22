@@ -46,14 +46,26 @@ export default function SportCoachesModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center px-4">
+    <div
+      className="fixed inset-0 z-50 flex items-end md:items-center justify-center px-4 sm:px-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${sportName} coaches`}
+    >
       <div
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
         aria-hidden
       />
 
-      <div className="relative w-full md:w-3/4 lg:w-1/2 max-h-[86vh] bg-surface-container/95 rounded-t-2xl md:rounded-2xl p-4 overflow-auto shadow-xl">
+      {/* Modal panel */}
+      <div
+        className={
+          "relative w-full max-w-3xl md:w-3/4 lg:w-1/2 bg-surface-container/95 rounded-t-3xl md:rounded-2xl p-4 shadow-xl overflow-auto " +
+          "h-[70vh] md:h-auto md:max-h-[86vh]"
+        }
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold text-lg">{sportName}</h3>
           <button
@@ -82,13 +94,13 @@ export default function SportCoachesModal({
                   <img
                     src={c.image}
                     alt={c.name}
-                    className="w-16 h-16 rounded-full object-cover"
+                    className="w-16 h-16 rounded-full object-cover flex-shrink-0"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80';
                     }}
                   />
                 ) : (
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">👤</div>
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">👤</div>
                 )}
 
                 <div className="flex-1">
@@ -104,6 +116,9 @@ export default function SportCoachesModal({
             ))}
           </div>
         )}
+
+        {/* small spacer to avoid content behind rounded bottom on some devices */}
+        <div className="h-4 md:hidden" />
       </div>
     </div>
   );
