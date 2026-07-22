@@ -6,14 +6,18 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { 
-  ArrowLeft, Share2, MapPin, Clock, Star, Dumbbell, Wallet, 
+import {
+  ArrowLeft, Share2, MapPin, Clock, Star, Dumbbell, Wallet,
   Phone, Mail, Globe, Instagram, MessageCircle, Users, Award,
   Heart, AlertCircle, Image as ImageIcon, Play, MapPinIcon,
-  ChevronLeft, ChevronRight, Send, Home, Search
+  ChevronLeft, ChevronRight, Send, Home, Search, Check, Lock
 } from "lucide-react";
 import { Gym } from "../hooks/useGymAPI";
 import { BottomNavigation } from "../components/BottomNavigation";
+import { useAuth } from "../context/AuthContext";
+import { useGymAccess } from "../hooks/useGymAccess";
+import SportCoachesModal from "../components/SportCoachesModal";
+import Toast from "../components/Toast";
 
 export function GymDetailPage() {
   const { gymId } = useParams<{ gymId: string }>();
@@ -26,9 +30,23 @@ export function GymDetailPage() {
   const [newComment, setNewComment] = useState("");
   const [comments, setComments] = useState<any[]>([]);
 
+  // Subscription & access
+  const { isAuthenticated } = useAuth();
+  const { sports: accessSports, loading: accessLoading, error: accessError, hasSportAccess, fetchCoaches } = useGymAccess(Number(gymId));
+
+  // Modal and coaches
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedSport, setSelectedSport] = useState<{ id: number; name: string } | null>(null);
+  const [coaches, setCoaches] = useState<any[] | null>(null);
+  const [coachesLoading, setCoachesLoading] = useState(false);
+  const [coachesError, setCoachesError] = useState<string | null>(null);
+
+  // Toast
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
+
   useEffect(() => {
     document.title = "FITOPIA | جزئیات باشگاه";
-    
+
     const fetchGymDetails = async () => {
       try {
         setLoading(true);
@@ -38,10 +56,10 @@ export function GymDetailPage() {
         if (!response.ok) throw new Error("باشگاه یافت نشد");
         const data = await response.json();
         setGym(data);
-        
+
         // بهتر هندل کردن نظرات - console log برای debug
         console.log("API Response Reviews:", data.reviews);
-        
+
         if (data.reviews && Array.isArray(data.reviews)) {
           setComments(data.reviews);
         }
@@ -92,6 +110,35 @@ export function GymDetailPage() {
       return image.image;
     }
     return "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80";
+  };
+
+  const openSport = async (sport: any) => {
+    const allowed = hasSportAccess(sport.id);
+    if (!allowed) {
+      if (!isAuthenticated) {
+        setToast({ message: 'برای دسترسی باید وارد شوید', type: 'info' });
+      } else {
+        setToast({ message: 'این رشته در اشتراک شما فعال نیست. لطفاً اشتراک خریداری کنید.', type: 'warning' });
+      }
+      return;
+    }
+
+    setSelectedSport({ id: sport.id, name: sport.name });
+    setModalOpen(true);
+    setCoachesLoading(true);
+    setCoachesError(null);
+
+    try {
+      const list = await fetchCoaches(sport.id);
+      setCoaches(list || []);
+    } catch (err: any) {
+      console.error('Error fetching coaches:', err);
+      const msg = err?.response?.data?.detail || err?.message || 'خطا در دریافت مربیان';
+      setCoachesError(msg);
+      setCoaches(null);
+    } finally {
+      setCoachesLoading(false);
+    }
   };
 
   if (loading) {
@@ -219,21 +266,39 @@ export function GymDetailPage() {
             <div className="w-1.5 h-6 bg-primary-container rounded-full" />
             رشته‌های ورزشی
           </h3>
-          <div className="grid grid-cols-2 gap-3">
-            {gym.sports && gym.sports.length > 0 ? (
-              gym.sports.map((sport) => (
-                <div
-                  key={sport.id}
-                  className="bg-surface-container/70 backdrop-blur border border-white/5 p-4 rounded-xl flex items-center gap-3 hover:border-primary/30 transition-all"
-                >
-                  <Dumbbell size={18} className="text-primary-container" />
-                  <span className="text-sm font-bold">{sport.name}</span>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-on-surface-variant">رشته‌ای موجود نیست</p>
-            )}
-          </div>
+
+          {accessLoading ? (
+            <div className="p-4 bg-surface-container/70 rounded-xl">در حال بارگذاری رشته‌ها...</div>
+          ) : accessError ? (
+            <div className="p-4 text-error">{accessError}</div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {gym.sports && gym.sports.length > 0 ? (
+                gym.sports.map((sport) => {
+                  const allowed = hasSportAccess(sport.id);
+                  const base = "p-4 rounded-xl flex items-center gap-3 transition-all";
+                  const classes = allowed
+                    ? `${base} bg-green-800/10 border border-green-500 hover:shadow-lg cursor-pointer`
+                    : `${base} bg-red-800/10 border border-red-500 opacity-70 cursor-not-allowed`;
+
+                  return (
+                    <button
+                      key={sport.id}
+                      onClick={() => openSport(sport)}
+                      className={classes}
+                      aria-disabled={!allowed}
+                      disabled={!allowed}
+                    >
+                      {allowed ? <Check className="text-green-400" /> : <Lock className="text-red-400" />}
+                      <span className="text-sm font-bold">{sport.name}</span>
+                    </button>
+                  );
+                })
+              ) : (
+                <p className="text-sm text-on-surface-variant">رشته‌ای موجود نیست</p>
+              )}
+            </div>
+          )}
         </section>
 
         {/* Facilities Section */}
@@ -307,13 +372,13 @@ export function GymDetailPage() {
               {/* Navigation Buttons */}
               <button
                 onClick={prevImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary/80 hover:bg-primary text-on-primary flex items-center justify-center transition-all active:scale-95 z-10"
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary/80 hover:bg-primary text-on-primary flex items-center justify-center transition-all active:s[...]
               >
                 <ChevronRight size={20} />
               </button>
               <button
                 onClick={nextImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary/80 hover:bg-primary text-on-primary flex items-center justify-center transition-all active:scale-95 z-10"
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary/80 hover:bg-primary text-on-primary flex items-center justify-center transition-all active:sc[...]
               >
                 <ChevronLeft size={20} />
               </button>
@@ -361,7 +426,7 @@ export function GymDetailPage() {
               {gym.prices.map((price, idx) => (
                 <div
                   key={idx}
-                  className="group relative bg-gradient-to-br from-surface-container/50 to-surface-container/20 backdrop-blur border border-white/10 hover:border-primary/30 p-6 rounded-2xl transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-1"
+                  className="group relative bg-gradient-to-br from-surface-container/50 to-surface-container/20 backdrop-blur border border-white/10 hover:border-primary/30 p-6 rounded-2xl transi[...]
                 >
                   {/* Decorative Background */}
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -419,7 +484,7 @@ export function GymDetailPage() {
                     )}
 
                     {/* Select/Payment Button */}
-                    <button className="w-full mt-4 bg-gradient-to-r from-primary-container to-primary text-on-primary px-4 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-primary/30 transition-all active:scale-95">
+                    <button className="w-full mt-4 bg-gradient-to-r from-primary-container to-primary text-on-primary px-4 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-primary/30 transi[...]
                       انتخاب و پرداخت
                     </button>
                   </div>
@@ -440,7 +505,7 @@ export function GymDetailPage() {
               {gym.coaches.map((coach: any, idx: number) => (
                 <div
                   key={idx}
-                  className="group relative bg-surface-container/70 backdrop-blur border border-white/5 hover:border-primary/30 rounded-2xl p-4 transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-2"
+                  className="group relative bg-surface-container/70 backdrop-blur border border-white/5 hover:border-primary/30 rounded-2xl p-4 transition-all duration-300 hover:shadow-lg hover:s[...]
                   style={{
                     animation: `slideIn 0.5s ease-out ${idx * 0.1}s backwards`
                   }}
@@ -511,7 +576,7 @@ export function GymDetailPage() {
                 onChange={(e) => setNewComment(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
                 placeholder="نظر خود را اینجا بنویسید..."
-                className="flex-1 bg-surface-container/50 border border-white/10 text-on-surface placeholder-on-surface-variant/50 px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all text-sm"
+                className="flex-1 bg-surface-container/50 border border-white/10 text-on-surface placeholder-on-surface-variant/50 px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 [...]"
               />
               <button
                 onClick={handleAddComment}
@@ -589,7 +654,7 @@ export function GymDetailPage() {
                   href={video}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="snap-center shrink-0 w-64 h-40 rounded-2xl overflow-hidden border border-white/5 hover:border-primary/50 transition-all flex items-center justify-center bg-surface-container/70 hover:bg-surface-container/90 group"
+                  className="snap-center shrink-0 w-64 h-40 rounded-2xl overflow-hidden border border-white/5 hover:border-primary/50 transition-all flex items-center justify-center bg-surface-co[...]"
                 >
                   <Play size={40} className="text-primary group-hover:scale-125 transition-transform" />
                 </a>
@@ -611,7 +676,7 @@ export function GymDetailPage() {
                   href={gym.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95"
+                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-[...]"
                 >
                   <Instagram size={20} className="text-primary" />
                   <span className="text-xs font-bold">Instagram</span>
@@ -622,7 +687,7 @@ export function GymDetailPage() {
                   href={gym.telegram}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95"
+                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-[...]"
                 >
                   <MessageCircle size={20} className="text-primary" />
                   <span className="text-xs font-bold">Telegram</span>
@@ -633,7 +698,7 @@ export function GymDetailPage() {
                   href={`https://wa.me/${gym.whatsapp.replace(/\D/g, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95"
+                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-[...]"
                 >
                   <MessageCircle size={20} className="text-primary" />
                   <span className="text-xs font-bold">WhatsApp</span>
@@ -644,7 +709,7 @@ export function GymDetailPage() {
                   href={gym.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95"
+                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-[...]"
                 >
                   <Globe size={20} className="text-primary" />
                   <span className="text-xs font-bold">Website</span>
@@ -654,6 +719,25 @@ export function GymDetailPage() {
           </section>
         )}
       </main>
+
+      {/* Sport Coaches Modal */}
+      <SportCoachesModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        sportName={selectedSport?.name || ''}
+        coaches={coaches}
+        loading={coachesLoading}
+        error={coachesError}
+      />
+
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
       {/* Bottom Navigation */}
       <BottomNavigation />
