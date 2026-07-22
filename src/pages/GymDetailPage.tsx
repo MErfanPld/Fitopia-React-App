@@ -372,13 +372,13 @@ export function GymDetailPage() {
               {/* Navigation Buttons */}
               <button
                 onClick={prevImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary/80 hover:bg-primary text-on-primary flex items-center justify-center transition-all active:s[...]
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary/80 hover:bg-primary text-on-primary flex items-center justify-center transition-all active:scale-95"
               >
                 <ChevronRight size={20} />
               </button>
               <button
                 onClick={nextImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary/80 hover:bg-primary text-on-primary flex items-center justify-center transition-all active:sc[...]
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary/80 hover:bg-primary text-on-primary flex items-center justify-center transition-all active:scale-95"
               >
                 <ChevronLeft size={20} />
               </button>
@@ -426,7 +426,7 @@ export function GymDetailPage() {
               {gym.prices.map((price, idx) => (
                 <div
                   key={idx}
-                  className="group relative bg-gradient-to-br from-surface-container/50 to-surface-container/20 backdrop-blur border border-white/10 hover:border-primary/30 p-6 rounded-2xl transi[...]
+                  className="group relative bg-gradient-to-br from-surface-container/50 to-surface-container/20 backdrop-blur border border-white/10 hover:border-primary/30 p-6 rounded-2xl transition"
                 >
                   {/* Decorative Background */}
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -484,7 +484,7 @@ export function GymDetailPage() {
                     )}
 
                     {/* Select/Payment Button */}
-                    <button className="w-full mt-4 bg-gradient-to-r from-primary-container to-primary text-on-primary px-4 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-primary/30 transi[...]
+                    <button className="w-full mt-4 bg-gradient-to-r from-primary-container to-primary text-on-primary px-4 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-primary/30 transition-transform active:scale-95">
                       انتخاب و پرداخت
                     </button>
                   </div>
@@ -505,7 +505,7 @@ export function GymDetailPage() {
               {gym.coaches.map((coach: any, idx: number) => (
                 <div
                   key={idx}
-                  className="group relative bg-surface-container/70 backdrop-blur border border-white/5 hover:border-primary/30 rounded-2xl p-4 transition-all duration-300 hover:shadow-lg hover:s[...]
+                  className="group relative bg-surface-container/70 backdrop-blur border border-white/5 hover:border-primary/30 rounded-2xl p-4 transition-all duration-300 hover:shadow-lg"
                   style={{
                     animation: `slideIn 0.5s ease-out ${idx * 0.1}s backwards`
                   }}
@@ -576,7 +576,7 @@ export function GymDetailPage() {
                 onChange={(e) => setNewComment(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
                 placeholder="نظر خود را اینجا بنویسید..."
-                className="flex-1 bg-surface-container/50 border border-white/10 text-on-surface placeholder-on-surface-variant/50 px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 [...]"
+                className="flex-1 bg-surface-container/50 border border-white/10 text-on-surface placeholder-on-surface-variant/50 px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition"
               />
               <button
                 onClick={handleAddComment}
@@ -654,7 +654,7 @@ export function GymDetailPage() {
                   href={video}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="snap-center shrink-0 w-64 h-40 rounded-2xl overflow-hidden border border-white/5 hover:border-primary/50 transition-all flex items-center justify-center bg-surface-co[...]"
+                  className="snap-center shrink-0 w-64 h-40 rounded-2xl overflow-hidden border border-white/5 hover:border-primary/50 transition-all flex items-center justify-center bg-surface-container"
                 >
                   <Play size={40} className="text-primary group-hover:scale-125 transition-transform" />
                 </a>
@@ -676,7 +676,7 @@ export function GymDetailPage() {
                   href={gym.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-[...]"
+                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-2"
                 >
                   <Instagram size={20} className="text-primary" />
                   <span className="text-xs font-bold">Instagram</span>
@@ -687,7 +687,7 @@ export function GymDetailPage() {
                   href={gym.telegram}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-[...]"
+                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-2"
                 >
                   <MessageCircle size={20} className="text-primary" />
                   <span className="text-xs font-bold">Telegram</span>
@@ -698,7 +698,7 @@ export function GymDetailPage() {
                   href={`https://wa.me/${gym.whatsapp.replace(/\D/g, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-[...]"
+                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-2"
                 >
                   <MessageCircle size={20} className="text-primary" />
                   <span className="text-xs font-bold">WhatsApp</span>
@@ -709,7 +709,7 @@ export function GymDetailPage() {
                   href={gym.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-[...]"
+                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-2"
                 >
                   <Globe size={20} className="text-primary" />
                   <span className="text-xs font-bold">Website</span>
