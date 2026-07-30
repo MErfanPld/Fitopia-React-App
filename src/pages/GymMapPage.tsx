@@ -4,7 +4,6 @@
  */
 
 import { useEffect } from "react";
-import { Header } from "../components/Header";
 import { BottomNavigation } from "../components/BottomNavigation";
 import { GymMap } from "../components/GymMap";
 import { ShaderBackground } from "../components/ShaderBackground";
@@ -16,21 +15,30 @@ export function GymMapPage() {
   }, []);
 
   return (
-    <>
+    <div className="relative h-screen w-full overflow-hidden">
       {/* Dynamic background */}
       <ShaderBackground />
       <ParticleOverlay />
 
-      {/* Header */}
-      <Header />
-
-      {/* Main content */}
-      <main className="relative z-10 pt-24 pb-36 px-4 md:px-8 max-w-7xl mx-auto w-full text-right">
+      {/* Map - Full screen */}
+      <div className="absolute inset-0 z-0">
         <GymMap />
-      </main>
+      </div>
 
-      {/* Bottom navigation */}
-      <BottomNavigation />
-    </>
+      {/* Fixed Header - Top */}
+      {/* <div className="absolute top-0 left-0 right-0 z-20">
+        <Header />
+      </div> */}
+
+      {/* Fixed Bottom Navigation */}
+      <div className="absolute bottom-0 left-0 right-0 z-20">
+        <BottomNavigation />
+      </div>
+
+      {/* Optional: Fixed controls overlay */}
+      <div className="absolute top-24 right-4 z-10 flex flex-col gap-2">
+        {/* Add any floating controls here if needed */}
+      </div>
+    </div>
   );
 }

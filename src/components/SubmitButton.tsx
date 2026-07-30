@@ -11,6 +11,7 @@ interface SubmitButtonProps {
   loading?: boolean;
   disabled?: boolean;
   children?: React.ReactNode;
+  label: "register" | "login";
 }
 
 export function SubmitButton({
@@ -18,6 +19,7 @@ export function SubmitButton({
   loading = false,
   disabled = false,
   children = "ثبت",
+  label,
 }: SubmitButtonProps) {
   return (
     <button
@@ -29,7 +31,7 @@ export function SubmitButton({
       {loading ? (
         <>
           <Loader2 className="animate-spin" size={20} />
-          <span>در حال ثبت‌نام...</span>
+          <span>در حال {label === "login" ? "ورود" : "ثبت نام"}...</span>
         </>
       ) : (
         <span>{children}</span>

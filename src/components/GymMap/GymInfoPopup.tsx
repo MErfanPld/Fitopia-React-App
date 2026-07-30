@@ -1,6 +1,6 @@
-import { Popup } from 'react-leaflet';
-import type { Gym } from '../../types/gym';
-import './popup.css';
+import { Popup } from "react-leaflet";
+import type { Gym } from "../../types/gym";
+import "./popup.css";
 
 interface GymInfoPopupProps {
   gym: Gym;
@@ -13,7 +13,10 @@ const GymInfoPopup = ({ gym }: GymInfoPopupProps) => {
 
   const handleWhatsApp = () => {
     if (gym.whatsapp) {
-      window.open(`https://wa.me/${gym.whatsapp.replace(/[^0-9]/g, '')}`, '_blank');
+      window.open(
+        `https://wa.me/${gym.whatsapp.replace(/[^0-9]/g, "")}`,
+        "_blank",
+      );
     }
   };
 
@@ -21,10 +24,8 @@ const GymInfoPopup = ({ gym }: GymInfoPopupProps) => {
     <Popup className="gym-popup" maxWidth={280}>
       <div className="popup-content">
         <h3 className="gym-name">{gym.name}</h3>
-        
-        {gym.is_popular && (
-          <div className="popular-badge">🔥 محبوب</div>
-        )}
+
+        {gym.is_popular && <div className="popular-badge">🔥 محبوب</div>}
 
         <div className="popup-section">
           <p className="address">

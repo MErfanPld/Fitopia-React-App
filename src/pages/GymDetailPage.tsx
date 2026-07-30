@@ -4,7 +4,7 @@
  * Connects to API endpoint: /api/gym/{id}/
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
@@ -71,12 +71,20 @@ export function GymDetailPage() {
   const [coaches, setCoaches] = useState<any[] | null>(null);
   const [coachesLoading, setCoachesLoading] = useState(false);
   const [coachesError, setCoachesError] = useState<string | null>(null);
+  const socialMediaRef = useRef<HTMLElement>(null);
 
   // Toast
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error" | "info" | "warning";
   } | null>(null);
+
+  const handleSocialMediaScroll = (): void => {
+    socialMediaRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
 
   useEffect(() => {
     document.title = "FITOPIA | جزئیات باشگاه";
@@ -225,7 +233,10 @@ export function GymDetailPage() {
           <ArrowLeft size={20} className="text-primary" />
         </button>
         <span className="font-bold text-primary">FITOPIA</span>
-        <button className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container hover:opacity-80 transition-opacity active:scale-95">
+        <button
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container hover:opacity-80 transition-opacity active:scale-95"
+          onClick={handleSocialMediaScroll}
+        >
           <Share2 size={20} className="text-primary" />
         </button>
       </header>
@@ -759,7 +770,7 @@ export function GymDetailPage() {
 
         {/* Social Media Links - Last */}
         {(gym.instagram || gym.telegram || gym.whatsapp || gym.website) && (
-          <section>
+          <section ref={socialMediaRef}>
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
               <div className="w-1.5 h-6 bg-primary-container rounded-full" />
               شبکه‌های اجتماعی

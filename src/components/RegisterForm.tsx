@@ -76,30 +76,40 @@ export function RegisterForm() {
     setSuccessMsg(null);
 
     try {
-      const response = await fetch("https://fitopiaapi.pythonanywhere.com/api/accounts/register/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        "https://fitopiaapi.pythonanywhere.com/api/accounts/register/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            phone_number: data.phoneNumber,
+            username: data.username,
+            full_name: data.fullName,
+            password: data.password,
+          }),
         },
-        body: JSON.stringify({
-          phone_number: data.phoneNumber,
-          username: data.username,
-          full_name: data.fullName,
-          password: data.password,
-        }),
-      });
+      );
 
       const responseData = await response.json().catch(() => null);
 
       if (response.ok) {
         setSuccessMsg(
-          `تبریک ${data.fullName}! حساب کاربری شما با نام کاربری ${data.username} در پایگاه داده سلامت فیتوپیا ثبت شد. در حال هدایت به بخش ورود...`
+          `تبریک ${data.fullName}! حساب کاربری شما با نام کاربری ${data.username} در پایگاه داده سلامت فیتوپیا ثبت شد. در حال هدایت به بخش ورود...`,
         );
-        
+
         // If the registration endpoint returns a token, log them in automatically
-        const token = responseData?.token || responseData?.access || responseData?.auth_token;
-        const refresh = responseData?.refresh || responseData?.refresh_token || responseData?.refreshToken || "fallback_refresh_token";
-        
+        const token =
+          responseData?.token ||
+          responseData?.access ||
+          responseData?.auth_token;
+        const refresh =
+          responseData?.refresh ||
+          responseData?.refresh_token ||
+          responseData?.refreshToken ||
+          "fallback_refresh_token";
+
         if (token) {
           login(token, refresh, responseData, data.fullName);
           setTimeout(() => {
@@ -148,7 +158,9 @@ export function RegisterForm() {
       }
     } catch (err) {
       console.error("HTTP Registration API Error:", err);
-      setApiError("بروز اختلال در اتصال به سرور ثبت‌نام. وضعیت شبکه را بررسی کنید.");
+      setApiError(
+        "بروز اختلال در اتصال به سرور ثبت‌نام. وضعیت شبکه را بررسی کنید.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -167,11 +179,16 @@ export function RegisterForm() {
           >
             <Sparkles size={24} />
           </div>
-          <h3 className="font-bold text-on-surface text-lg">ثبت‌نام با موفقیت انجام شد!</h3>
+          <h3 className="font-bold text-on-surface text-lg">
+            ثبت‌نام با موفقیت انجام شد!
+          </h3>
           <p className="font-body-md text-sm text-on-surface-variant leading-relaxed">
             {successMsg}
           </p>
-          <p id="countdown-text" className="text-xs text-on-surface-variant/60 font-medium">
+          <p
+            id="countdown-text"
+            className="text-xs text-on-surface-variant/60 font-medium"
+          >
             انتقال خودکار به صفحه ورود در {countdown} ثانیه دیگر...
           </p>
           <Link
@@ -238,7 +255,7 @@ export function RegisterForm() {
               pattern: {
                 value: /^[a-zA-Z0-9_.-]+$/,
                 message: "فقط حروف انگلیسی، اعداد، نقطه و خط تیره مجاز است",
-              }
+              },
             })}
             error={errors.username?.message}
           />
@@ -255,7 +272,8 @@ export function RegisterForm() {
               required: "شماره موبایل الزامی است",
               pattern: {
                 value: /^09\d{9}$/,
-                message: "یک شماره موبایل معتبر ۱۱ رقمی (مثلاً ۰۹۱۲۳۴۵۶۷۸۹) وارد کنید",
+                message:
+                  "یک شماره موبایل معتبر ۱۱ رقمی (مثلاً ۰۹۱۲۳۴۵۶۷۸۹) وارد کنید",
               },
             })}
             error={errors.phoneNumber?.message}
@@ -288,7 +306,8 @@ export function RegisterForm() {
             register={register("confirmPassword", {
               required: "تکرار رمز عبور الزامی است",
               validate: (value) =>
-                value === passwordVal || "تکرار رمز عبور با رمز عبور اولیه مطابقت ندارد",
+                value === passwordVal ||
+                "تکرار رمز عبور با رمز عبور اولیه مطابقت ندارد",
             })}
             error={errors.confirmPassword?.message}
           />
@@ -321,19 +340,28 @@ export function RegisterForm() {
               </div>
               <span className="font-label-sm text-sm text-on-surface-variant leading-tight select-none font-medium">
                 قوانین و شرایط{" "}
-                <span className="text-primary-container font-black">FITOPIA</span> را
-                می‌پذیرم.
+                <span className="text-primary-container font-black">
+                  FITOPIA
+                </span>{" "}
+                را می‌پذیرم.
               </span>
             </label>
             {errors.terms && (
-              <span id="terms-error" className="text-red-400 text-xs mt-1 block leading-tight">
+              <span
+                id="terms-error"
+                className="text-red-400 text-xs mt-1 block leading-tight"
+              >
                 {errors.terms.message}
               </span>
             )}
           </div>
 
           {/* Submit */}
-          <SubmitButton label="ساخت حساب" loading={isLoading} disabled={!isValid} />
+          <SubmitButton
+            label="register"
+            loading={isLoading}
+            disabled={!isValid}
+          />
         </form>
       )}
     </div>

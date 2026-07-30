@@ -50,15 +50,13 @@ export function LoginForm() {
             username: data.username,
             password: data.password,
           }),
-        }
+        },
       );
 
       const responseData = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setApiError(
-          responseData?.detail || "اطلاعات ورود اشتباه است"
-        );
+        setApiError(responseData?.detail || "اطلاعات ورود اشتباه است");
         setIsLoading(false);
         return;
       }
@@ -74,10 +72,7 @@ export function LoginForm() {
         return;
       }
 
-      const displayName =
-        user?.full_name ||
-        user?.username ||
-        data.username;
+      const displayName = user?.full_name || user?.username || data.username;
 
       // ✅ save auth state
       login(token, refresh, user, displayName);
@@ -98,7 +93,6 @@ export function LoginForm() {
   return (
     <div className="w-full">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-
         {apiError && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg flex gap-2">
             <AlertCircle size={16} />
@@ -128,11 +122,7 @@ export function LoginForm() {
           error={errors.password?.message}
         />
 
-        <SubmitButton
-          label="ورود"
-          loading={isLoading}
-          disabled={!isValid}
-        />
+        <SubmitButton label="login" loading={isLoading} disabled={!isValid} />
       </form>
     </div>
   );
