@@ -8,6 +8,7 @@ import GymInfoPopup from "./GymInfoPopup";
 import GymListView from "./GymListView";
 import "./styles.css";
 import MapResizeFix from "./MapResizeFix";
+import { MapPin, RefreshCcw, TriangleAlert } from "lucide-react";
 
 const GymMap = () => {
   const {
@@ -53,7 +54,9 @@ const GymMap = () => {
     return (
       <div className="fixed inset-0 bg-[#07070A] flex flex-col items-center justify-center z-50 p-4">
         <div className="text-center max-w-md">
-          <div className="text-6xl mb-6">⚠️</div>
+          <div className="text-6xl mb-6">
+            <TriangleAlert />
+          </div>
           <p className="text-error text-lg font-bold mb-2">{locError}</p>
           <p className="text-on-surface-variant text-sm mb-6">
             {isFallback
@@ -64,7 +67,10 @@ const GymMap = () => {
             onClick={handleRetry}
             className="px-8 py-3 bg-primary text-on-primary rounded-xl font-bold hover:shadow-lg hover:shadow-primary/30 transition-all active:scale-95"
           >
-            🔄 تلاش مجدد
+            <RefreshCcw className="text-xl" />
+            <span className="ml-2">
+              <RefreshCcw /> تلاش مجدد
+            </span>
           </button>
         </div>
       </div>
@@ -115,7 +121,10 @@ const GymMap = () => {
         <Marker position={defaultCenter} icon={userIcon}>
           <Popup className="user-popup">
             <div className="popup-content">
-              <p>📍 {isFallback ? "موقعیت پیش‌فرض (تهران)" : "موقعیت شما"}</p>
+              <p>
+                <MapPin />{" "}
+                {isFallback ? "موقعیت پیش‌فرض (تهران)" : "موقعیت شما"}
+              </p>
               {isFallback && (
                 <button onClick={handleRetry} className="retry-small-btn">
                   دریافت موقعیت دقیق
@@ -138,8 +147,9 @@ const GymMap = () => {
         {/* Location Info Card */}
         <div className="bg-surface-container/80 backdrop-blur-md border border-white/10 rounded-2xl p-1.5 min-w-[200px] shadow-xl">
           <p className="text-xs text-on-surface-variant mb-1">موقعیت شما</p>
-          <p className="text-xs font-bold text-on-surface">
-            {isFallback ? "📍 پیش‌فرض (تهران)" : "📍 موقعیت فعلی"}
+
+          <p className="text-xs font-bold text-on-surface flex items-center gap-1">
+            <MapPin /> {isFallback ? `پیش‌فرض (تهران)` : `موقعیت فعلی`}
           </p>
           <p className="text-xs text-on-surface-variant mt-1">
             {location.lat.toFixed(4)}, {location.lon.toFixed(4)}
@@ -163,9 +173,9 @@ const GymMap = () => {
           {gymsError && (
             <button
               onClick={handleRetry}
-              className="mt-1 text-error text-xs font-bold hover:underline"
+              className="mt-1 text-error text-xs font-bold hover:underline flex items-center gap-1"
             >
-              ⚠️ خطا - تلاش مجدد
+              <TriangleAlert /> خطا - تلاش مجدد
             </button>
           )}
         </div>
@@ -173,10 +183,12 @@ const GymMap = () => {
         {/* Refresh Button */}
         <button
           onClick={handleRetry}
-          className="bg-surface-container/80 backdrop-blur-md border border-white/10 rounded-2xl p-1.5 shadow-xl hover:bg-surface-container transition-all active:scale-95"
+          className="bg-surface-container/80 backdrop-blur-md border border-white/10 rounded-2xl p-1.5 shadow-xl hover:bg-surface-container transition-all active:scale-95 w-10 h-10 flex items-center justify-center"
           aria-label="بروزرسانی"
         >
-          <span className="text-xl">🔄</span>
+          <span className="text-xl">
+            <RefreshCcw />
+          </span>
         </button>
       </div>
 
