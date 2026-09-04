@@ -1,8 +1,5 @@
 /**
- * @file RegisterForm.tsx
- * @description Integration with FITOPIA PythonAnywhere registration backend.
- * Captures user full name, custom alphanumeric username, phone number, and password,
- * validating fields gracefully inside react-hook-form and posting secure JSON mock registration models.
+ * Register form — original API/validation logic preserved; UI uses design system.
  */
 
 import { useState, useEffect } from "react";
@@ -31,7 +28,6 @@ export function RegisterForm() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number>(8);
 
-  // Setup hook form tracking validation states
   const {
     register,
     handleSubmit,
@@ -52,7 +48,6 @@ export function RegisterForm() {
 
   const passwordVal = watch("password");
 
-  // Quick Countdown loop for automatic redirect after registration success
   useEffect(() => {
     if (successMsg) {
       const interval = setInterval(() => {
@@ -69,7 +64,6 @@ export function RegisterForm() {
     }
   }, [successMsg, navigate]);
 
-  // Submission handler connecting with standard PythonAnywhere Registration API
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
     setApiError(null);
@@ -99,7 +93,6 @@ export function RegisterForm() {
           `تبریک ${data.fullName}! حساب کاربری شما با نام کاربری ${data.username} در پایگاه داده سلامت فیتوپیا ثبت شد. در حال هدایت به بخش ورود...`,
         );
 
-        // If the registration endpoint returns a token, log them in automatically
         const token =
           responseData?.token ||
           responseData?.access ||
@@ -116,7 +109,6 @@ export function RegisterForm() {
             navigate("/home");
           }, 2000);
         } else {
-          // Fallback if no token is returned, save name candidate and redirect to login
           localStorage.setItem("fitopia_user_name", data.fullName);
           setTimeout(() => {
             navigate("/login");
@@ -169,41 +161,26 @@ export function RegisterForm() {
   return (
     <div className="w-full" id="register-form-container">
       {successMsg ? (
-        <div
-          id="success-alert"
-          className="bg-primary/10 border border-primary-container p-6 rounded-2xl text-center mb-6 flex flex-col items-center gap-3 animate-[fadeIn_0.5s_ease-out]"
-        >
-          <div
-            id="sparkles-circle"
-            className="w-12 h-12 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container animate-[pulse_2s_infinite]"
-          >
-            <Sparkles size={24} />
+        <div className="state-box elevation-1" id="success-alert" role="status">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-container/20 text-primary-container">
+            <Sparkles size={22} aria-hidden />
           </div>
-          <h3 className="font-bold text-on-surface text-lg">
-            ثبت‌نام با موفقیت انجام شد!
-          </h3>
-          <p className="font-body-md text-sm text-on-surface-variant leading-relaxed">
-            {successMsg}
-          </p>
-          <p
-            id="countdown-text"
-            className="text-xs text-on-surface-variant/60 font-medium"
-          >
+          <h3 className="state-title">ثبت‌نام با موفقیت انجام شد!</h3>
+          <p className="state-desc">{successMsg}</p>
+          <p id="countdown-text" className="text-xs text-on-surface-variant/70">
             انتقال خودکار به صفحه ورود در {countdown} ثانیه دیگر...
           </p>
-          <Link
-            to="/login"
-            className="w-full mt-4 py-3 bg-gradient-to-r from-[#FF6A00] to-[#FFB000] text-center text-on-primary font-bold rounded-xl shadow-lg shadow-primary/20 active:scale-95 hover:brightness-110 duration-200 transition-all block text-sm"
-          >
+          <Link to="/login" className="btn btn-primary btn-block no-underline mt-1">
             ورود به حساب کاربری
           </Link>
           <button
             id="success-back-btn"
+            type="button"
             onClick={() => {
               setSuccessMsg(null);
               setCountdown(8);
             }}
-            className="text-xs text-primary font-bold hover:underline mt-2 cursor-pointer"
+            className="text-xs text-primary font-bold hover:underline"
           >
             ایجاد یک حساب کاربری دیگر
           </button>
@@ -212,19 +189,20 @@ export function RegisterForm() {
         <form
           id="registerForm"
           onSubmit={handleSubmit(onSubmit)}
-          className="w-full space-y-7"
+          className="w-full flex flex-col gap-4"
+          noValidate
         >
           {apiError && (
             <div
               id="api-error-alert"
-              className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-xs flex items-start gap-2.5 leading-relaxed"
+              className="rounded-xl border border-red-500/30 bg-red-500/10 text-red-300 p-3.5 flex gap-2.5 text-sm leading-relaxed"
+              role="alert"
             >
-              <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              <AlertCircle size={18} className="shrink-0 mt-0.5" aria-hidden />
               <span>{apiError}</span>
             </div>
           )}
 
-          {/* Full Name */}
           <FormInput
             id="fullName"
             label="نام کامل"
@@ -239,7 +217,6 @@ export function RegisterForm() {
             error={errors.fullName?.message}
           />
 
-          {/* Username */}
           <FormInput
             id="username"
             label="نام کاربری"
@@ -260,7 +237,6 @@ export function RegisterForm() {
             error={errors.username?.message}
           />
 
-          {/* Phone Number */}
           <FormInput
             id="phoneNumber"
             label="شماره موبایل"
@@ -279,7 +255,6 @@ export function RegisterForm() {
             error={errors.phoneNumber?.message}
           />
 
-          {/* Password (required) */}
           <PasswordInput
             id="password"
             label="رمز عبور"
@@ -298,7 +273,6 @@ export function RegisterForm() {
             error={errors.password?.message}
           />
 
-          {/* Confirm Password (frontend only validation) */}
           <PasswordInput
             id="confirmPassword"
             label="تکرار رمز عبور"
@@ -312,9 +286,8 @@ export function RegisterForm() {
             error={errors.confirmPassword?.message}
           />
 
-          {/* Terms & Conditions */}
-          <div className="flex flex-col gap-1 pr-1" id="terms-box">
-            <label className="custom-checkbox flex items-start gap-3 cursor-pointer group">
+          <div className="flex flex-col gap-1" id="terms-box">
+            <label className="custom-checkbox flex items-start gap-3 cursor-pointer">
               <div className="relative flex items-center justify-center mt-0.5">
                 <input
                   id="terms"
@@ -333,35 +306,30 @@ export function RegisterForm() {
                     strokeLinejoin="round"
                     strokeWidth="3"
                     viewBox="0 0 24 24"
+                    aria-hidden
                   >
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
                 </div>
               </div>
-              <span className="font-label-sm text-sm text-on-surface-variant leading-tight select-none font-medium">
+              <span className="text-sm text-on-surface-variant leading-snug font-medium">
                 قوانین و شرایط{" "}
-                <span className="text-primary-container font-black">
-                  FITOPIA
-                </span>{" "}
+                <span className="text-primary-container font-bold">FITOPIA</span>{" "}
                 را می‌پذیرم.
               </span>
             </label>
             {errors.terms && (
-              <span
-                id="terms-error"
-                className="text-red-400 text-xs mt-1 block leading-tight"
-              >
+              <span id="terms-error" className="field-error" role="alert">
                 {errors.terms.message}
               </span>
             )}
           </div>
 
-          {/* Submit */}
-          <SubmitButton
-            label="register"
-            loading={isLoading}
-            disabled={!isValid}
-          />
+          <div className="pt-1">
+            <SubmitButton label="register" loading={isLoading} disabled={!isValid}>
+              ثبت‌نام
+            </SubmitButton>
+          </div>
         </form>
       )}
     </div>
