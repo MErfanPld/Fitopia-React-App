@@ -1,61 +1,50 @@
-import React, { useEffect } from 'react';
+import React, { useEffect } from "react";
+import { CheckCircle2, XCircle, AlertTriangle, Info, X } from "lucide-react";
 
 interface ToastProps {
   message: string;
-  type: 'success' | 'error' | 'info' | 'warning';
+  type: "success" | "error" | "info" | "warning";
   duration?: number;
   onClose?: () => void;
 }
 
+const styles: Record<ToastProps["type"], string> = {
+  success: "border-emerald-500/40 bg-emerald-500/15 text-emerald-200",
+  error: "border-red-500/40 bg-red-500/15 text-red-200",
+  warning: "border-amber-500/40 bg-amber-500/15 text-amber-200",
+  info: "border-sky-500/40 bg-sky-500/15 text-sky-200",
+};
+
+const icons = {
+  success: CheckCircle2,
+  error: XCircle,
+  warning: AlertTriangle,
+  info: Info,
+};
+
 const Toast: React.FC<ToastProps> = ({ message, type, duration = 4000, onClose }) => {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose?.();
-    }, duration);
-
+    const timer = setTimeout(() => onClose?.(), duration);
     return () => clearTimeout(timer);
   }, [duration, onClose]);
 
-  const getStyles = () => {
-    switch (type) {
-      case 'success':
-        return 'bg-green-500/20 border-green-500/50 text-green-300';
-      case 'error':
-        return 'bg-red-500/20 border-red-500/50 text-red-300';
-      case 'warning':
-        return 'bg-yellow-500/20 border-yellow-500/50 text-yellow-300';
-      case 'info':
-      default:
-        return 'bg-blue-500/20 border-blue-500/50 text-blue-300';
-    }
-  };
-
-  const getIcon = () => {
-    switch (type) {
-      case 'success':
-        return 'check_circle';
-      case 'error':
-        return 'error';
-      case 'warning':
-        return 'warning';
-      case 'info':
-      default:
-        return 'info';
-    }
-  };
+  const Icon = icons[type];
 
   return (
     <div
-      className={`fixed bottom-24 left-4 right-4 md:left-auto md:right-6 max-w-md glass-panel rounded-xl p-4 border flex items-center gap-3 animate-in slide-in-from-bottom-5 fade-in ${getStyles()}`}
+      className={`fixed bottom-24 left-4 right-4 z-[60] md:left-auto md:right-6 max-w-md rounded-2xl p-4 border flex items-center gap-3 elevation-2 backdrop-blur-xl ${styles[type]}`}
       role="alert"
+      aria-live="polite"
     >
-      <span className="material-symbols-outlined flex-shrink-0">{getIcon()}</span>
-      <p className="font-body-md flex-1">{message}</p>
+      <Icon size={20} className="flex-shrink-0" aria-hidden />
+      <p className="text-sm font-medium flex-1 leading-relaxed">{message}</p>
       <button
+        type="button"
         onClick={onClose}
-        className="flex-shrink-0 text-on-surface-variant hover:opacity-80 transition-opacity"
+        className="flex-shrink-0 min-w-10 min-h-10 inline-flex items-center justify-center rounded-xl hover:bg-white/10 transition-colors"
+        aria-label="بستن"
       >
-        <span className="material-symbols-outlined">close</span>
+        <X size={18} />
       </button>
     </div>
   );
