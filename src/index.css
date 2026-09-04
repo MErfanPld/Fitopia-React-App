@@ -165,22 +165,6 @@
   position: absolute; bottom: 0; left: 50%; width: 0; height: 2px;
   background: #ffb000; transform: translateX(-50%);
 }
-.bottom-nav {
-  position: fixed; bottom: 0; inset-inline: 0; z-index: 50;
-  display: flex; justify-content: space-around; align-items: center;
-  min-height: 64px;
-  padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom));
-  background: rgba(12, 12, 16, 0.94);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-.bottom-nav-item {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 0.2rem; min-width: 64px; min-height: 48px; padding: 0.35rem 0.6rem;
-  border-radius: 0.75rem; color: rgba(184, 176, 170, 0.75); text-decoration: none;
-}
-.bottom-nav-item.active { color: #ff8a4c; background: rgba(255, 106, 0, 0.1); }
 .state-box {
   display: flex; flex-direction: column; align-items: center; text-align: center;
   gap: 0.75rem; padding: 2rem 1.25rem; border-radius: 1rem;
@@ -204,3 +188,60 @@
 }
 .section-gap { display: flex; flex-direction: column; gap: 1.25rem; }
 img { max-width: 100%; height: auto; }
+
+/* —— Home shell utilities (v2) —— */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+
+.home-shell {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+.home-pad {
+  padding-inline: clamp(0.75rem, 3.5vw, 1.5rem);
+}
+
+.section-title {
+  font-size: clamp(0.875rem, 2.5vw, 1rem);
+  font-weight: 700;
+  color: var(--color-on-surface);
+  letter-spacing: -0.01em;
+}
+
+.section-link {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #ff8a4c;
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding-inline: 0.25rem;
+}
+
+.hero-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(7, 7, 10, 0.15) 0%,
+    rgba(7, 7, 10, 0.45) 45%,
+    rgba(7, 7, 10, 0.92) 100%
+  );
+}
+
+.drawer-backdrop {
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+@media (min-width: 1024px) {
+  .home-with-rail {
+    padding-inline-start: 5.5rem;
+  }
+}
