@@ -1,7 +1,6 @@
 /**
  * @file SubmitButton.tsx
- * @description Flexible custom submit button that displays an active spinning
- * loader icon and disables clicks while processing async form operations.
+ * Primary submit control — Fitopia Design System
  */
 
 import { Loader2 } from "lucide-react";
@@ -11,8 +10,10 @@ interface SubmitButtonProps {
   loading?: boolean;
   disabled?: boolean;
   children?: React.ReactNode;
-  /** Used only for login/register loading text. Optional for generic forms. */
   label?: "register" | "login" | "save";
+  type?: "submit" | "button";
+  onClick?: () => void;
+  className?: string;
 }
 
 export function SubmitButton({
@@ -21,24 +22,25 @@ export function SubmitButton({
   disabled = false,
   children = "ثبت",
   label = "save",
+  type = "submit",
+  onClick,
+  className = "",
 }: SubmitButtonProps) {
   const loadingText =
-    label === "login"
-      ? "ورود"
-      : label === "register"
-        ? "ثبت نام"
-        : "ذخیره";
+    label === "login" ? "ورود" : label === "register" ? "ثبت نام" : "ذخیره";
 
   return (
     <button
       id={id}
-      type="submit"
+      type={type}
+      onClick={onClick}
       disabled={disabled || loading}
-      className="w-full py-3 rounded-xl font-bold text-on-primary active:scale-95 transition-transform amber-gradient shadow-[0_0_20px_rgba(255,106,0,0.2)] flex items-center justify-center gap-2 disabled:opacity-60 disabled:pointer-events-none"
+      className={`btn btn-primary btn-block ${className}`}
+      aria-busy={loading}
     >
       {loading ? (
         <>
-          <Loader2 className="animate-spin" size={20} />
+          <Loader2 className="animate-spin" size={20} aria-hidden />
           <span>در حال {loadingText}...</span>
         </>
       ) : (
