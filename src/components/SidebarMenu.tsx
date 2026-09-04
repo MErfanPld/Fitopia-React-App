@@ -1,186 +1,145 @@
-import { FC } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { 
-  Smartphone, 
-  User, 
-  Calendar, 
-  Heart, 
-  BarChart3, 
-  Settings, 
-  LogOut,
+import { FC, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import {
+  Home,
+  Map,
+  Building2,
+  Award,
+  Ticket,
+  User,
   CreditCard,
-  ChevronLeft 
-} from 'lucide-react';
+  History,
+  LogOut,
+  X,
+} from "lucide-react";
 
 interface SidebarMenuProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const primaryLinks = [
+  { id: "home", label: "خانه", icon: Home, path: "/home" },
+  { id: "map", label: "نقشه باشگاه‌ها", icon: Map, path: "/gym-map" },
+  { id: "all", label: "همه باشگاه‌ها", icon: Building2, path: "/gym/all" },
+  { id: "sub", label: "اشتراک‌ها", icon: Award, path: "/subscriptions" },
+  { id: "tokens", label: "اعتبار دسترسی", icon: Ticket, path: "/gym-access/tokens" },
+  { id: "profile", label: "پروفایل", icon: User, path: "/profile" },
+] as const;
+
+const secondaryLinks = [
+  { id: "history", label: "تاریخچه اشتراک", icon: History, path: "/subscriptions/history" },
+  { id: "payment", label: "پرداخت", icon: CreditCard, path: "/subscriptions/payment" },
+] as const;
+
 const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
   const { displayName, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const menuItems = [
-    {
-      id: 'subscriptions',
-      label: 'تاریخچه اشتراک‌ها',
-      icon: Smartphone,
-      path: '/subscriptions/history',
-    },
-    {
-      id: 'payment',
-      label: 'درخواست پرداخت',
-      icon: CreditCard,
-      path: '/subscriptions/payment',
-    },
-    {
-      id: 'profile',
-      label: 'پروفایل',
-      icon: User,
-      path: '/profile',
-    },
-    {
-      id: 'bookings',
-      label: 'رزروهای من',
-      icon: Calendar,
-      path: '#',
-      soon: true,
-    },
-    {
-      id: 'favorites',
-      label: 'باشگاه‌های مورد علاقه',
-      icon: Heart,
-      path: '#',
-      soon: true,
-    },
-    {
-      id: 'stats',
-      label: 'آمار و تحلیل',
-      icon: BarChart3,
-      path: '#',
-      soon: true,
-    },
-    {
-      id: 'settings',
-      label: 'تنظیمات',
-      icon: Settings,
-      path: '#',
-      soon: true,
-    },
-  ];
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isOpen, onClose]);
 
   const handleLogout = async () => {
     await logout();
     onClose();
+    navigate("/welcome", { replace: true });
   };
+
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(path + "/");
 
   return (
     <>
-      {/* Overlay */}
       <div
-        className={`fixed inset-0 bg-black transition-opacity duration-300 md:hidden ${
-          isOpen ? 'opacity-40 z-30' : 'opacity-0 pointer-events-none'
+        className={`fixed inset-0 z-[60] drawer-backdrop transition-opacity duration-200 lg:hidden ${
+          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
+        aria-hidden={!isOpen}
       />
 
-      {/* Sidebar */}
-      <div
-        className={`fixed top-0 right-0 h-screen w-72 md:w-80 max-w-[90vw] bg-gradient-to-b from-surface-container via-surface to-surface-container-low z-50 shadow-2xl transform transition-all duration-300 ease-out flex flex-col ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
+      <aside
+        className={`fixed top-0 right-0 z-[70] h-dvh w-[min(20rem,88vw)] flex flex-col border-l border-white/10 bg-[#0e0e12] shadow-[-12px_0_40px_rgba(0,0,0,0.45)] transition-transform duration-250 ease-out lg:hidden ${
+          isOpen ? "translate-x-0" : "translate-x-full"
         }`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="منوی اصلی"
+        aria-hidden={!isOpen}
       >
-        {/* Header Section */}
-        <div className="flex-shrink-0 pt-6 px-6 pb-4 border-b border-white/10 bg-gradient-to-b from-primary/10 to-transparent">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center flex-shrink-0 border border-white/10">
-              <User className="text-on-surface-variant w-7 h-7" strokeWidth={1.5} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-on-surface-variant font-medium tracking-wide">خوش‌آمدید به</p>
-              <p className="font-black text-on-surface text-sm mt-0.5 truncate">
-                {displayName}
-              </p>
-            </div>
+        <div className="flex items-center justify-between gap-3 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-4 border-b border-white/8">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-w-11 min-h-11 inline-flex items-center justify-center rounded-xl hover:bg-white/5"
+            aria-label="بستن منو"
+          >
+            <X className="w-5 h-5" aria-hidden />
+          </button>
+          <div className="text-right min-w-0">
+            <p className="text-sm font-bold text-white truncate">{displayName || "کاربر فیتوپیا"}</p>
+            <p className="text-[11px] text-white/45">عضو فیتوپیا</p>
+          </div>
+          <div className="min-w-11 min-h-11 rounded-2xl bg-primary-container/15 border border-primary-container/30 flex items-center justify-center">
+            <User className="w-5 h-5 text-primary" aria-hidden />
           </div>
         </div>
 
-        {/* Menu Items - Scrollable */}
-        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2 custom-scrollbar">
-          {menuItems.map((item, index) => {
-            const Icon = item.icon;
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1" aria-label="لینک‌های اپ">
+          {primaryLinks.map(({ id, label, icon: Icon, path }) => {
+            const active = isActive(path);
             return (
               <Link
-                key={item.id}
-                to={item.path}
-                onClick={item.soon ? (e) => e.preventDefault() : onClose}
-                style={{
-                  animationDelay: isOpen ? `${index * 40}ms` : '0ms',
-                }}
-                className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300 ${
-                  item.soon
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-white/5 text-on-surface hover:text-primary hover:pl-5'
-                } ${isOpen ? 'animate-in fade-in slide-in-from-right-4' : ''}`}
+                key={id}
+                to={path}
+                onClick={onClose}
+                className={`flex items-center justify-end gap-3 rounded-xl px-3 min-h-12 no-underline transition-colors ${
+                  active
+                    ? "bg-primary-container/15 text-primary"
+                    : "text-white/80 hover:bg-white/5"
+                }`}
+                aria-current={active ? "page" : undefined}
               >
-                {/* Icon - Simple and clean */}
-                <div className="flex-shrink-0">
-                  <Icon className="w-5 h-5 text-on-surface-variant group-hover:text-primary transition-colors" strokeWidth={1.5} />
-                </div>
-
-                {/* Label */}
-                <span className="flex-1 text-sm font-semibold min-w-0 transition-all">
-                  {item.label}
-                </span>
-
-                {/* Soon Badge or Arrow */}
-                {item.soon ? (
-                  <span className="text-xs px-2.5 py-1 bg-primary/20 text-primary rounded-full flex-shrink-0 font-bold tracking-wider">
-                    به زودی
-                  </span>
-                ) : (
-                  <ChevronLeft className="w-5 h-5 text-on-surface-variant group-hover:text-primary group-hover:translate-x-1 transition-all opacity-0 group-hover:opacity-100 flex-shrink-0" strokeWidth={1.5} />
-                )}
+                <span className="text-sm font-semibold">{label}</span>
+                <Icon size={18} strokeWidth={active ? 2 : 1.6} aria-hidden />
               </Link>
             );
           })}
+
+          <div className="my-3 border-t border-white/8" />
+
+          {secondaryLinks.map(({ id, label, icon: Icon, path }) => (
+            <Link
+              key={id}
+              to={path}
+              onClick={onClose}
+              className="flex items-center justify-end gap-3 rounded-xl px-3 min-h-12 text-white/70 hover:bg-white/5 no-underline"
+            >
+              <span className="text-sm font-medium">{label}</span>
+              <Icon size={18} strokeWidth={1.6} aria-hidden />
+            </Link>
+          ))}
         </nav>
 
-        {/* Divider */}
-        <div className="border-t border-white/10" />
-
-        {/* Footer - Logout (Always Visible) */}
-        <div className="p-4 space-y-2 bg-gradient-to-t from-surface-container/50 to-transparent">
+        <div className="p-3 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-white/8">
           <button
+            type="button"
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-on-surface-variant hover:text-on-surface transition-all"
+            className="w-full flex items-center justify-end gap-3 rounded-xl px-3 min-h-12 text-red-300 hover:bg-red-500/10 transition-colors"
           >
-            <div className="flex-shrink-0">
-              <LogOut className="w-5 h-5 text-on-surface-variant hover:text-on-surface transition-colors" strokeWidth={1.5} />
-            </div>
-            <span className="text-sm font-semibold flex-1 text-right">خروج از حساب</span>
-            <ChevronLeft className="w-5 h-5 transition-transform flex-shrink-0" strokeWidth={1.5} />
+            <span className="text-sm font-semibold">خروج از حساب</span>
+            <LogOut size={18} aria-hidden />
           </button>
         </div>
-      </div>
-
-      {/* Custom Scrollbar Styles */}
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 106, 0, 0.3);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 106, 0, 0.5);
-        }
-      `}</style>
+      </aside>
     </>
   );
 };
