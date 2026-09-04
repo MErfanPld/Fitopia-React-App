@@ -61,7 +61,6 @@ export function LoginForm() {
         return;
       }
 
-      // ✅ FIX: correct API structure
       const token = responseData?.tokens?.access;
       const refresh = responseData?.tokens?.refresh;
       const user = responseData?.user;
@@ -74,13 +73,8 @@ export function LoginForm() {
 
       const displayName = user?.full_name || user?.username || data.username;
 
-      // ✅ save auth state
       login(token, refresh, user, displayName);
-
-      // ✅ reset form
       reset();
-
-      // ✅ redirect
       navigate("/home", { replace: true });
     } catch (err) {
       console.error(err);
@@ -92,10 +86,17 @@ export function LoginForm() {
 
   return (
     <div className="w-full">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col gap-5"
+        noValidate
+      >
         {apiError && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg flex gap-2">
-            <AlertCircle size={16} />
+          <div
+            className="rounded-xl border border-red-500/30 bg-red-500/10 text-red-300 p-3.5 flex gap-2.5 text-sm leading-relaxed"
+            role="alert"
+          >
+            <AlertCircle size={18} className="shrink-0 mt-0.5" aria-hidden />
             <span>{apiError}</span>
           </div>
         )}
@@ -115,6 +116,7 @@ export function LoginForm() {
         <PasswordInput
           id="password"
           label="رمز عبور"
+          forgotPasswordHref="#"
           register={register("password", {
             required: "رمز الزامی است",
             minLength: { value: 6, message: "حداقل ۶ کاراکتر" },
@@ -122,7 +124,11 @@ export function LoginForm() {
           error={errors.password?.message}
         />
 
-        <SubmitButton label="login" loading={isLoading} disabled={!isValid} />
+        <div className="pt-1">
+          <SubmitButton label="login" loading={isLoading} disabled={!isValid}>
+            ورود
+          </SubmitButton>
+        </div>
       </form>
     </div>
   );
