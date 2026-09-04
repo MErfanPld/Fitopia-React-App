@@ -1,13 +1,6 @@
-/**
- * @file PopularGyms.tsx
- * @description Horizontal list component rendering a list of best-rated partner gyms
- * from API. Displays them with 2.5 card width for better showcase with snap scrolling.
- */
-
 import { useNavigate } from "react-router-dom";
 import { useGyms, Gym } from "../hooks/useGymAPI";
 import { GymCard } from "./GymCard";
-import { Star } from "lucide-react";
 
 interface PopularGymsProps {
   onGymSelect?: (gym: Gym) => void;
@@ -18,24 +11,17 @@ export function PopularGyms({ onGymSelect }: PopularGymsProps) {
   const navigate = useNavigate();
 
   const handleGymClick = (gym: Gym) => {
-    if (onGymSelect) {
-      onGymSelect(gym);
-    } else {
-      // Navigate to gym detail page
-      navigate(`/gym/${gym.id}`);
-    }
+    if (onGymSelect) onGymSelect(gym);
+    else navigate(`/gym/${gym.id}`);
   };
 
   if (loading) {
     return (
-      <section className="mt-8 fade-in-up select-none" id="popular-gyms-section">
-        <div className="flex items-center gap-2 mb-4">
-          <Star size={18} className="text-primary" />
-          <h4 className="font-title text-title text-on-surface">باشگاه‌های محبوب</h4>
-        </div>
-        <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-48 w-40 bg-surface-variant/20 rounded-lg animate-pulse flex-shrink-0" />
+      <section className="space-y-3" aria-busy="true">
+        <div className="skeleton h-4 w-32 rounded" />
+        <div className="flex gap-3 overflow-hidden">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="skeleton h-44 w-[min(70vw,16rem)] rounded-2xl shrink-0" />
           ))}
         </div>
       </section>
@@ -44,54 +30,41 @@ export function PopularGyms({ onGymSelect }: PopularGymsProps) {
 
   if (error) {
     return (
-      <section className="mt-8 fade-in-up select-none" id="popular-gyms-section">
-        <div className="flex items-center gap-2 mb-4">
-          <Star size={18} className="text-primary" />
-          <h4 className="font-title text-title text-on-surface">باشگاه‌های محبوب</h4>
-        </div>
-        <div className="p-4 bg-error/10 rounded-lg text-error text-sm">
-          خطا در بارگذاری باشگاه‌ها: {error}
+      <section className="space-y-2">
+        <h2 className="section-title">باشگاه‌های محبوب</h2>
+        <div className="state-box">
+          <p className="state-desc">خطا در بارگذاری باشگاه‌ها</p>
         </div>
       </section>
     );
   }
 
-  // Filter popular gyms, sorted by popularity score
   const popularGyms = gyms
     .filter((gym) => gym.is_popular)
     .sort((a, b) => b.popularity_score - a.popularity_score)
-    .slice(0, 6); // Show max 6 gyms
+    .slice(0, 8);
 
   return (
-    <section className="mt-8 fade-in-up select-none" style={{ animationDelay: "0.4s" }} id="popular-gyms-section">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
-          <Star size={18} className="text-primary" />
-          <h4 className="font-title text-title text-on-surface">باشگاه‌های محبوب</h4>
-        </div>
-        <button
-          onClick={() => navigate("/gym/all")}
-          className="text-primary font-label-sm hover:underline cursor-pointer bg-transparent border-none"
-        >
+    <section className="space-y-3" id="popular-gyms-section" aria-label="باشگاه‌های محبوب">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="section-title">باشگاه‌های محبوب</h2>
+        <button type="button" className="section-link" onClick={() => navigate("/gym/all")}>
           مشاهده همه
         </button>
       </div>
 
       {popularGyms.length === 0 ? (
-        <div className="p-4 bg-surface-variant/10 rounded-lg text-on-surface-variant/70 text-sm">
-          هیچ باشگاه محبوبی یافت نشد
+        <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 text-sm text-white/55">
+          باشگاه محبوبی یافت نشد
         </div>
       ) : (
-        <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 snap-x snap-mandatory">
+        <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-1 snap-x snap-mandatory">
           {popularGyms.map((gym) => (
             <div
               key={gym.id}
-              className="flex-shrink-0 w-[calc(50vw-12px)] md:w-[calc((100vw-80px)/2.5)] lg:w-[calc((100vw-96px)/2.5)] snap-center"
+              className="snap-start shrink-0 w-[min(72vw,16.5rem)] sm:w-[15rem]"
             >
-              <GymCard
-                gym={gym}
-                onClick={() => handleGymClick(gym)}
-              />
+              <GymCard gym={gym} onClick={() => handleGymClick(gym)} />
             </div>
           ))}
         </div>
