@@ -1,75 +1,67 @@
 /**
- * @file QuickActions.tsx
- * @description Quick action trigger buttons centered around core fitness behaviors
- * (e.g. workout sensors, smart nutrition logs, progress metrics, body compound scanning).
+ * Quick actions — real app routes only (no mock features).
  */
 
-import { Dumbbell, Calendar, LineChart, Cpu } from "lucide-react";
+import { Map, Ticket, Award, Building2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+const actions = [
+  {
+    id: "qa-map",
+    label: "نقشه باشگاه‌ها",
+    desc: "یافتن نزدیک‌ترین",
+    icon: Map,
+    to: "/gym-map",
+  },
+  {
+    id: "qa-all",
+    label: "همه باشگاه‌ها",
+    desc: "لیست و جستجو",
+    icon: Building2,
+    to: "/gym/all",
+  },
+  {
+    id: "qa-sub",
+    label: "اشتراک‌ها",
+    desc: "پلن و تمدید",
+    icon: Award,
+    to: "/subscriptions",
+  },
+  {
+    id: "qa-tokens",
+    label: "اعتبار دسترسی",
+    desc: "توکن ورود",
+    icon: Ticket,
+    to: "/gym-access/tokens",
+  },
+] as const;
 
 export function QuickActions() {
-  // Configured hot shortcuts for active user routines
-  const actions = [
-    {
-      id: "action-workout",
-      label: "شروع تمرین",
-      desc: "تمرین در لحظه",
-      icon: Dumbbell,
-      color: "bg-orange-500/10 text-[#FF6A00] border-orange-500/25",
-      handler: () => alert("ویژگی راه‌اندازی شتاب‌سنج تمرین در نسخه آزمایشی در دسترس است!"),
-    },
-    {
-      id: "action-nutrition",
-      label: "تغذیه هوشمند",
-      desc: "برنامه کالری روز",
-      icon: Calendar,
-      color: "bg-amber-500/10 text-[#FFB000] border-amber-500/25",
-      handler: () => alert("منوی تغذیه‌ای شما بر اساس ۴,۲۰۰ کالری تنظیم شده است. ۵ واحد کربوهیدرات اضافه کنید."),
-    },
-    {
-      id: "action-progress",
-      label: "پیشرفت من",
-      desc: "نمودار هفتگی عضلانی",
-      icon: LineChart,
-      color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/25",
-      handler: () => alert("شما ۸۵٪ از هدف روتین تناسب اندام خرداد ماه را به‌خوبی پیش برده‌اید!"),
-    },
-    {
-      id: "action-body",
-      label: "آنالیز ترکیب بدنی",
-      desc: "درصد چربی و توده",
-      icon: Cpu,
-      color: "bg-purple-500/10 text-purple-400 border-purple-500/25",
-      handler: () => alert("اسکن چربی بدن از طریق دوربین به زودی با تکیه بر سنسورهای نسل بعد فعال می‌شود."),
-    },
-  ];
+  const navigate = useNavigate();
 
   return (
-    <section className="space-y-4" id="quick-actions-section">
-      <h4 className="text-base font-black text-on-surface">دسترسی سریع فیتوپیا</h4>
-      
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" id="quick-actions-grid">
+    <section className="space-y-3" id="quick-actions-section" aria-label="دسترسی سریع">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-bold text-on-surface">دسترسی سریع</h2>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3" id="quick-actions-grid">
         {actions.map((act) => {
           const Icon = act.icon;
           return (
             <button
               key={act.id}
               id={act.id}
-              onClick={act.handler}
-              className={`glass-card rounded-2xl p-4 flex flex-col text-right justify-between items-start gap-4 hover:border-primary-container/40 transition-all cursor-pointer active:scale-95 text-xs select-none border border-white/5`}
+              type="button"
+              onClick={() => navigate(act.to)}
+              className="glass-card text-right p-3.5 flex flex-col gap-3 min-h-[5.5rem] border border-white/6 hover:border-primary-container/35 transition-colors"
             >
-              {/* Top icon and label state */}
-              <div className="flex justify-between w-full items-start">
-                <div className={`p-2.5 rounded-xl border ${act.color}`}>
-                  <Icon size={18} />
-                </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-container/12 border border-primary-container/25 text-primary-container">
+                <Icon size={18} strokeWidth={1.75} aria-hidden />
               </div>
-
-              {/* Bottom labels */}
               <div>
-                <span className="font-extrabold text-sm text-on-surface block">{act.label}</span>
-                <span className="text-[11px] text-on-surface-variant/60 block mt-1 leading-tight font-medium">
-                  {act.desc}
-                </span>
+                <p className="text-sm font-bold text-on-surface leading-tight">{act.label}</p>
+                <p className="text-[11px] text-on-surface-variant mt-0.5">{act.desc}</p>
               </div>
             </button>
           );

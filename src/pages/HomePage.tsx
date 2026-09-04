@@ -1,19 +1,17 @@
 /**
- * @file HomePage.tsx
- * Primary member dashboard — Fitopia Design System
+ * Home — premium member shell (Header, Hero, Quick Actions, discovery).
  */
 
 import { useEffect } from "react";
 import { Header } from "../components/Header";
-import { GreetingSection } from "../components/GreetingSection";
 import PromoSlider from "../components/PromoSlider";
 import { PWAInstallButton } from "../components/PWAInstallButton";
+import { QuickActions } from "../components/QuickActions";
 import { CategorySlider } from "../components/CategorySlider";
 import { PopularGyms } from "../components/PopularGyms";
 import { NearbyGymsMap } from "../components/NearbyGymsMap";
 import { BottomNavigation } from "../components/BottomNavigation";
 import { ShaderBackground } from "../components/ShaderBackground";
-import { ParticleOverlay } from "../components/ParticleOverlay";
 
 export function HomePage() {
   useEffect(() => {
@@ -23,23 +21,22 @@ export function HomePage() {
   return (
     <>
       <ShaderBackground />
-      <ParticleOverlay />
       <Header />
 
-      <main className="page-shell section-gap select-none text-right">
-        <div id="home-greeting-wrapper">
-          <GreetingSection />
+      <main className="relative z-10 mx-auto w-full max-w-3xl px-4 pt-[calc(3.75rem+env(safe-area-inset-top))] pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pt-20">
+        <div className="flex flex-col gap-5 md:gap-6 text-right">
+          <PromoSlider />
+
+          <PWAInstallButton />
+
+          <QuickActions />
+
+          <CategorySlider />
+
+          <PopularGyms />
+
+          <NearbyGymsMap />
         </div>
-
-        <PWAInstallButton />
-
-        <PromoSlider />
-
-        <CategorySlider />
-
-        <PopularGyms />
-
-        <NearbyGymsMap />
       </main>
 
       <BottomNavigation />
