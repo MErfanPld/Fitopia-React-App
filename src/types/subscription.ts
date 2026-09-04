@@ -26,10 +26,18 @@ export interface UserSubscription {
   tokens_used: number;
   tokens_remaining: number;
   is_active: boolean;
-  days_remaining: number;
+  days_remaining: number | string;
   paid_amount: number;
   discount_applied: number;
   created_at: string;
 }
 
 export type UserSubscriptionResponse = UserSubscription;
+
+/** Alias used by history / active plan components */
+export type MySubscription = UserSubscription & {
+  discount_remaining?: number;
+};
+
+/** History list item shape */
+export type SubscriptionHistoryItem = UserSubscription;

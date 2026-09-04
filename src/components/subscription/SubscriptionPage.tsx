@@ -1,19 +1,13 @@
 import { useState } from 'react';
-import { useSubscriptionPlans } from '../hooks/useSubscriptionPlans';
-import PlanCard from '../components/subscription/PlanCard';
-import PlanCardSkeleton from '../components/subscription/PlanCardSkeleton';
-import ConfirmModal from '../components/subscription/ConfirmModal';
-import { SubscriptionPlan } from '../types/subscription';
+import { useSubscriptionPlans } from '../../hooks/useSubscriptionPlans';
+import PlanCard from './PlanCard';
+import PlanCardSkeleton from './PlanCardSkeleton';
+import ConfirmModal from './ConfirmModal';
+import { SubscriptionPlan } from '../../types/subscription';
 
 const SubscriptionPage = () => {
   const { plans, loading, error, refetch } = useSubscriptionPlans();
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
-
-  const handleConfirm = () => {
-    // TODO: اینجا API پرداخت رو صدا بزن
-    console.log('خرید پلن:', selectedPlan);
-    setSelectedPlan(null);
-  };
 
   return (
     <>
@@ -51,7 +45,6 @@ const SubscriptionPage = () => {
 
       <ConfirmModal
         plan={selectedPlan}
-        onConfirm={handleConfirm}
         onClose={() => setSelectedPlan(null)}
       />
     </>

@@ -11,7 +11,8 @@ interface SubmitButtonProps {
   loading?: boolean;
   disabled?: boolean;
   children?: React.ReactNode;
-  label: "register" | "login";
+  /** Used only for login/register loading text. Optional for generic forms. */
+  label?: "register" | "login" | "save";
 }
 
 export function SubmitButton({
@@ -19,19 +20,26 @@ export function SubmitButton({
   loading = false,
   disabled = false,
   children = "ثبت",
-  label,
+  label = "save",
 }: SubmitButtonProps) {
+  const loadingText =
+    label === "login"
+      ? "ورود"
+      : label === "register"
+        ? "ثبت نام"
+        : "ذخیره";
+
   return (
     <button
       id={id}
       type="submit"
       disabled={disabled || loading}
-      className="w-full py-3 rounded-xl font-bold text-on-primary active:scale-95 transition-transform amber-gradient shadow-[0_0_20px_rgba(255,106,0,0.2)] flex items-center justify-center gap-2"
+      className="w-full py-3 rounded-xl font-bold text-on-primary active:scale-95 transition-transform amber-gradient shadow-[0_0_20px_rgba(255,106,0,0.2)] flex items-center justify-center gap-2 disabled:opacity-60 disabled:pointer-events-none"
     >
       {loading ? (
         <>
           <Loader2 className="animate-spin" size={20} />
-          <span>در حال {label === "login" ? "ورود" : "ثبت نام"}...</span>
+          <span>در حال {loadingText}...</span>
         </>
       ) : (
         <span>{children}</span>
