@@ -1,6 +1,5 @@
 /**
  * Mobile navigation drawer only (RTL: slides from right).
- * Desktop uses BottomNavigation → DesktopNavRail.
  */
 
 import { FC, useEffect, useRef } from "react";
@@ -48,14 +47,14 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
     };
     document.addEventListener("keydown", onKey);
 
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
+    document.documentElement.classList.add("drawer-open");
+    document.body.classList.add("drawer-open");
     requestAnimationFrame(() => closeRef.current?.focus());
 
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
+      document.documentElement.classList.remove("drawer-open");
+      document.body.classList.remove("drawer-open");
     };
   }, [isOpen, onClose]);
 
@@ -71,7 +70,7 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
   return (
     <>
       <div
-        className={`fixed inset-0 z-[60] lg:hidden transition-opacity duration-200 ${
+        className={`fixed inset-0 z-[60] md:hidden transition-opacity duration-200 ${
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         style={{ background: "rgba(0,0,0,0.55)" }}
@@ -80,7 +79,7 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
       />
 
       <aside
-        className={`fixed top-0 right-0 z-[70] h-dvh w-[min(20rem,82vw)] flex flex-col bg-[#0e0e12] border-l border-white/[0.07] shadow-[-8px_0_32px_rgba(0,0,0,0.4)] transition-transform duration-[240ms] ease-out lg:hidden ${
+        className={`fixed top-0 right-0 z-[70] h-dvh w-[min(20rem,82vw)] flex flex-col bg-[#0e0e12] border-l border-white/[0.07] shadow-[-8px_0_32px_rgba(0,0,0,0.4)] transition-transform duration-[240ms] ease-out md:hidden ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
         role="dialog"
