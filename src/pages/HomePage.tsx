@@ -21,7 +21,7 @@ export function HomePage() {
   }, []);
 
   return (
-    <div className="min-h-dvh bg-[#07070A] text-right home-with-rail">
+    <div className="min-h-dvh bg-[#07070A] text-right home-with-rail overflow-x-hidden overflow-y-visible">
       <div
         aria-hidden
         className="pointer-events-none fixed inset-x-0 top-0 h-48 bg-[radial-gradient(ellipse_at_top,_rgba(255,106,0,0.1),_transparent_65%)]"
