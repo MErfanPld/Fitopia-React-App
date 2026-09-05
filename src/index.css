@@ -189,7 +189,6 @@
 .section-gap { display: flex; flex-direction: column; gap: 1.25rem; }
 img { max-width: 100%; height: auto; }
 
-/* —— Home shell utilities (v2) —— */
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -242,6 +241,6 @@ img { max-width: 100%; height: auto; }
 
 @media (min-width: 1024px) {
   .home-with-rail {
-    padding-inline-start: 5.5rem;
+    padding-inline-start: 4.75rem;
   }
 }
