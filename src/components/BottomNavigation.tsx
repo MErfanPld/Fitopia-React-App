@@ -1,7 +1,7 @@
 /**
- * Fitopia navigation shell
- * - Mobile: floating pill, HOME centered, raised active circle
- * - Desktop/tablet (≥ md): thin 68px rail, optional expand via toggle
+ * Fitopia navigation
+ * - Mobile (<md): floating pill, Home centered, raised active circle
+ * - Desktop/tablet (≥md): thin 64px rail at inline-start (RTL-aware)
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -11,8 +11,10 @@ import {
   MapPinned,
   CreditCard,
   CircleUser,
-  PanelLeft,
+  PanelLeftClose,
+  PanelLeftOpen,
   LogOut,
+  Ticket,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -33,7 +35,8 @@ const primaryNav: NavItem[] = [
     to: "/gym/all",
     label: "باشگاه‌ها",
     icon: Compass,
-    match: (p) => p === "/gym/all" || (p.startsWith("/gym/") && !p.startsWith("/gym-map")),
+    match: (p) =>
+      p === "/gym/all" || (p.startsWith("/gym/") && !p.startsWith("/gym-map")),
   },
   {
     id: "map",
@@ -92,7 +95,7 @@ function MobileBottomNav() {
               role="listitem"
               aria-label={label}
               aria-current={current ? "page" : undefined}
-              className="relative flex flex-1 items-center justify-center min-h-12 min-w-0 no-underline rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#FF6A00]/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#141418]"
+              className="relative flex flex-1 items-center justify-center min-h-12 min-w-0 no-underline rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#FF6A00]/80"
             >
               <span
                 className={`flex items-center justify-center rounded-full transition-all duration-200 ease-out motion-reduce:transition-none ${
@@ -127,6 +130,13 @@ function DesktopNavRail() {
   const toggle = useCallback(() => setExpanded((v) => !v), []);
 
   useEffect(() => {
+    document.documentElement.classList.add("has-nav-rail");
+    return () => {
+      document.documentElement.classList.remove("has-nav-rail");
+    };
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (tipTimer.current) clearTimeout(tipTimer.current);
     };
@@ -148,7 +158,7 @@ function DesktopNavRail() {
     tipTimer.current = setTimeout(() => {
       const rect = el.getBoundingClientRect();
       setTooltip({ label, y: rect.top + rect.height / 2 });
-    }, 150);
+    }, 160);
   };
 
   const hideTip = () => {
@@ -164,35 +174,31 @@ function DesktopNavRail() {
   return (
     <>
       <aside
-        className={`hidden md:flex fixed top-0 left-0 z-40 h-dvh flex-col items-stretch border-r border-white/[0.05] bg-[#0D0D11] transition-[width] duration-200 ease-out overflow-hidden motion-reduce:transition-none ${
-          expanded ? "w-[238px]" : "w-[68px]"
+        className={`hidden md:flex fixed top-0 z-40 h-dvh flex-col bg-[#0B0B0F] border-white/[0.05] transition-[width] duration-200 ease-out overflow-hidden motion-reduce:transition-none inset-inline-start-0 border-e ${
+          expanded ? "w-[220px]" : "w-[64px]"
         }`}
         aria-label="ناوبری اصلی"
       >
         <div
-          className={`flex h-14 shrink-0 items-center border-b border-white/[0.05] ${
+          className={`flex h-12 shrink-0 items-center border-b border-white/[0.04] ${
             expanded ? "px-3 gap-2" : "justify-center"
           }`}
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-primary-container/12 border border-primary-container/20">
-            <span className="text-[12px] font-black text-[#FF6A00]">F</span>
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(255,106,0,0.14)]">
+            <span className="text-[10px] font-black tracking-tight text-[#FF6A00]">F</span>
           </div>
-          <span
-            className={`text-[13px] font-extrabold tracking-wide text-white whitespace-nowrap transition-opacity duration-200 delay-75 ${
-              expanded ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
-            }`}
-          >
-            FITOPIA
-          </span>
           {expanded && (
-            <button
-              type="button"
-              onClick={toggle}
-              className="ms-auto flex h-8 w-8 items-center justify-center rounded-lg text-white/40 hover:text-white/80 hover:bg-white/[0.05] transition-colors"
-              aria-label="جمع کردن منو"
-            >
-              <PanelLeft size={16} strokeWidth={1.8} aria-hidden />
-            </button>
+            <>
+              <span className="text-[12px] font-extrabold text-white/90 tracking-wide">FITOPIA</span>
+              <button
+                type="button"
+                onClick={toggle}
+                className="ms-auto flex h-7 w-7 items-center justify-center rounded-md text-white/30 hover:text-white/75 hover:bg-white/[0.05]"
+                aria-label="جمع کردن منو"
+              >
+                <PanelLeftClose size={14} aria-hidden />
+              </button>
+            </>
           )}
         </div>
 
@@ -201,21 +207,21 @@ function DesktopNavRail() {
             <button
               type="button"
               onClick={toggle}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-white/35 hover:text-white/75 hover:bg-white/[0.05] transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-white/25 hover:text-white/70 hover:bg-white/[0.05]"
               aria-label="باز کردن منو"
               aria-expanded={false}
             >
-              <PanelLeft size={16} strokeWidth={1.8} className="rotate-180" aria-hidden />
+              <PanelLeftOpen size={14} aria-hidden />
             </button>
           </div>
         )}
 
         <nav
-          className={`flex-1 flex flex-col py-2 gap-2 overflow-y-auto overflow-x-hidden ${
-            expanded ? "px-2.5" : "items-center px-0"
+          className={`flex-1 flex flex-col py-2 gap-0.5 ${
+            expanded ? "px-2" : "items-center px-0"
           }`}
         >
-          <div className={`flex flex-col gap-1.5 ${expanded ? "" : "items-center"}`}>
+          <div className={`flex flex-col gap-0.5 ${expanded ? "" : "items-center"}`}>
             {primaryNav.slice(0, 2).map((item) => (
               <RailLink
                 key={item.id}
@@ -228,7 +234,7 @@ function DesktopNavRail() {
             ))}
           </div>
 
-          <div className={`my-1 flex flex-col ${expanded ? "" : "items-center"}`}>
+          <div className={`my-1.5 flex ${expanded ? "" : "justify-center"}`}>
             <RailLink
               item={primaryNav[2]}
               pathname={location.pathname}
@@ -239,7 +245,7 @@ function DesktopNavRail() {
             />
           </div>
 
-          <div className={`flex flex-col gap-1.5 ${expanded ? "" : "items-center"}`}>
+          <div className={`flex flex-col gap-0.5 ${expanded ? "" : "items-center"}`}>
             {primaryNav.slice(3).map((item) => (
               <RailLink
                 key={item.id}
@@ -251,27 +257,44 @@ function DesktopNavRail() {
               />
             ))}
           </div>
+
+          {expanded && (
+            <>
+              <div className="my-2 mx-1 border-t border-white/[0.05]" />
+              <Link
+                to="/gym-access/tokens"
+                className={`flex items-center gap-2.5 rounded-xl min-h-9 px-2.5 no-underline text-[12.5px] transition-colors ${
+                  location.pathname.startsWith("/gym-access")
+                    ? "bg-[rgba(255,106,0,0.12)] text-[#FF6A00] font-bold"
+                    : "text-[#7A7A82] hover:bg-white/[0.04] hover:text-white/80 font-semibold"
+                }`}
+              >
+                <Ticket size={17} strokeWidth={1.8} aria-hidden />
+                توکن‌ها
+              </Link>
+            </>
+          )}
         </nav>
 
         <div
-          className={`shrink-0 border-t border-white/[0.05] py-3 ${
-            expanded ? "px-2.5" : "flex flex-col items-center gap-2"
+          className={`shrink-0 border-t border-white/[0.04] py-2 ${
+            expanded ? "px-2" : "flex justify-center"
           }`}
         >
           <Link
             to="/profile"
-            className={`flex items-center rounded-[12px] no-underline transition-colors hover:bg-white/[0.04] ${
-              expanded ? "gap-2.5 px-2 min-h-11" : "h-9 w-9 justify-center"
+            className={`flex items-center rounded-xl no-underline hover:bg-white/[0.04] transition-colors ${
+              expanded ? "gap-2 px-2 min-h-9" : "h-8 w-8 justify-center"
             }`}
             aria-label={displayName || "پروفایل"}
             onMouseEnter={(e) => showTip(displayName || "پروفایل", e.currentTarget)}
             onMouseLeave={hideTip}
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.06] border border-white/10 text-white/70">
-              <CircleUser size={16} strokeWidth={1.8} aria-hidden />
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.05] border border-white/[0.08] text-white/60">
+              <CircleUser size={14} strokeWidth={1.85} aria-hidden />
             </span>
             {expanded && (
-              <span className="text-[12px] font-semibold text-white/80 truncate max-w-[8.5rem]">
+              <span className="text-[12px] font-semibold text-white/70 truncate max-w-[7.5rem]">
                 {displayName || "پروفایل"}
               </span>
             )}
@@ -280,10 +303,10 @@ function DesktopNavRail() {
             <button
               type="button"
               onClick={handleLogout}
-              className="mt-1 w-full flex items-center gap-2.5 rounded-[12px] px-2 min-h-10 text-white/40 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+              className="mt-1 w-full flex items-center gap-2 rounded-xl px-2 min-h-8 text-white/30 hover:text-red-300 hover:bg-red-500/10 text-[12px]"
             >
-              <LogOut size={16} strokeWidth={1.8} aria-hidden />
-              <span className="text-[12px] font-medium">خروج</span>
+              <LogOut size={14} strokeWidth={1.85} aria-hidden />
+              خروج
             </button>
           )}
         </div>
@@ -292,8 +315,12 @@ function DesktopNavRail() {
       {tooltip && !expanded && (
         <div
           role="tooltip"
-          className="hidden md:block fixed z-50 pointer-events-none px-2.5 py-1 rounded-md bg-[#1a1a20] border border-white/10 text-[11px] font-semibold text-white shadow-lg"
-          style={{ left: "4.75rem", top: tooltip.y, transform: "translateY(-50%)" }}
+          className="hidden md:block fixed z-50 pointer-events-none px-2.5 py-1 rounded-md bg-[#16161c] border border-white/10 text-[11px] font-semibold text-white shadow-lg"
+          style={{
+            insetInlineStart: "4.35rem",
+            top: tooltip.y,
+            transform: "translateY(-50%)",
+          }}
         >
           {tooltip.label}
         </div>
@@ -327,32 +354,28 @@ function RailLink({
       aria-current={active ? "page" : undefined}
       onMouseEnter={(e) => onTip(item.label, e.currentTarget)}
       onMouseLeave={onTipHide}
-      className={`group relative flex items-center no-underline outline-none focus-visible:ring-2 focus-visible:ring-[#FF6A00]/70 rounded-[12px] transition-colors duration-150 ${
-        expanded ? "gap-3 min-h-11 w-full px-2.5" : "h-11 w-11 justify-center"
+      className={`relative flex items-center no-underline outline-none focus-visible:ring-2 focus-visible:ring-[#FF6A00]/50 rounded-xl transition-colors duration-150 ${
+        expanded ? "gap-2.5 min-h-9 w-full px-2.5" : "h-9 w-9 justify-center"
       } ${
         active
-          ? "bg-[rgba(255,106,0,0.14)] text-[#FF6A00]"
-          : "text-[#8B8B92] hover:bg-white/[0.04] hover:text-white/85"
+          ? "bg-[rgba(255,106,0,0.12)] text-[#FF6A00]"
+          : "text-[#7A7A82] hover:bg-white/[0.04] hover:text-white/85"
       }`}
     >
       {active && (
         <span
           aria-hidden
-          className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[2px] rounded-full bg-[#FF6A00]"
+          className="absolute inset-inline-start-0 top-1/2 -translate-y-1/2 h-3 w-[2px] rounded-full bg-[#FF6A00]"
         />
       )}
       <Icon
-        size={emphasize || item.primary ? 21 : 20}
-        strokeWidth={active ? 2 : 1.85}
+        size={emphasize || item.primary ? 20 : 18}
+        strokeWidth={active ? 2.05 : 1.75}
         className="shrink-0"
         aria-hidden
       />
       {expanded && (
-        <span
-          className={`text-[13px] whitespace-nowrap transition-opacity duration-200 delay-75 ${
-            active ? "font-bold" : "font-semibold"
-          }`}
-        >
+        <span className={`text-[12.5px] whitespace-nowrap ${active ? "font-bold" : "font-semibold"}`}>
           {item.label}
         </span>
       )}
