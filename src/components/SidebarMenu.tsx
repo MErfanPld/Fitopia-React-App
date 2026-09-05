@@ -1,14 +1,17 @@
-import { FC, useEffect } from "react";
+/**
+ * Mobile navigation drawer only (RTL: slides from right).
+ * Desktop uses BottomNavigation → DesktopNavRail.
+ */
+
+import { FC, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   Home,
   Map,
-  Building2,
   Award,
   Ticket,
   User,
-  CreditCard,
   History,
   LogOut,
   X,
@@ -19,32 +22,41 @@ interface SidebarMenuProps {
   onClose: () => void;
 }
 
-const primaryLinks = [
+const primary = [
   { id: "home", label: "خانه", icon: Home, path: "/home" },
-  { id: "map", label: "نقشه باشگاه‌ها", icon: Map, path: "/gym-map" },
-  { id: "all", label: "همه باشگاه‌ها", icon: Building2, path: "/gym/all" },
-  { id: "sub", label: "اشتراک‌ها", icon: Award, path: "/subscriptions" },
-  { id: "tokens", label: "اعتبار دسترسی", icon: Ticket, path: "/gym-access/tokens" },
+  { id: "map", label: "باشگاه‌ها", icon: Map, path: "/gym-map" },
+  { id: "sub", label: "اشتراک", icon: Award, path: "/subscriptions" },
+  { id: "tokens", label: "توکن‌ها", icon: Ticket, path: "/gym-access/tokens" },
   { id: "profile", label: "پروفایل", icon: User, path: "/profile" },
 ] as const;
 
-const secondaryLinks = [
+const secondary = [
   { id: "history", label: "تاریخچه اشتراک", icon: History, path: "/subscriptions/history" },
-  { id: "payment", label: "پرداخت", icon: CreditCard, path: "/subscriptions/payment" },
 ] as const;
 
 const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
   const { displayName, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    requestAnimationFrame(() => closeRef.current?.focus());
+
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
   }, [isOpen, onClose]);
 
   const handleLogout = async () => {
@@ -53,89 +65,95 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
     navigate("/welcome", { replace: true });
   };
 
-  const isActive = (path: string) =>
+  const active = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + "/");
 
   return (
     <>
       <div
-        className={`fixed inset-0 z-[60] drawer-backdrop transition-opacity duration-200 lg:hidden ${
+        className={`fixed inset-0 z-[60] lg:hidden transition-opacity duration-200 ${
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
+        style={{ background: "rgba(0,0,0,0.55)" }}
         onClick={onClose}
         aria-hidden={!isOpen}
       />
 
       <aside
-        className={`fixed top-0 right-0 z-[70] h-dvh w-[min(20rem,88vw)] flex flex-col border-l border-white/10 bg-[#0e0e12] shadow-[-12px_0_40px_rgba(0,0,0,0.45)] transition-transform duration-250 ease-out lg:hidden ${
+        className={`fixed top-0 right-0 z-[70] h-dvh w-[min(20rem,82vw)] flex flex-col bg-[#0e0e12] border-l border-white/[0.07] shadow-[-8px_0_32px_rgba(0,0,0,0.4)] transition-transform duration-[240ms] ease-out lg:hidden ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
         role="dialog"
         aria-modal="true"
-        aria-label="منوی اصلی"
+        aria-label="منوی ناوبری"
         aria-hidden={!isOpen}
       >
-        <div className="flex items-center justify-between gap-3 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-4 border-b border-white/8">
+        <div className="flex items-center justify-between gap-3 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 border-b border-white/[0.06]">
           <button
+            ref={closeRef}
             type="button"
             onClick={onClose}
-            className="min-w-11 min-h-11 inline-flex items-center justify-center rounded-xl hover:bg-white/5"
+            className="min-w-11 min-h-11 inline-flex items-center justify-center rounded-xl hover:bg-white/5 transition-colors"
             aria-label="بستن منو"
           >
-            <X className="w-5 h-5" aria-hidden />
+            <X className="w-5 h-5 text-white/80" aria-hidden />
           </button>
-          <div className="text-right min-w-0">
-            <p className="text-sm font-bold text-white truncate">{displayName || "کاربر فیتوپیا"}</p>
-            <p className="text-[11px] text-white/45">عضو فیتوپیا</p>
-          </div>
-          <div className="min-w-11 min-h-11 rounded-2xl bg-primary-container/15 border border-primary-container/30 flex items-center justify-center">
+          <span className="text-sm font-extrabold tracking-wide text-white">FITOPIA</span>
+        </div>
+
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-white/[0.06]">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-container/15 border border-primary-container/30">
             <User className="w-5 h-5 text-primary" aria-hidden />
+          </div>
+          <div className="min-w-0 text-right flex-1">
+            <p className="text-sm font-bold text-white truncate">{displayName || "کاربر فیتوپیا"}</p>
+            <p className="text-[11px] text-white/40">عضو فیتوپیا</p>
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1" aria-label="لینک‌های اپ">
-          {primaryLinks.map(({ id, label, icon: Icon, path }) => {
-            const active = isActive(path);
+        <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-0.5" aria-label="لینک‌ها">
+          {primary.map(({ id, label, icon: Icon, path }) => {
+            const on = active(path);
             return (
               <Link
                 key={id}
                 to={path}
                 onClick={onClose}
-                className={`flex items-center justify-end gap-3 rounded-xl px-3 min-h-12 no-underline transition-colors ${
-                  active
-                    ? "bg-primary-container/15 text-primary"
-                    : "text-white/80 hover:bg-white/5"
+                className={`flex items-center justify-end gap-3 rounded-xl px-3 min-h-12 no-underline transition-colors duration-150 ${
+                  on
+                    ? "bg-primary-container/12 text-[#FF8A4C]"
+                    : "text-white/75 hover:bg-white/[0.04]"
                 }`}
-                aria-current={active ? "page" : undefined}
+                aria-current={on ? "page" : undefined}
               >
-                <span className="text-sm font-semibold">{label}</span>
-                <Icon size={18} strokeWidth={active ? 2 : 1.6} aria-hidden />
+                <span className="text-[13px] font-semibold">{label}</span>
+                <Icon size={20} strokeWidth={on ? 2.05 : 1.55} aria-hidden />
               </Link>
             );
           })}
 
-          <div className="my-3 border-t border-white/8" />
+          <div className="my-2.5 mx-2 border-t border-white/[0.06]" />
 
-          {secondaryLinks.map(({ id, label, icon: Icon, path }) => (
+          {secondary.map(({ id, label, icon: Icon, path }) => (
             <Link
               key={id}
               to={path}
               onClick={onClose}
-              className="flex items-center justify-end gap-3 rounded-xl px-3 min-h-12 text-white/70 hover:bg-white/5 no-underline"
+              className="flex items-center justify-end gap-3 rounded-xl px-3 min-h-12 text-white/55 hover:bg-white/[0.04] no-underline"
             >
-              <span className="text-sm font-medium">{label}</span>
-              <Icon size={18} strokeWidth={1.6} aria-hidden />
+              <span className="text-[13px] font-medium">{label}</span>
+              <Icon size={20} strokeWidth={1.55} aria-hidden />
             </Link>
           ))}
         </nav>
 
-        <div className="p-3 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-white/8">
+        <div className="p-2.5 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-white/[0.06]">
           <button
             type="button"
             onClick={handleLogout}
-            className="w-full flex items-center justify-end gap-3 rounded-xl px-3 min-h-12 text-red-300 hover:bg-red-500/10 transition-colors"
+            className="w-full flex items-center justify-end gap-3 rounded-xl px-3 min-h-12 text-red-300/90 hover:bg-red-500/10 transition-colors"
           >
-            <span className="text-sm font-semibold">خروج از حساب</span>
+            <span className="text-[13px] font-semibold">خروج از حساب</span>
             <LogOut size={18} aria-hidden />
           </button>
         </div>
