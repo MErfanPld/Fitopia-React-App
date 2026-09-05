@@ -20,6 +20,7 @@ export function Header() {
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -30,18 +31,31 @@ export function Header() {
   }, []);
 
   useEffect(() => {
-    if (!sidebarOpen) return;
+    if (!sidebarOpen) {
+      document.documentElement.classList.remove("drawer-open");
+      document.body.classList.remove("drawer-open");
+      return;
+    }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setSidebarOpen(false);
     };
     document.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    document.documentElement.classList.add("drawer-open");
+    document.body.classList.add("drawer-open");
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
+      document.documentElement.classList.remove("drawer-open");
+      document.body.classList.remove("drawer-open");
+      menuBtnRef.current?.focus();
     };
   }, [sidebarOpen]);
+
+  useEffect(() => {
+    return () => {
+      document.documentElement.classList.remove("drawer-open");
+      document.body.classList.remove("drawer-open");
+    };
+  }, []);
 
   const handleProfileClick = () => {
     setOpen(false);
@@ -69,24 +83,25 @@ export function Header() {
         <div className="home-shell home-pad pt-[max(0.75rem,env(safe-area-inset-top))] pb-2">
           <div className="flex items-start gap-3">
             <button
+              ref={menuBtnRef}
               type="button"
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden mt-0.5 min-w-11 min-h-11 inline-flex items-center justify-center rounded-2xl bg-white/[0.04] border border-white/8 hover:bg-white/[0.07] transition-colors"
+              className="md:hidden mt-0.5 min-w-11 min-h-11 inline-flex items-center justify-center rounded-2xl bg-white/[0.04] border border-white/8 hover:bg-white/[0.07] transition-colors"
               aria-label="باز کردن منو"
               aria-expanded={sidebarOpen}
             >
-              <Menu className="w-5 h-5 text-on-surface" aria-hidden />
+              <Menu className="w-5 h-5 text-white" aria-hidden />
             </button>
 
             <div className="flex-1 min-w-0 text-right">
-              <p className="text-[11px] sm:text-xs font-medium text-white/55">
+              <p className="text-[11px] sm:text-xs font-medium text-white/50">
                 {greetingByHour()} 👋
               </p>
-              <h1 className="mt-0.5 text-[1.05rem] sm:text-xl font-extrabold text-white truncate leading-tight tracking-tight">
+              <h1 className="mt-0.5 text-[clamp(1.05rem,4.5vw,1.35rem)] font-extrabold text-white truncate leading-tight tracking-tight">
                 {name}
               </h1>
-              <p className="mt-1 text-[11px] sm:text-xs text-white/50 leading-relaxed">
-                آماده‌ای برای تمرین امروز؟
+              <p className="mt-1 text-[11px] sm:text-xs text-white/45 leading-relaxed line-clamp-1">
+                آماده‌ای تمرین امروزت رو شروع کنی؟
               </p>
             </div>
 
@@ -94,7 +109,7 @@ export function Header() {
               <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
-                className="min-w-11 min-h-11 rounded-2xl bg-gradient-to-br from-primary-container/30 to-white/5 border border-primary-container/35 inline-flex items-center justify-center hover:border-primary-container/60 transition-colors"
+                className="min-w-11 min-h-11 rounded-2xl bg-gradient-to-br from-primary-container/25 to-white/5 border border-primary-container/30 inline-flex items-center justify-center hover:border-primary-container/55 transition-colors"
                 aria-label="منوی کاربر"
                 aria-expanded={open}
                 aria-haspopup="menu"
@@ -111,20 +126,20 @@ export function Header() {
                     type="button"
                     role="menuitem"
                     onClick={handleProfileClick}
-                    className="w-full flex items-center justify-end gap-2.5 px-4 py-3.5 text-sm text-on-surface hover:bg-white/5 transition-colors"
+                    className="w-full flex items-center justify-end gap-2.5 px-4 py-3.5 text-sm text-white hover:bg-white/5"
                   >
                     پروفایل
-                    <User className="w-4 h-4 text-white/50" aria-hidden />
+                    <User className="w-4 h-4 text-white/45" aria-hidden />
                   </button>
                   <button
                     type="button"
                     role="menuitem"
                     onClick={handleLogoutClick}
                     disabled={loading}
-                    className="w-full flex items-center justify-end gap-2.5 px-4 py-3.5 text-sm text-on-surface hover:bg-white/5 border-t border-white/8 disabled:opacity-50"
+                    className="w-full flex items-center justify-end gap-2.5 px-4 py-3.5 text-sm text-white hover:bg-white/5 border-t border-white/8 disabled:opacity-50"
                   >
                     {loading ? "در حال خروج..." : "خروج"}
-                    <LogOut className="w-4 h-4 text-white/50" aria-hidden />
+                    <LogOut className="w-4 h-4 text-white/45" aria-hidden />
                   </button>
                 </div>
               )}
