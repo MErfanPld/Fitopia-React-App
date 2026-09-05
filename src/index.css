@@ -63,7 +63,13 @@
 
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
-  html { -webkit-tap-highlight-color: transparent; }
+  html {
+    -webkit-tap-highlight-color: transparent;
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
   html, body, #root {
     font-family: "Vazirmatn", "Inter", system-ui, -apple-system, sans-serif;
     min-height: 100%;
@@ -73,9 +79,22 @@
     background-color: #07070a;
     color: var(--color-on-surface);
     overflow-x: hidden;
+    overflow-y: auto;
     min-height: 100dvh;
+    height: auto;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: auto;
+  }
+  #root {
+    min-height: 100dvh;
+    height: auto;
+    overflow: visible;
+  }
+  html.drawer-open,
+  body.drawer-open {
+    overflow: hidden !important;
+    touch-action: none;
   }
   button, input, textarea, select { font: inherit; }
   :focus-visible { outline: 2px solid #ff6a00; outline-offset: 2px; }
