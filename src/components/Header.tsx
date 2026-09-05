@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Menu, User, LogOut } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import SidebarMenu from "./SidebarMenu";
 
 function greetingByHour(): string {
@@ -13,9 +13,17 @@ function greetingByHour(): string {
   return "شب بخیر";
 }
 
+function clearScrollLock() {
+  document.documentElement.classList.remove("drawer-open");
+  document.body.classList.remove("drawer-open");
+  document.body.style.overflow = "";
+  document.documentElement.style.overflow = "";
+}
+
 export function Header() {
   const { logout, displayName } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -30,31 +38,26 @@ export function Header() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Close drawer + clear any stuck lock on route change
   useEffect(() => {
-    if (!sidebarOpen) {
-      document.documentElement.classList.remove("drawer-open");
-      document.body.classList.remove("drawer-open");
-      return;
-    }
+    setSidebarOpen(false);
+    clearScrollLock();
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!sidebarOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setSidebarOpen(false);
     };
     document.addEventListener("keydown", onKey);
-    document.documentElement.classList.add("drawer-open");
-    document.body.classList.add("drawer-open");
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.documentElement.classList.remove("drawer-open");
-      document.body.classList.remove("drawer-open");
       menuBtnRef.current?.focus();
     };
   }, [sidebarOpen]);
 
   useEffect(() => {
-    return () => {
-      document.documentElement.classList.remove("drawer-open");
-      document.body.classList.remove("drawer-open");
-    };
+    return () => clearScrollLock();
   }, []);
 
   const handleProfileClick = () => {
@@ -126,20 +129,20 @@ export function Header() {
                     type="button"
                     role="menuitem"
                     onClick={handleProfileClick}
-                    className="w-full flex items-center justify-end gap-2.5 px-4 py-3.5 text-sm text-white hover:bg-white/5"
+                    className="w-full flex items-center gap-2 px-4 py-3 text-sm text-white/85 hover:bg-white/[0.05] text-right"
                   >
+                    <User size={16} aria-hidden />
                     پروفایل
-                    <User className="w-4 h-4 text-white/45" aria-hidden />
                   </button>
                   <button
                     type="button"
                     role="menuitem"
                     onClick={handleLogoutClick}
                     disabled={loading}
-                    className="w-full flex items-center justify-end gap-2.5 px-4 py-3.5 text-sm text-white hover:bg-white/5 border-t border-white/8 disabled:opacity-50"
+                    className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-300/90 hover:bg-red-500/10 text-right border-t border-white/[0.06]"
                   >
+                    <LogOut size={16} aria-hidden />
                     {loading ? "در حال خروج..." : "خروج"}
-                    <LogOut className="w-4 h-4 text-white/45" aria-hidden />
                   </button>
                 </div>
               )}
