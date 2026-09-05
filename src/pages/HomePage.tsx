@@ -1,11 +1,14 @@
 /**
- * Fitopia Home — premium fitness shell v2
+ * Fitopia Home — premium member experience
+ * Hierarchy: Header → Membership → Stats → Actions → Discovery
  */
 
 import { useEffect } from "react";
 import { Header } from "../components/Header";
 import PromoSlider from "../components/PromoSlider";
 import { PWAInstallButton } from "../components/PWAInstallButton";
+import { MembershipHero } from "../components/home/MembershipHero";
+import { QuickStats } from "../components/home/QuickStats";
 import { QuickActions } from "../components/QuickActions";
 import { CategorySlider } from "../components/CategorySlider";
 import { PopularGyms } from "../components/PopularGyms";
@@ -21,16 +24,18 @@ export function HomePage() {
     <div className="min-h-dvh bg-[#07070A] text-right home-with-rail">
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-x-0 top-0 h-56 bg-[radial-gradient(ellipse_at_top,_rgba(255,106,0,0.12),_transparent_60%)]"
+        className="pointer-events-none fixed inset-x-0 top-0 h-48 bg-[radial-gradient(ellipse_at_top,_rgba(255,106,0,0.1),_transparent_65%)]"
       />
 
       <Header />
 
-      <main className="relative z-10 home-shell home-pad pb-[calc(5.25rem+env(safe-area-inset-bottom))] lg:pb-10">
-        <div className="flex flex-col gap-6 sm:gap-7 md:gap-8 max-w-3xl lg:max-w-4xl mx-auto">
+      <main className="relative z-10 home-shell home-pad pb-[calc(5.25rem+env(safe-area-inset-bottom))] lg:pb-12">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 sm:gap-7 lg:max-w-4xl">
+          <MembershipHero />
+          <QuickStats />
+          <QuickActions />
           <PromoSlider />
           <PWAInstallButton />
-          <QuickActions />
           <CategorySlider />
           <PopularGyms />
           <NearbyGymsMap />
