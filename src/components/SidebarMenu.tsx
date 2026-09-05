@@ -1,5 +1,7 @@
 /**
  * Mobile navigation drawer only (RTL: slides from right).
+ * Desktop uses BottomNavigation → DesktopNavRail.
+ * Sole owner of body scroll-lock via .drawer-open.
  */
 
 import { FC, useEffect, useRef } from "react";
@@ -30,7 +32,12 @@ const primary = [
 ] as const;
 
 const secondary = [
-  { id: "history", label: "تاریخچه اشتراک", icon: History, path: "/subscriptions/history" },
+  {
+    id: "history",
+    label: "تاریخچه اشتراک",
+    icon: History,
+    path: "/subscriptions/history",
+  },
 ] as const;
 
 const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
@@ -40,7 +47,13 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
   const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      document.documentElement.classList.remove("drawer-open");
+      document.body.classList.remove("drawer-open");
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      return;
+    }
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -55,6 +68,8 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
       document.removeEventListener("keydown", onKey);
       document.documentElement.classList.remove("drawer-open");
       document.body.classList.remove("drawer-open");
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
     };
   }, [isOpen, onClose]);
 
@@ -97,7 +112,9 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
           >
             <X className="w-5 h-5 text-white/80" aria-hidden />
           </button>
-          <span className="text-sm font-extrabold tracking-wide text-white">FITOPIA</span>
+          <span className="text-sm font-extrabold tracking-wide text-white">
+            FITOPIA
+          </span>
         </div>
 
         <div className="flex items-center gap-3 px-4 py-4 border-b border-white/[0.06]">
@@ -105,12 +122,17 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
             <User className="w-5 h-5 text-primary" aria-hidden />
           </div>
           <div className="min-w-0 text-right flex-1">
-            <p className="text-sm font-bold text-white truncate">{displayName || "کاربر فیتوپیا"}</p>
+            <p className="text-sm font-bold text-white truncate">
+              {displayName || "کاربر فیتوپیا"}
+            </p>
             <p className="text-[11px] text-white/40">عضو فیتوپیا</p>
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-0.5" aria-label="لینک‌ها">
+        <nav
+          className="flex-1 overflow-y-auto px-2.5 py-3 space-y-0.5"
+          aria-label="لینک‌ها"
+        >
           {primary.map(({ id, label, icon: Icon, path }) => {
             const on = active(path);
             return (
@@ -153,7 +175,7 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
             className="w-full flex items-center justify-end gap-3 rounded-xl px-3 min-h-12 text-red-300/90 hover:bg-red-500/10 transition-colors"
           >
             <span className="text-[13px] font-semibold">خروج از حساب</span>
-            <LogOut size={18} aria-hidden />
+            <LogOut size={18} strokeWidth={1.7} aria-hidden />
           </button>
         </div>
       </aside>
