@@ -29,7 +29,7 @@ export function HomePage() {
 
       <Header />
 
-      <main className="relative z-10 home-shell home-pad pb-[calc(5.25rem+env(safe-area-inset-bottom))] lg:pb-12">
+      <main className="relative z-10 home-shell home-pad pb-[calc(6.75rem+env(safe-area-inset-bottom))] lg:pb-12">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 sm:gap-7 lg:max-w-4xl">
           <MembershipHero />
           <QuickStats />
