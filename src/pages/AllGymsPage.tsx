@@ -1,17 +1,23 @@
 /**
- * @file AllGymsPage.tsx
- * @description Complete gym listing page with filtering, search, and API integration
- * Displays all gyms from the API with categories, sorting, and grid layout
+ * All Gyms — fitness marketplace discovery
+ * Hierarchy: Header → Search → Sort chips → Results → Grid → Nav
+ * Real API only: /gym/ client filter + sort (popular | name | newest)
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ArrowRight,
+  Search,
+  X,
+  MapPinned,
+  AlertCircle,
+  RefreshCw,
+  Building2,
+} from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Header } from "../components/Header";
 import { BottomNavigation } from "../components/BottomNavigation";
-import { ShaderBackground } from "../components/ShaderBackground";
-import { ParticleOverlay } from "../components/ParticleOverlay";
-import { ArrowLeft, Search, Filter, Loader, AlertCircle } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { GymListCard } from "../components/GymListCard";
+import { GymCard } from "../components/GymCard";
 import api from "../services/api";
 
 export interface Gym {
@@ -36,176 +42,318 @@ export interface Gym {
 }
 
 type SortOption = "popular" | "name" | "newest";
+type ChipFilter = "all" | "popular_only";
+
+const SORT_OPTIONS: { id: SortOption; label: string }[] = [
+  { id: "popular", label: "محبوب‌ترین" },
+  { id: "name", label: "الفبایی" },
+  { id: "newest", label: "جدیدترین" },
+];
+
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebounced(value), delayMs);
+    return () => window.clearTimeout(t);
+  }, [value, delayMs]);
+  return debounced;
+}
+
+function GymCardSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121216]" aria-hidden>
+      <div className="skeleton aspect-[4/3] w-full rounded-none" />
+      <div className="space-y-2 p-3">
+        <div className="skeleton h-4 w-3/4 rounded" />
+        <div className="skeleton h-3 w-1/2 rounded" />
+      </div>
+    </div>
+  );
+}
 
 export function AllGymsPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [gyms, setGyms] = useState<Gym[]>([]);
-  const [filteredGyms, setFilteredGyms] = useState<Gym[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get("q") || "");
   const [sortBy, setSortBy] = useState<SortOption>("popular");
-  const [showFilters, setShowFilters] = useState(false);
+  const [chip, setChip] = useState<ChipFilter>("all");
+
+  const debouncedSearch = useDebouncedValue(searchTerm, 280);
 
   useEffect(() => {
-    document.title = "FITOPIA | تمام باشگاه‌ها";
-    loadGyms();
+    document.title = "FITOPIA | باشگاه‌ها";
   }, []);
 
   useEffect(() => {
-    applyFilters();
-  }, [gyms, searchTerm, sortBy]);
+    const next = new URLSearchParams(searchParams);
+    if (debouncedSearch.trim()) next.set("q", debouncedSearch.trim());
+    else next.delete("q");
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
 
-  const loadGyms = async () => {
+  const loadGyms = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await api.get<Gym[]>("/gym/");
-      console.log("📤 Gyms loaded:", data);
-      setGyms(data || []);
-    } catch (err: any) {
-      console.error("❌ Error loading gyms:", err);
-      setError(err.message || "خطا در بارگذاری باشگاه‌ها");
+      setGyms(Array.isArray(data) ? data : []);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "خطا در بارگذاری باشگاه‌ها";
+      setError(msg);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const applyFilters = () => {
-    let filtered = [...gyms];
+  useEffect(() => {
+    loadGyms();
+  }, [loadGyms]);
 
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (gym) =>
-          gym.name.toLowerCase().includes(term) ||
-          gym.address.toLowerCase().includes(term)
+  const filteredGyms = useMemo(() => {
+    let list = [...gyms];
+
+    if (chip === "popular_only") {
+      list = list.filter((g) => g.is_popular || (g.popularity_score ?? 0) > 0);
+    }
+
+    const term = debouncedSearch.trim().toLowerCase();
+    if (term) {
+      list = list.filter(
+        (g) =>
+          g.name?.toLowerCase().includes(term) ||
+          g.address?.toLowerCase().includes(term),
       );
     }
 
     if (sortBy === "popular") {
-      filtered.sort((a, b) => b.popularity_score - a.popularity_score);
+      list.sort(
+        (a, b) => (b.popularity_score ?? 0) - (a.popularity_score ?? 0),
+      );
     } else if (sortBy === "name") {
-      filtered.sort((a, b) => a.name.localeCompare(b.name, "fa-IR"));
-    } else if (sortBy === "newest") {
-      filtered.sort((a, b) => b.id - a.id);
+      list.sort((a, b) => (a.name || "").localeCompare(b.name || "", "fa-IR"));
+    } else {
+      list.sort((a, b) => b.id - a.id);
     }
 
-    setFilteredGyms(filtered);
+    return list;
+  }, [gyms, debouncedSearch, sortBy, chip]);
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSortBy("popular");
+    setChip("all");
   };
 
+  const hasActiveFilters =
+    Boolean(searchTerm.trim()) || sortBy !== "popular" || chip !== "all";
+
   return (
-    <>
-      <ShaderBackground />
-      <ParticleOverlay />
+    <div className="min-h-dvh bg-[#07070A] text-right home-with-rail">
       <Header />
 
-      <main className="relative z-10 pt-24 pb-36 px-4 md:px-8 max-w-7xl mx-auto w-full select-none text-right">
-        <div className="flex items-center gap-3 mb-8">
-          <button
-            onClick={() => navigate("/home")}
-            className="p-2 hover:bg-white/10 rounded-lg transition-all active:scale-95"
-            title="برگشت"
-          >
-            <ArrowLeft className="w-5 h-5 text-on-surface" />
-          </button>
-          <h1 className="text-2xl font-bold text-on-surface">تمام باشگاه‌ها</h1>
-        </div>
-
-        <div className="flex gap-3 mb-6 flex-col md:flex-row">
-          <div className="flex-1 relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant/50" />
-            <input
-              type="text"
-              placeholder="جستجو در نام یا آدرس باشگاه..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-surface-container/50 border border-white/10 rounded-xl px-4 py-3 pr-10 text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:border-primary/50 transition-colors"
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="bg-surface-container/50 border border-white/10 rounded-xl px-4 py-3 text-on-surface focus:outline-none focus:border-primary/50 transition-colors font-medium"
-            >
-              <option value="popular">محبوب‌ترین</option>
-              <option value="name">الفبایی</option>
-              <option value="newest">جدیدترین</option>
-            </select>
-
+      <main className="relative z-10 home-shell home-pad pb-[calc(6.75rem+env(safe-area-inset-bottom))] md:pb-12">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 sm:gap-6 lg:max-w-4xl xl:max-w-6xl">
+          <header className="flex items-start gap-3 pt-1">
             <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 bg-primary/10 border border-primary/30 text-primary rounded-xl px-4 py-3 hover:bg-primary/20 transition-colors font-medium"
+              type="button"
+              onClick={() => navigate("/home")}
+              className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.07] transition-colors"
+              aria-label="بازگشت به خانه"
             >
-              <Filter size={18} />
-              <span>فیلتر</span>
+              <ArrowRight size={20} strokeWidth={1.85} aria-hidden />
             </button>
-          </div>
-        </div>
-
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader className="w-8 h-8 animate-spin text-primary mb-4" />
-            <p className="text-on-surface-variant">درحال بارگذاری باشگاه‌ها...</p>
-          </div>
-        )}
-
-        {error && !loading && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-center gap-3 mb-6">
-            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-red-300 font-medium">{error}</p>
+            <div className="min-w-0 flex-1 text-right">
+              <h1 className="text-[clamp(1.15rem,4.5vw,1.4rem)] font-extrabold text-white leading-tight tracking-tight">
+                باشگاه‌ها
+              </h1>
+              <p className="mt-0.5 text-[12px] text-white/45 leading-relaxed">
+                باشگاه مناسب خودت را پیدا کن
+              </p>
             </div>
             <button
-              onClick={loadGyms}
-              className="text-sm px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-colors font-medium"
+              type="button"
+              onClick={() => navigate("/gym-map")}
+              className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-[#FF8A4C] hover:bg-white/[0.07] transition-colors"
+              aria-label="نقشه باشگاه‌ها"
             >
-              تلاش مجدد
+              <MapPinned size={20} strokeWidth={1.85} aria-hidden />
             </button>
-          </div>
-        )}
+          </header>
 
-        {!loading && filteredGyms.length === 0 && !error && (
-          <div className="text-center py-20">
-            <p className="text-on-surface-variant text-lg mb-4">
-              {searchTerm ? "باشگاهی با این مشخصات یافت نشد" : "هیچ باشگاهی دسترس نیست"}
-            </p>
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm("")}
-                className="text-primary font-medium hover:underline"
-              >
-                پاک کردن جستجو
-              </button>
-            )}
-          </div>
-        )}
-
-        {!loading && filteredGyms.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredGyms.map((gym) => (
-              <GymListCard
-                key={gym.id}
-                gym={gym}
-                onClick={() => navigate(`/gym/${gym.id}`)}
+          <form
+            role="search"
+            aria-label="جستجوی باشگاه"
+            onSubmit={(e) => e.preventDefault()}
+            className="w-full"
+          >
+            <label className="sr-only" htmlFor="all-gyms-search">
+              جستجو
+            </label>
+            <div className="relative flex items-center">
+              <Search
+                size={20}
+                strokeWidth={1.85}
+                className="pointer-events-none absolute end-4 z-10 text-white/40"
+                aria-hidden
               />
+              <input
+                id="all-gyms-search"
+                type="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="جستجوی نام باشگاه یا آدرس..."
+                enterKeyHint="search"
+                autoComplete="off"
+                className="w-full min-h-[3.25rem] rounded-2xl border border-white/[0.09] bg-[#121216] pe-12 ps-11 text-[0.9375rem] text-white placeholder:text-white/35 outline-none transition-[border-color,box-shadow] focus:border-[#FF6A00]/55 focus:shadow-[0_0_0_3px_rgba(255,106,0,0.12)]"
+              />
+              {searchTerm ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute start-3 flex h-8 w-8 items-center justify-center rounded-full text-white/45 hover:text-white/80 hover:bg-white/[0.06]"
+                  aria-label="پاک کردن جستجو"
+                >
+                  <X size={16} aria-hidden />
+                </button>
+              ) : null}
+            </div>
+          </form>
+
+          <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-0.5 -mx-0.5 px-0.5">
+            <button
+              type="button"
+              onClick={() => setChip("all")}
+              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 min-h-9 text-xs font-semibold border transition-colors ${
+                chip === "all"
+                  ? "bg-[#FF6A00]/15 border-[#FF6A00]/45 text-[#FF8A4C]"
+                  : "bg-white/[0.04] border-white/10 text-white/75"
+              }`}
+            >
+              همه
+            </button>
+            <button
+              type="button"
+              onClick={() => setChip("popular_only")}
+              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 min-h-9 text-xs font-semibold border transition-colors ${
+                chip === "popular_only"
+                  ? "bg-[#FF6A00]/15 border-[#FF6A00]/45 text-[#FF8A4C]"
+                  : "bg-white/[0.04] border-white/10 text-white/75"
+              }`}
+            >
+              محبوب
+            </button>
+            <span className="mx-0.5 w-px shrink-0 self-center h-5 bg-white/10" aria-hidden />
+            {SORT_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setSortBy(opt.id)}
+                className={`shrink-0 whitespace-nowrap rounded-full px-3.5 min-h-9 text-xs font-semibold border transition-colors ${
+                  sortBy === opt.id
+                    ? "bg-[#FF6A00]/15 border-[#FF6A00]/45 text-[#FF8A4C]"
+                    : "bg-white/[0.04] border-white/10 text-white/75"
+                }`}
+              >
+                {opt.label}
+              </button>
             ))}
           </div>
-        )}
 
-        {!loading && filteredGyms.length > 0 && (
-          <div className="mt-8 text-center text-on-surface-variant text-sm">
-            <p>
-              {filteredGyms.length} از {gyms.length} باشگاه
-            </p>
-          </div>
-        )}
+          {!loading && !error && (
+            <div className="flex items-center justify-between gap-3 text-[12px]">
+              <p className="text-white/50">
+                {filteredGyms.length > 0
+                  ? `${filteredGyms.length.toLocaleString("fa-IR")} باشگاه پیدا شد`
+                  : "نتیجه‌ای نیست"}
+              </p>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="text-[#FF8A4C] font-semibold min-h-9 px-1"
+                >
+                  پاک کردن فیلترها
+                </button>
+              )}
+            </div>
+          )}
+
+          {error && !loading && (
+            <div
+              role="alert"
+              className="rounded-2xl border border-red-500/25 bg-red-500/10 p-5 text-center space-y-3"
+            >
+              <AlertCircle className="mx-auto h-8 w-8 text-red-300" aria-hidden />
+              <p className="text-sm font-semibold text-red-200">
+                دریافت باشگاه‌ها با مشکل مواجه شد
+              </p>
+              <p className="text-xs text-red-200/70">{error}</p>
+              <button
+                type="button"
+                onClick={loadGyms}
+                className="btn btn-secondary mx-auto min-h-11 px-5 gap-2 text-sm"
+              >
+                <RefreshCw size={16} aria-hidden />
+                تلاش مجدد
+              </button>
+            </div>
+          )}
+
+          {loading && (
+            <div
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+              aria-busy="true"
+              aria-label="در حال بارگذاری"
+            >
+              {Array.from({ length: 6 }).map((_, i) => (
+                <GymCardSkeleton key={i} />
+              ))}
+            </div>
+          )}
+
+          {!loading && !error && filteredGyms.length === 0 && (
+            <div className="rounded-2xl border border-white/[0.08] bg-[#121216] px-5 py-12 text-center space-y-3">
+              <Building2
+                className="mx-auto h-10 w-10 text-white/30"
+                strokeWidth={1.5}
+                aria-hidden
+              />
+              <p className="text-base font-bold text-white">باشگاهی پیدا نشد</p>
+              <p className="text-sm text-white/50 leading-relaxed max-w-xs mx-auto">
+                عبارت جستجو یا فیلترها را تغییر دهید و دوباره امتحان کنید.
+              </p>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="btn btn-primary mx-auto mt-2 min-h-11 px-5 text-sm"
+                >
+                  پاک کردن فیلترها
+                </button>
+              )}
+            </div>
+          )}
+
+          {!loading && !error && filteredGyms.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredGyms.map((gym) => (
+                <GymCard
+                  key={gym.id}
+                  gym={gym}
+                  onClick={() => navigate(`/gym/${gym.id}`)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </main>
 
       <BottomNavigation />
-    </>
+    </div>
   );
 }
