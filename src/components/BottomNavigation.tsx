@@ -1,7 +1,8 @@
 /**
- * Fitopia navigation
- * - Mobile (<md): floating pill, Home centered, raised active circle
- * - Desktop/tablet (≥md): thin 64px rail at inline-start (RTL-aware)
+ * Fitopia navigation — premium fitness marketplace
+ * Mobile (<md): floating pill, HOME raised center
+ * Tablet/Desktop (≥md): thin 68px icon rail (RTL-aware)
+ * Routes and match logic preserved — UI only.
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -10,7 +11,7 @@ import {
   Compass,
   MapPinned,
   CreditCard,
-  CircleUser,
+  UserRound,
   PanelLeftClose,
   PanelLeftOpen,
   LogOut,
@@ -64,7 +65,7 @@ const primaryNav: NavItem[] = [
     id: "profile",
     to: "/profile",
     label: "پروفایل",
-    icon: CircleUser,
+    icon: UserRound,
     match: (p) => p === "/profile" || p.startsWith("/profile/"),
   },
 ];
@@ -73,21 +74,52 @@ function isActive(match: NavItem["match"], pathname: string) {
   return match(pathname);
 }
 
+/* ───────── Mobile floating pill ───────── */
+
 function MobileBottomNav() {
   const location = useLocation();
 
   return (
     <nav
       className="fixed inset-x-0 z-50 flex justify-center pointer-events-none md:hidden"
-      style={{ bottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+      style={{ bottom: "max(12px, env(safe-area-inset-bottom, 0px))" }}
       aria-label="منوی اصلی"
     >
       <div
-        className="pointer-events-auto relative flex items-center justify-between w-[min(calc(100vw-1.5rem),23.75rem)] h-[4.15rem] px-1.5 rounded-full border border-white/[0.08] bg-[rgba(20,20,24,0.96)] shadow-[0_8px_28px_rgba(0,0,0,0.4)]"
+        className="pointer-events-auto relative flex items-end justify-between w-[min(calc(100vw-1.5rem),23.75rem)] h-[4.25rem] px-1.5 pb-1.5 rounded-full border border-white/[0.07] bg-[rgba(18,18,22,0.94)] shadow-[0_10px_32px_rgba(0,0,0,0.45)] backdrop-blur-md"
         role="list"
       >
         {primaryNav.map(({ id, to, label, icon: Icon, match, primary }) => {
           const current = isActive(match, location.pathname);
+
+          if (primary) {
+            return (
+              <Link
+                key={id}
+                to={to}
+                role="listitem"
+                aria-label={label}
+                aria-current={current ? "page" : undefined}
+                className="relative flex flex-1 items-center justify-center min-h-12 min-w-0 no-underline outline-none focus-visible:ring-2 focus-visible:ring-[#FF6A00]/70 rounded-full"
+              >
+                <span
+                  className={`flex items-center justify-center rounded-full transition-all duration-200 ease-out motion-reduce:transition-none ${
+                    current
+                      ? "h-[3.35rem] w-[3.35rem] -translate-y-3.5 bg-[#FF6A00] text-white shadow-[0_6px_16px_rgba(255,106,0,0.28)]"
+                      : "h-11 w-11 -translate-y-2 bg-[#FF6A00]/90 text-white/95 shadow-[0_4px_12px_rgba(255,106,0,0.2)] active:scale-95"
+                  }`}
+                >
+                  <Icon
+                    size={current ? 24 : 22}
+                    strokeWidth={current ? 2.15 : 1.9}
+                    aria-hidden
+                  />
+                </span>
+                <span className="sr-only">{label}</span>
+              </Link>
+            );
+          }
+
           return (
             <Link
               key={id}
@@ -95,22 +127,28 @@ function MobileBottomNav() {
               role="listitem"
               aria-label={label}
               aria-current={current ? "page" : undefined}
-              className="relative flex flex-1 items-center justify-center min-h-12 min-w-0 no-underline rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#FF6A00]/80"
+              className="relative flex flex-1 flex-col items-center justify-center gap-0.5 min-h-12 min-w-0 no-underline rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#FF6A00]/60 py-1"
             >
               <span
-                className={`flex items-center justify-center rounded-full transition-all duration-200 ease-out motion-reduce:transition-none ${
+                className={`flex items-center justify-center h-9 w-9 rounded-full transition-colors duration-200 ease-out motion-reduce:transition-none ${
                   current
-                    ? "h-[3.25rem] w-[3.25rem] -translate-y-3 bg-[#FF6A00] text-white shadow-[0_6px_14px_rgba(255,106,0,0.32)]"
-                    : "h-11 w-11 text-[#8B8B92] active:opacity-70"
+                    ? "bg-[rgba(255,106,0,0.14)] text-[#FF6A00]"
+                    : "text-[#8B8B92] active:opacity-70"
                 }`}
               >
                 <Icon
-                  size={current || primary ? 22 : 20}
-                  strokeWidth={current ? 2.1 : 1.75}
+                  size={20}
+                  strokeWidth={current ? 2.05 : 1.7}
                   aria-hidden
                 />
               </span>
-              <span className="sr-only">{label}</span>
+              <span
+                className={`text-[10px] font-semibold leading-none tracking-tight transition-colors duration-200 ${
+                  current ? "text-[#FF6A00]" : "text-[#6E6E76]"
+                }`}
+              >
+                {label}
+              </span>
             </Link>
           );
         })}
@@ -119,12 +157,16 @@ function MobileBottomNav() {
   );
 }
 
+/* ───────── Desktop / tablet rail ───────── */
+
 function DesktopNavRail() {
   const location = useLocation();
   const navigate = useNavigate();
   const { displayName, logout } = useAuth();
   const [expanded, setExpanded] = useState(false);
-  const [tooltip, setTooltip] = useState<{ label: string; y: number } | null>(null);
+  const [tooltip, setTooltip] = useState<{ label: string; y: number } | null>(
+    null,
+  );
   const tipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const toggle = useCallback(() => setExpanded((v) => !v), []);
@@ -158,7 +200,7 @@ function DesktopNavRail() {
     tipTimer.current = setTimeout(() => {
       const rect = el.getBoundingClientRect();
       setTooltip({ label, y: rect.top + rect.height / 2 });
-    }, 160);
+    }, 140);
   };
 
   const hideTip = () => {
@@ -175,7 +217,7 @@ function DesktopNavRail() {
     <>
       <aside
         className={`hidden md:flex fixed top-0 z-40 h-dvh flex-col bg-[#0B0B0F] border-white/[0.05] transition-[width] duration-200 ease-out overflow-hidden motion-reduce:transition-none inset-inline-start-0 border-e ${
-          expanded ? "w-[220px]" : "w-[64px]"
+          expanded ? "w-[220px]" : "w-[68px]"
         }`}
         aria-label="ناوبری اصلی"
       >
@@ -185,11 +227,15 @@ function DesktopNavRail() {
           }`}
         >
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(255,106,0,0.14)]">
-            <span className="text-[10px] font-black tracking-tight text-[#FF6A00]">F</span>
+            <span className="text-[10px] font-black tracking-tight text-[#FF6A00]">
+              F
+            </span>
           </div>
           {expanded && (
             <>
-              <span className="text-[12px] font-extrabold text-white/90 tracking-wide">FITOPIA</span>
+              <span className="text-[12px] font-extrabold text-white/90 tracking-wide">
+                FITOPIA
+              </span>
               <button
                 type="button"
                 onClick={toggle}
@@ -221,7 +267,9 @@ function DesktopNavRail() {
             expanded ? "px-2" : "items-center px-0"
           }`}
         >
-          <div className={`flex flex-col gap-0.5 ${expanded ? "" : "items-center"}`}>
+          <div
+            className={`flex flex-col gap-0.5 ${expanded ? "" : "items-center"}`}
+          >
             {primaryNav.slice(0, 2).map((item) => (
               <RailLink
                 key={item.id}
@@ -245,7 +293,9 @@ function DesktopNavRail() {
             />
           </div>
 
-          <div className={`flex flex-col gap-0.5 ${expanded ? "" : "items-center"}`}>
+          <div
+            className={`flex flex-col gap-0.5 ${expanded ? "" : "items-center"}`}
+          >
             {primaryNav.slice(3).map((item) => (
               <RailLink
                 key={item.id}
@@ -287,11 +337,13 @@ function DesktopNavRail() {
               expanded ? "gap-2 px-2 min-h-9" : "h-8 w-8 justify-center"
             }`}
             aria-label={displayName || "پروفایل"}
-            onMouseEnter={(e) => showTip(displayName || "پروفایل", e.currentTarget)}
+            onMouseEnter={(e) =>
+              showTip(displayName || "پروفایل", e.currentTarget)
+            }
             onMouseLeave={hideTip}
           >
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.05] border border-white/[0.08] text-white/60">
-              <CircleUser size={14} strokeWidth={1.85} aria-hidden />
+              <UserRound size={14} strokeWidth={1.85} aria-hidden />
             </span>
             {expanded && (
               <span className="text-[12px] font-semibold text-white/70 truncate max-w-[7.5rem]">
@@ -317,7 +369,7 @@ function DesktopNavRail() {
           role="tooltip"
           className="hidden md:block fixed z-50 pointer-events-none px-2.5 py-1 rounded-md bg-[#16161c] border border-white/10 text-[11px] font-semibold text-white shadow-lg"
           style={{
-            insetInlineStart: "4.35rem",
+            insetInlineStart: "4.6rem",
             top: tooltip.y,
             transform: "translateY(-50%)",
           }}
@@ -355,27 +407,31 @@ function RailLink({
       onMouseEnter={(e) => onTip(item.label, e.currentTarget)}
       onMouseLeave={onTipHide}
       className={`relative flex items-center no-underline outline-none focus-visible:ring-2 focus-visible:ring-[#FF6A00]/50 rounded-xl transition-colors duration-150 ${
-        expanded ? "gap-2.5 min-h-9 w-full px-2.5" : "h-9 w-9 justify-center"
+        expanded ? "gap-2.5 min-h-10 w-full px-2.5" : "h-10 w-10 justify-center"
       } ${
         active
-          ? "bg-[rgba(255,106,0,0.12)] text-[#FF6A00]"
+          ? "bg-[rgba(255,106,0,0.14)] text-[#FF6A00]"
           : "text-[#7A7A82] hover:bg-white/[0.04] hover:text-white/85"
       }`}
     >
       {active && (
         <span
           aria-hidden
-          className="absolute inset-inline-start-0 top-1/2 -translate-y-1/2 h-3 w-[2px] rounded-full bg-[#FF6A00]"
+          className="absolute inset-inline-start-0 top-1/2 -translate-y-1/2 h-3.5 w-[2px] rounded-full bg-[#FF6A00]"
         />
       )}
       <Icon
-        size={emphasize || item.primary ? 20 : 18}
+        size={emphasize || item.primary ? 21 : 19}
         strokeWidth={active ? 2.05 : 1.75}
         className="shrink-0"
         aria-hidden
       />
       {expanded && (
-        <span className={`text-[12.5px] whitespace-nowrap ${active ? "font-bold" : "font-semibold"}`}>
+        <span
+          className={`text-[12.5px] whitespace-nowrap ${
+            active ? "font-bold" : "font-semibold"
+          }`}
+        >
           {item.label}
         </span>
       )}
