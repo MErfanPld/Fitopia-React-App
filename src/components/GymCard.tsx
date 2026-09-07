@@ -3,12 +3,20 @@
  */
 
 import { MapPin, Star } from "lucide-react";
-import type { Gym } from "../hooks/useGymAPI";
 
 const API_BASE = "https://fitopiaapi.pythonanywhere.com";
 
+/** Minimal fields required for marketplace card (list + detail payloads) */
+export type GymCardData = {
+  id: number;
+  name: string;
+  address?: string;
+  cover_image?: string | null;
+  popularity_score?: number | null;
+};
+
 interface GymCardProps {
-  gym: Gym;
+  gym: GymCardData;
   onClick?: () => void;
 }
 
