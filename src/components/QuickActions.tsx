@@ -1,41 +1,36 @@
-import { Map, Ticket, Award, Building2 } from "lucide-react";
+/**
+ * Compact discovery shortcuts — marketplace style, real routes only.
+ */
+
+import { Building2, MapPinned, CreditCard, Ticket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+const actions = [
+  { to: "/gym/all", label: "باشگاه‌ها", icon: Building2 },
+  { to: "/gym-map", label: "نقشه", icon: MapPinned },
+  { to: "/subscriptions", label: "اشتراک", icon: CreditCard },
+  { to: "/gym-access/tokens", label: "توکن‌ها", icon: Ticket },
+] as const;
 
 export function QuickActions() {
   const navigate = useNavigate();
 
   return (
-    <section aria-label="اقدامات اصلی" className="space-y-3">
-      <h2 className="section-title">اقدام بعدی</h2>
-
-      <button
-        type="button"
-        onClick={() => navigate("/gym-map")}
-        className="w-full text-right rounded-2xl border border-primary-container/30 bg-gradient-to-l from-primary-container/18 via-[#141418] to-[#121216] p-4 min-h-[5rem] flex items-center gap-3 active:scale-[0.99] transition-transform"
-      >
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-container text-[#1a0a00]">
-          <Map size={20} strokeWidth={2.1} aria-hidden />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-white">پیدا کردن باشگاه</p>
-          <p className="text-[11px] text-white/50 mt-0.5">نقشه و نزدیک‌ترین گزینه‌ها</p>
-        </div>
-      </button>
-
-      <div className="grid grid-cols-3 gap-2.5">
-        {[
-          { to: "/gym/all", label: "باشگاه‌ها", icon: Building2 },
-          { to: "/subscriptions", label: "اشتراک", icon: Award },
-          { to: "/gym-access/tokens", label: "توکن", icon: Ticket },
-        ].map(({ to, label, icon: Icon }) => (
+    <section aria-label="میانبرها" className="w-full">
+      <div className="grid grid-cols-4 gap-2 sm:gap-2.5">
+        {actions.map(({ to, label, icon: Icon }) => (
           <button
             key={to}
             type="button"
             onClick={() => navigate(to)}
-            className="rounded-2xl border border-white/8 bg-[#121216] p-3 min-h-[4.5rem] flex flex-col items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+            className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/[0.08] bg-[#121216] px-1.5 py-3 min-h-[4.25rem] active:scale-[0.97] transition-transform"
           >
-            <Icon size={18} className="text-primary" strokeWidth={1.85} aria-hidden />
-            <span className="text-[11px] font-semibold text-white/85 text-center">{label}</span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.05] text-[#FF8A4C]">
+              <Icon size={18} strokeWidth={1.9} aria-hidden />
+            </span>
+            <span className="text-[11px] font-semibold text-white/80 text-center leading-tight">
+              {label}
+            </span>
           </button>
         ))}
       </div>
