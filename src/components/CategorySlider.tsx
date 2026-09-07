@@ -35,7 +35,7 @@ export function CategorySlider({ onCategoryChange }: CategorySliderProps) {
 
   return (
     <section className="space-y-3" id="category-slider" aria-label="دسته‌بندی باشگاه‌ها">
-      <h2 className="section-title">کشف بر اساس رشته</h2>
+      <h2 className="section-title">فعالیت‌ها</h2>
       <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1 -mx-0.5 px-0.5">
         {categories.map((cat) => {
           const isActive = cat.id === activeCategory;
