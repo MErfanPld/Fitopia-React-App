@@ -10,7 +10,7 @@ import { BottomNavigation } from "../components/BottomNavigation";
 import { ShaderBackground } from "../components/ShaderBackground";
 import { ParticleOverlay } from "../components/ParticleOverlay";
 import { ArrowLeft, Search, Filter, Loader, AlertCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { GymListCard } from "../components/GymListCard";
 import api from "../services/api";
 
@@ -39,11 +39,12 @@ type SortOption = "popular" | "name" | "newest";
 
 export function AllGymsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [gyms, setGyms] = useState<Gym[]>([]);
   const [filteredGyms, setFilteredGyms] = useState<Gym[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get("q") || "");
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [showFilters, setShowFilters] = useState(false);
 
@@ -74,7 +75,6 @@ export function AllGymsPage() {
   const applyFilters = () => {
     let filtered = [...gyms];
 
-    // Search filter
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(
@@ -84,7 +84,6 @@ export function AllGymsPage() {
       );
     }
 
-    // Sort
     if (sortBy === "popular") {
       filtered.sort((a, b) => b.popularity_score - a.popularity_score);
     } else if (sortBy === "name") {
@@ -103,7 +102,6 @@ export function AllGymsPage() {
       <Header />
 
       <main className="relative z-10 pt-24 pb-36 px-4 md:px-8 max-w-7xl mx-auto w-full select-none text-right">
-        {/* Header */}
         <div className="flex items-center gap-3 mb-8">
           <button
             onClick={() => navigate("/home")}
@@ -115,9 +113,7 @@ export function AllGymsPage() {
           <h1 className="text-2xl font-bold text-on-surface">تمام باشگاه‌ها</h1>
         </div>
 
-        {/* Search and Filters Bar */}
         <div className="flex gap-3 mb-6 flex-col md:flex-row">
-          {/* Search Input */}
           <div className="flex-1 relative">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant/50" />
             <input
@@ -129,7 +125,6 @@ export function AllGymsPage() {
             />
           </div>
 
-          {/* Sort and Filter Buttons */}
           <div className="flex gap-2">
             <select
               value={sortBy}
@@ -151,7 +146,6 @@ export function AllGymsPage() {
           </div>
         </div>
 
-        {/* Loading State */}
         {loading && (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader className="w-8 h-8 animate-spin text-primary mb-4" />
@@ -159,7 +153,6 @@ export function AllGymsPage() {
           </div>
         )}
 
-        {/* Error State */}
         {error && !loading && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-center gap-3 mb-6">
             <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
@@ -175,7 +168,6 @@ export function AllGymsPage() {
           </div>
         )}
 
-        {/* Empty State */}
         {!loading && filteredGyms.length === 0 && !error && (
           <div className="text-center py-20">
             <p className="text-on-surface-variant text-lg mb-4">
@@ -192,7 +184,6 @@ export function AllGymsPage() {
           </div>
         )}
 
-        {/* Gyms Grid */}
         {!loading && filteredGyms.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredGyms.map((gym) => (
@@ -205,7 +196,6 @@ export function AllGymsPage() {
           </div>
         )}
 
-        {/* Results Count */}
         {!loading && filteredGyms.length > 0 && (
           <div className="mt-8 text-center text-on-surface-variant text-sm">
             <p>
