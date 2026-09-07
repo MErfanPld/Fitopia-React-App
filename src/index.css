@@ -261,7 +261,7 @@ img { max-width: 100%; height: auto; }
 
 @media (min-width: 768px) {
   html.has-nav-rail body {
-    padding-inline-start: 64px;
+    padding-inline-start: 68px;
   }
   html.has-nav-rail .home-with-rail {
     padding-inline-start: 0;
