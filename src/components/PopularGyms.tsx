@@ -17,11 +17,24 @@ export function PopularGyms({ onGymSelect }: PopularGymsProps) {
 
   if (loading) {
     return (
-      <section className="space-y-3" aria-busy="true">
-        <div className="skeleton h-4 w-32 rounded" />
+      <section className="space-y-3" aria-busy="true" aria-label="در حال بارگذاری باشگاه‌های محبوب">
+        <div className="flex items-center justify-between gap-2">
+          <div className="skeleton h-4 w-32 rounded" />
+          <div className="skeleton h-3 w-16 rounded" />
+        </div>
         <div className="flex gap-3 overflow-hidden">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="skeleton h-44 w-[min(70vw,16rem)] rounded-2xl shrink-0" />
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="shrink-0 w-[min(72vw,16.5rem)] sm:w-[15rem] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121216]"
+            >
+              <div className="skeleton aspect-[4/3] w-full rounded-none" />
+              <div className="space-y-2 p-3">
+                <div className="skeleton h-4 w-[75%] rounded ms-auto" />
+                <div className="skeleton h-3 w-full rounded" />
+                <div className="skeleton h-3 w-[55%] rounded ms-auto" />
+              </div>
+            </div>
           ))}
         </div>
       </section>
