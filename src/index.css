@@ -191,12 +191,44 @@
   background: rgba(24, 24, 29, 0.85); border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .skeleton {
-  background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
+  background: linear-gradient(
+    110deg,
+    rgba(255, 255, 255, 0.035) 0%,
+    rgba(255, 255, 255, 0.035) 35%,
+    rgba(255, 106, 0, 0.08) 50%,
+    rgba(255, 255, 255, 0.06) 55%,
+    rgba(255, 255, 255, 0.035) 70%,
+    rgba(255, 255, 255, 0.035) 100%
+  );
+  background-size: 220% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
   border-radius: 0.75rem;
 }
-@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@keyframes shimmer {
+  0% { background-position: 120% 0; }
+  100% { background-position: -120% 0; }
+}
+@keyframes fitopia-pulse {
+  0%, 100% { opacity: 0.45; transform: scale(0.92); }
+  50% { opacity: 1; transform: scale(1); }
+}
+@keyframes fitopia-spin {
+  to { transform: rotate(360deg); }
+}
+.fitopia-loader-ring {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 106, 0, 0.18);
+  border-top-color: #ff6a00;
+  animation: fitopia-spin 0.85s linear infinite;
+}
+.skeleton-stagger > *:nth-child(1) .skeleton { animation-delay: 0ms; }
+.skeleton-stagger > *:nth-child(2) .skeleton { animation-delay: 80ms; }
+.skeleton-stagger > *:nth-child(3) .skeleton { animation-delay: 160ms; }
+.skeleton-stagger > *:nth-child(4) .skeleton { animation-delay: 240ms; }
+.skeleton-stagger > *:nth-child(5) .skeleton { animation-delay: 320ms; }
+.skeleton-stagger > *:nth-child(6) .skeleton { animation-delay: 400ms; }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 .floating-brand { animation: float 4s ease-in-out infinite; }
 .material-symbols-outlined { font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24; }
