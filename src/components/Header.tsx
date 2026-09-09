@@ -20,7 +20,12 @@ function clearScrollLock() {
   document.documentElement.style.overflow = "";
 }
 
-export function Header() {
+type HeaderProps = {
+  /** Only Home shows greeting + user name block */
+  showGreeting?: boolean;
+};
+
+export function Header({ showGreeting = false }: HeaderProps) {
   const { logout, displayName } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,7 +43,6 @@ export function Header() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Close drawer + clear any stuck lock on route change
   useEffect(() => {
     setSidebarOpen(false);
     clearScrollLock();
@@ -84,31 +88,39 @@ export function Header() {
     <>
       <header className="relative z-40 w-full">
         <div className="home-shell home-pad pt-[max(0.75rem,env(safe-area-inset-top))] pb-2">
-          <div className="flex items-start gap-3">
+          <div
+            className={`flex gap-3 ${
+              showGreeting ? "items-start" : "items-center justify-between"
+            }`}
+          >
             <button
               ref={menuBtnRef}
               type="button"
               onClick={() => setSidebarOpen(true)}
-              className="md:hidden mt-0.5 min-w-11 min-h-11 inline-flex items-center justify-center rounded-2xl bg-white/[0.04] border border-white/8 hover:bg-white/[0.07] transition-colors"
+              className="md:hidden min-w-11 min-h-11 inline-flex items-center justify-center rounded-2xl bg-white/[0.04] border border-white/8 hover:bg-white/[0.07] transition-colors"
               aria-label="باز کردن منو"
               aria-expanded={sidebarOpen}
             >
               <Menu className="w-5 h-5 text-white" aria-hidden />
             </button>
 
-            <div className="flex-1 min-w-0 text-right">
-              <p className="text-[11px] sm:text-xs font-medium text-white/50">
-                {greetingByHour()} 👋
-              </p>
-              <h1 className="mt-0.5 text-[clamp(1.05rem,4.5vw,1.35rem)] font-extrabold text-white truncate leading-tight tracking-tight">
-                {name}
-              </h1>
-              <p className="mt-1 text-[11px] sm:text-xs text-white/45 leading-relaxed line-clamp-1">
-                آماده‌ای تمرین امروزت رو شروع کنی؟
-              </p>
-            </div>
+            {showGreeting ? (
+              <div className="flex-1 min-w-0 text-right">
+                <p className="text-[11px] sm:text-xs font-medium text-white/50">
+                  {greetingByHour()} 👋
+                </p>
+                <h1 className="mt-0.5 text-[clamp(1.05rem,4.5vw,1.35rem)] font-extrabold text-white truncate leading-tight tracking-tight">
+                  {name}
+                </h1>
+                <p className="mt-0.5 text-[11px] text-white/40 leading-relaxed line-clamp-1">
+                  باشگاه‌ها و فعالیت‌های نزدیکت
+                </p>
+              </div>
+            ) : (
+              <div className="flex-1 min-w-0" aria-hidden />
+            )}
 
-            <div className="relative mt-0.5" ref={ref}>
+            <div className="relative" ref={ref}>
               <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}

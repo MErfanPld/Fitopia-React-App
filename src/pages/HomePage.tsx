@@ -29,7 +29,7 @@ export function HomePage() {
         className="pointer-events-none fixed inset-x-0 top-0 h-40 bg-[radial-gradient(ellipse_at_top,_rgba(255,106,0,0.08),_transparent_60%)]"
       />
 
-      <Header />
+      <Header showGreeting />
 
       <main className="relative z-10 home-shell home-pad pb-[calc(6.75rem+env(safe-area-inset-bottom))] md:pb-12">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 sm:gap-6 lg:max-w-4xl xl:max-w-5xl">
