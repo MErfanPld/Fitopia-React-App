@@ -59,13 +59,44 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
   return debounced;
 }
 
-function GymCardSkeleton() {
+function GymCardSkeleton({ index = 0 }: { index?: number }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121216]" aria-hidden>
-      <div className="skeleton aspect-[4/3] w-full rounded-none" />
+    <div
+      className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121216]"
+      aria-hidden
+      style={{ animationDelay: `${index * 70}ms` }}
+    >
+      <div className="relative aspect-[4/3] overflow-hidden">
+        <div className="skeleton absolute inset-0 rounded-none" />
+        <div className="absolute top-2 start-2 skeleton h-5 w-14 rounded-full opacity-60" />
+        <div className="absolute top-2 end-2 skeleton h-5 w-10 rounded-full opacity-60" />
+      </div>
       <div className="space-y-2 p-3">
-        <div className="skeleton h-4 w-3/4 rounded" />
-        <div className="skeleton h-3 w-1/2 rounded" />
+        <div className="skeleton h-4 w-[78%] rounded-md ms-auto" />
+        <div className="skeleton h-3 w-full rounded-md" />
+        <div className="skeleton h-3 w-[62%] rounded-md ms-auto" />
+      </div>
+    </div>
+  );
+}
+
+function GymsLoadingState() {
+  return (
+    <div className="space-y-5" aria-busy="true" aria-live="polite" aria-label="در حال بارگذاری باشگاه‌ها">
+      <div className="flex flex-col items-center justify-center gap-3 py-2">
+        <div className="relative flex h-12 w-12 items-center justify-center">
+          <div className="fitopia-loader-ring" />
+          <span className="absolute h-2 w-2 rounded-full bg-primary" style={{ animation: "fitopia-pulse 1.2s ease-in-out infinite" }} />
+        </div>
+        <div className="text-center space-y-1">
+          <p className="text-sm font-semibold text-white/85">در حال بارگذاری باشگاه‌ها</p>
+          <p className="text-[11px] text-white/40">لطفاً چند لحظه صبر کنید…</p>
+        </div>
+      </div>
+      <div className="skeleton-stagger grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <GymCardSkeleton key={i} index={i} />
+        ))}
       </div>
     </div>
   );
@@ -118,119 +149,101 @@ export function AllGymsPage() {
     let list = [...gyms];
 
     if (chip === "popular_only") {
-      list = list.filter((g) => g.is_popular || (g.popularity_score ?? 0) > 0);
+      list = list.filter((g) => g.is_popular);
     }
 
-    const term = debouncedSearch.trim().toLowerCase();
-    if (term) {
-      list = list.filter(
-        (g) =>
-          g.name?.toLowerCase().includes(term) ||
-          g.address?.toLowerCase().includes(term),
-      );
+    const q = debouncedSearch.trim().toLowerCase();
+    if (q) {
+      list = list.filter((g) => {
+        const hay = `${g.name} ${g.address || ""} ${g.description || ""}`.toLowerCase();
+        return hay.includes(q);
+      });
     }
 
     if (sortBy === "popular") {
-      list.sort(
-        (a, b) => (b.popularity_score ?? 0) - (a.popularity_score ?? 0),
-      );
+      list.sort((a, b) => (b.popularity_score || 0) - (a.popularity_score || 0));
     } else if (sortBy === "name") {
-      list.sort((a, b) => (a.name || "").localeCompare(b.name || "", "fa-IR"));
-    } else {
+      list.sort((a, b) => a.name.localeCompare(b.name, "fa"));
+    } else if (sortBy === "newest") {
       list.sort((a, b) => b.id - a.id);
     }
 
     return list;
-  }, [gyms, debouncedSearch, sortBy, chip]);
+  }, [gyms, chip, debouncedSearch, sortBy]);
+
+  const hasActiveFilters =
+    Boolean(searchTerm.trim()) || chip !== "all" || sortBy !== "popular";
 
   const clearFilters = () => {
     setSearchTerm("");
-    setSortBy("popular");
     setChip("all");
+    setSortBy("popular");
   };
-
-  const hasActiveFilters =
-    Boolean(searchTerm.trim()) || sortBy !== "popular" || chip !== "all";
 
   return (
     <div className="min-h-dvh bg-[#07070A] text-right home-with-rail">
       <Header />
 
       <main className="relative z-10 home-shell home-pad pb-[calc(6.75rem+env(safe-area-inset-bottom))] md:pb-12">
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 sm:gap-6 lg:max-w-4xl xl:max-w-6xl">
-          <header className="flex items-start gap-3 pt-1">
-            <button
-              type="button"
-              onClick={() => navigate("/home")}
-              className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.07] transition-colors"
-              aria-label="بازگشت به خانه"
-            >
-              <ArrowRight size={20} strokeWidth={1.85} aria-hidden />
-            </button>
-            <div className="min-w-0 flex-1 text-right">
-              <h1 className="text-[clamp(1.15rem,4.5vw,1.4rem)] font-extrabold text-white leading-tight tracking-tight">
-                باشگاه‌ها
-              </h1>
-              <p className="mt-0.5 text-[12px] text-white/45 leading-relaxed">
-                باشگاه مناسب خودت را پیدا کن
-              </p>
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 sm:gap-5 lg:max-w-4xl xl:max-w-5xl">
+          {/* Title */}
+          <div className="space-y-1 pt-1">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0 text-right">
+                <h1 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl">
+                  باشگاه‌ها
+                </h1>
+                <p className="mt-0.5 text-xs text-white/45 sm:text-sm">
+                  باشگاه مناسب خودت را پیدا کن
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate("/gym-map")}
+                className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-white/80 hover:bg-white/[0.07] transition-colors"
+                aria-label="نقشه باشگاه‌ها"
+              >
+                <MapPinned size={16} className="text-primary" aria-hidden />
+                <span className="hidden sm:inline">نقشه</span>
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => navigate("/gym-map")}
-              className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-[#FF8A4C] hover:bg-white/[0.07] transition-colors"
-              aria-label="نقشه باشگاه‌ها"
-            >
-              <MapPinned size={20} strokeWidth={1.85} aria-hidden />
-            </button>
-          </header>
+          </div>
 
-          <form
-            role="search"
-            aria-label="جستجوی باشگاه"
-            onSubmit={(e) => e.preventDefault()}
-            className="w-full"
-          >
-            <label className="sr-only" htmlFor="all-gyms-search">
-              جستجو
-            </label>
-            <div className="relative flex items-center">
-              <Search
-                size={20}
-                strokeWidth={1.85}
-                className="pointer-events-none absolute end-4 z-10 text-white/40"
-                aria-hidden
-              />
-              <input
-                id="all-gyms-search"
-                type="search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="جستجوی نام باشگاه یا آدرس..."
-                enterKeyHint="search"
-                autoComplete="off"
-                className="w-full min-h-[3.25rem] rounded-2xl border border-white/[0.09] bg-[#121216] pe-12 ps-11 text-[0.9375rem] text-white placeholder:text-white/35 outline-none transition-[border-color,box-shadow] focus:border-[#FF6A00]/55 focus:shadow-[0_0_0_3px_rgba(255,106,0,0.12)]"
-              />
-              {searchTerm ? (
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm("")}
-                  className="absolute start-3 flex h-8 w-8 items-center justify-center rounded-full text-white/45 hover:text-white/80 hover:bg-white/[0.06]"
-                  aria-label="پاک کردن جستجو"
-                >
-                  <X size={16} aria-hidden />
-                </button>
-              ) : null}
-            </div>
-          </form>
+          {/* Search */}
+          <div className="relative">
+            <Search
+              size={18}
+              className="pointer-events-none absolute top-1/2 end-3.5 -translate-y-1/2 text-white/40"
+              aria-hidden
+            />
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="جستجوی نام باشگاه، منطقه یا امکانات..."
+              className="field w-full min-h-[52px] rounded-2xl border border-white/10 bg-[#121216] pe-11 ps-11 text-sm text-white placeholder:text-white/35 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              aria-label="جستجوی باشگاه"
+            />
+            {searchTerm ? (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="absolute top-1/2 start-3 -translate-y-1/2 inline-flex min-h-9 min-w-9 items-center justify-center rounded-xl text-white/50 hover:text-white"
+                aria-label="پاک کردن جستجو"
+              >
+                <X size={16} aria-hidden />
+              </button>
+            ) : null}
+          </div>
 
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-0.5 -mx-0.5 px-0.5">
+          {/* Filters / sort */}
+          <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-0.5">
             <button
               type="button"
               onClick={() => setChip("all")}
               className={`shrink-0 whitespace-nowrap rounded-full px-3.5 min-h-9 text-xs font-semibold border transition-colors ${
                 chip === "all"
-                  ? "bg-[#FF6A00]/15 border-[#FF6A00]/45 text-[#FF8A4C]"
+                  ? "bg-primary text-black border-primary"
                   : "bg-white/[0.04] border-white/10 text-white/75"
               }`}
             >
@@ -241,7 +254,7 @@ export function AllGymsPage() {
               onClick={() => setChip("popular_only")}
               className={`shrink-0 whitespace-nowrap rounded-full px-3.5 min-h-9 text-xs font-semibold border transition-colors ${
                 chip === "popular_only"
-                  ? "bg-[#FF6A00]/15 border-[#FF6A00]/45 text-[#FF8A4C]"
+                  ? "bg-primary text-black border-primary"
                   : "bg-white/[0.04] border-white/10 text-white/75"
               }`}
             >
@@ -268,14 +281,14 @@ export function AllGymsPage() {
             <div className="flex items-center justify-between gap-3 text-[12px]">
               <p className="text-white/50">
                 {filteredGyms.length > 0
-                  ? `${filteredGyms.length.toLocaleString("fa-IR")} باشگاه پیدا شد`
+                  ? `${filteredGyms.length} باشگاه`
                   : "نتیجه‌ای نیست"}
               </p>
               {hasActiveFilters && (
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="text-[#FF8A4C] font-semibold min-h-9 px-1"
+                  className="text-primary/90 font-medium hover:text-primary"
                 >
                   پاک کردن فیلترها
                 </button>
@@ -284,19 +297,14 @@ export function AllGymsPage() {
           )}
 
           {error && !loading && (
-            <div
-              role="alert"
-              className="rounded-2xl border border-red-500/25 bg-red-500/10 p-5 text-center space-y-3"
-            >
-              <AlertCircle className="mx-auto h-8 w-8 text-red-300" aria-hidden />
-              <p className="text-sm font-semibold text-red-200">
-                دریافت باشگاه‌ها با مشکل مواجه شد
-              </p>
-              <p className="text-xs text-red-200/70">{error}</p>
+            <div className="rounded-2xl border border-red-500/20 bg-red-500/5 px-5 py-10 text-center space-y-3">
+              <AlertCircle className="mx-auto h-9 w-9 text-red-300/80" aria-hidden />
+              <p className="text-sm font-semibold text-white">خطا در بارگذاری</p>
+              <p className="text-xs text-white/50 max-w-xs mx-auto">{error}</p>
               <button
                 type="button"
                 onClick={loadGyms}
-                className="btn btn-secondary mx-auto min-h-11 px-5 gap-2 text-sm"
+                className="btn btn-primary mx-auto mt-1 inline-flex min-h-11 items-center gap-2 px-5 text-sm"
               >
                 <RefreshCw size={16} aria-hidden />
                 تلاش مجدد
@@ -304,17 +312,7 @@ export function AllGymsPage() {
             </div>
           )}
 
-          {loading && (
-            <div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-              aria-busy="true"
-              aria-label="در حال بارگذاری"
-            >
-              {Array.from({ length: 6 }).map((_, i) => (
-                <GymCardSkeleton key={i} />
-              ))}
-            </div>
-          )}
+          {loading && <GymsLoadingState />}
 
           {!loading && !error && filteredGyms.length === 0 && (
             <div className="rounded-2xl border border-white/[0.08] bg-[#121216] px-5 py-12 text-center space-y-3">
