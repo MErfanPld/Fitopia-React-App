@@ -1,170 +1,254 @@
 /**
- * @file GymDetailPage.tsx
- * @description Comprehensive gym detail page showing full information, images, amenities, prices, and reviews
- * Connects to API endpoint: /api/gym/{id}/
+ * Gym detail — premium marketplace profile
+ * Route: /gym/:gymId
+ * API: GET /api/gym/{id}/ + useGymAccess sports/coaches
+ * Real data only; preserves access lock, coaches modal, contact, gallery.
  */
 
-import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
+  ArrowRight,
   Share2,
   MapPin,
   Clock,
   Star,
-  Dumbbell,
-  Wallet,
   Phone,
-  Mail,
   Globe,
   Instagram,
   MessageCircle,
   Users,
-  Award,
-  Heart,
   AlertCircle,
-  Image as ImageIcon,
-  Play,
-  MapPinIcon,
   ChevronLeft,
   ChevronRight,
-  Send,
-  Home,
-  Search,
   Check,
   Lock,
+  Building2,
+  RefreshCw,
+  Navigation,
+  Dumbbell,
+  Wallet,
+  Image as ImageIcon,
+  Send,
 } from "lucide-react";
-import { Gym } from "../hooks/useGymAPI";
+import type { Gym, Sport } from "../hooks/useGymAPI";
 import { BottomNavigation } from "../components/BottomNavigation";
 import { useAuth } from "../context/AuthContext";
 import { useGymAccess } from "../hooks/useGymAccess";
-import SportCoachesModal from "../components/SportCoachesModal";
+import SportCoachesModal, { type CoachLite } from "../components/SportCoachesModal";
 import Toast from "../components/Toast";
+
+const API_BASE = "https://fitopiaapi.pythonanywhere.com";
+
+function resolveMedia(src?: string | null): string | null {
+  if (!src) return null;
+  if (src.startsWith("http://") || src.startsWith("https://")) return src;
+  return `${API_BASE}${src.startsWith("/") ? "" : "/"}${src}`;
+}
+
+function getImageUrl(image: unknown): string | null {
+  if (typeof image === "string") return resolveMedia(image);
+  if (image && typeof image === "object" && "image" in image) {
+    const v = (image as { image?: string }).image;
+    return resolveMedia(v);
+  }
+  return null;
+}
+
+function formatToman(n?: number | null): string {
+  if (typeof n !== "number" || Number.isNaN(n)) return "—";
+  return n.toLocaleString("fa-IR");
+}
+
+function SectionTitle({ children }: { children: ReactNode }) {
+  return (
+    <h2 className="flex items-center gap-2 text-[0.95rem] font-bold text-white tracking-tight">
+      <span className="inline-block h-4 w-1 rounded-full bg-primary-container shrink-0" aria-hidden />
+      {children}
+    </h2>
+  );
+}
+
+function Card({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={`rounded-2xl border border-white/[0.08] bg-[#121216] p-4 sm:p-5 ${className}`}
+    >
+      {children}
+    </section>
+  );
+}
+
+function DetailSkeleton() {
+  return (
+    <div className="min-h-dvh bg-[#07070A] home-with-rail" aria-busy="true" aria-label="در حال بارگذاری">
+      <div className="home-shell home-pad pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <div className="mx-auto max-w-3xl space-y-4 pb-28">
+          <div className="flex items-center justify-between">
+            <div className="skeleton h-11 w-11 rounded-2xl" />
+            <div className="skeleton h-4 w-24 rounded" />
+            <div className="skeleton h-11 w-11 rounded-2xl" />
+          </div>
+          <div className="skeleton aspect-[16/10] w-full rounded-2xl" />
+          <div className="space-y-2">
+            <div className="skeleton h-6 w-2/3 rounded ms-auto" />
+            <div className="skeleton h-4 w-full rounded" />
+            <div className="skeleton h-4 w-1/2 rounded ms-auto" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="skeleton h-20 rounded-2xl" />
+            <div className="skeleton h-20 rounded-2xl" />
+          </div>
+          <div className="skeleton h-32 w-full rounded-2xl" />
+          <div className="skeleton h-40 w-full rounded-2xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function GymDetailPage() {
   const { gymId } = useParams<{ gymId: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
   const [gym, setGym] = useState<Gym | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [newComment, setNewComment] = useState("");
-  const [comments, setComments] = useState<any[]>([]);
+  const [comments, setComments] = useState<
+    { id: number; user_name: string; text: string; date?: string; rating?: number }[]
+  >([]);
 
-  // Subscription & access
   const { isAuthenticated } = useAuth();
   const {
     sports: accessSports,
     loading: accessLoading,
-    error: accessError,
     hasSportAccess,
     fetchCoaches,
   } = useGymAccess(Number(gymId));
 
-  // Modal and coaches
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedSport, setSelectedSport] = useState<{
-    id: number;
-    name: string;
-  } | null>(null);
-  const [coaches, setCoaches] = useState<any[] | null>(null);
+  const [selectedSport, setSelectedSport] = useState<{ id: number; name: string } | null>(null);
+  const [coaches, setCoaches] = useState<CoachLite[] | null>(null);
   const [coachesLoading, setCoachesLoading] = useState(false);
   const [coachesError, setCoachesError] = useState<string | null>(null);
   const socialMediaRef = useRef<HTMLElement>(null);
 
-  // Toast
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error" | "info" | "warning";
   } | null>(null);
 
-  const handleSocialMediaScroll = (): void => {
-    socialMediaRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+  const loadGym = async () => {
+    if (!gymId) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch(`${API_BASE}/api/gym/${gymId}/`);
+      if (!response.ok) throw new Error("باشگاه یافت نشد");
+      const data = await response.json();
+      setGym(data);
+      if (data.reviews && Array.isArray(data.reviews)) {
+        setComments(data.reviews);
+      } else {
+        setComments([]);
+      }
+      setCurrentImageIndex(0);
+      document.title = data?.name ? `FITOPIA | ${data.name}` : "FITOPIA | جزئیات باشگاه";
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "خطایی رخ داد");
+      setGym(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    document.title = "FITOPIA | جزئیات باشگاه";
-
-    const fetchGymDetails = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(
-          `https://fitopiaapi.pythonanywhere.com/api/gym/${gymId}/`,
-        );
-        if (!response.ok) throw new Error("باشگاه یافت نشد");
-        const data = await response.json();
-        setGym(data);
-
-        // بهتر هندل کردن نظرات - console log برای debug
-        console.log("API Response Reviews:", data.reviews);
-
-        if (data.reviews && Array.isArray(data.reviews)) {
-          setComments(data.reviews);
-        }
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "خطایی رخ داد");
-        console.error("Error fetching gym details:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (gymId) fetchGymDetails();
+    loadGym();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gymId]);
 
-  const handleAddComment = () => {
-    if (newComment.trim()) {
-      const newReview = {
-        id: Date.now(),
-        user_name: "شما",
-        text: newComment,
-        date: new Date().toISOString(),
-        rating: 5,
-      };
-      setComments([newReview, ...comments]);
-      setNewComment("");
+  const coverUrl = useMemo(() => resolveMedia(gym?.cover_image ?? null), [gym?.cover_image]);
+
+  const gallery = useMemo(() => {
+    if (!gym?.images?.length) return [] as string[];
+    return gym.images
+      .map((img) => getImageUrl(img))
+      .filter((u): u is string => Boolean(u));
+  }, [gym?.images]);
+
+  const rating =
+    typeof gym?.popularity_score === "number" && gym.popularity_score > 0
+      ? gym.popularity_score.toFixed(1)
+      : typeof gym?.average_rating === "number" && gym.average_rating > 0
+        ? gym.average_rating.toFixed(1)
+        : null;
+
+  const sportsList: Sport[] = useMemo(() => {
+    if (accessSports && accessSports.length > 0) return accessSports;
+    if (gym?.sports?.length) return gym.sports;
+    return [];
+  }, [accessSports, gym?.sports]);
+
+  const hasSocial =
+    Boolean(gym?.instagram || gym?.telegram || gym?.whatsapp || gym?.website);
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    const title = gym?.name || "Fitopia";
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, url });
+        return;
+      }
+    } catch {
+      /* user cancelled */
     }
+    try {
+      await navigator.clipboard.writeText(url);
+      setToast({ message: "لینک کپی شد", type: "success" });
+    } catch {
+      socialMediaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const handleAddComment = () => {
+    if (!newComment.trim()) return;
+    const newReview = {
+      id: Date.now(),
+      user_name: "شما",
+      text: newComment.trim(),
+      date: new Date().toISOString(),
+      rating: 5,
+    };
+    setComments([newReview, ...comments]);
+    setNewComment("");
   };
 
   const nextImage = () => {
-    if (gym?.images) {
-      setCurrentImageIndex((prev) => (prev + 1) % gym.images.length);
-    }
+    if (gallery.length < 2) return;
+    setCurrentImageIndex((prev) => (prev + 1) % gallery.length);
   };
 
   const prevImage = () => {
-    if (gym?.images) {
-      setCurrentImageIndex(
-        (prev) => (prev - 1 + gym.images.length) % gym.images.length,
-      );
-    }
+    if (gallery.length < 2) return;
+    setCurrentImageIndex((prev) => (prev - 1 + gallery.length) % gallery.length);
   };
 
-  // تابع برای گرفتن URL تصویر
-  const getImageUrl = (image: any): string => {
-    if (typeof image === "string") {
-      return image;
-    }
-    if (image && image.image) {
-      return image.image;
-    }
-    return "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80";
-  };
-
-  const openSport = async (sport: any) => {
+  const openSport = async (sport: Sport) => {
     const allowed = hasSportAccess(sport.id);
     if (!allowed) {
       if (!isAuthenticated) {
         setToast({ message: "برای دسترسی باید وارد شوید", type: "info" });
       } else {
         setToast({
-          message:
-            "این رشته در اشتراک شما فعال نیست. لطفاً اشتراک خریداری کنید.",
+          message: "این رشته در اشتراک شما فعال نیست. لطفاً اشتراک خریداری کنید.",
           type: "warning",
         });
       }
@@ -178,11 +262,12 @@ export function GymDetailPage() {
 
     try {
       const list = await fetchCoaches(sport.id);
-      setCoaches(list || []);
-    } catch (err: any) {
-      console.error("Error fetching coaches:", err);
+      setCoaches((list as CoachLite[]) || []);
+    } catch (err: unknown) {
       const msg =
-        err?.response?.data?.detail || err?.message || "خطا در دریافت مربیان";
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message?: string }).message)
+          : "خطا در دریافت مربیان";
       setCoachesError(msg);
       setCoaches(null);
     } finally {
@@ -190,642 +275,566 @@ export function GymDetailPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#07070A] flex items-center justify-center">
-        <div className="relative w-20 h-20">
-          <div className="absolute inset-0 bg-primary/25 rounded-full blur-2xl animate-pulse" />
-          <div className="w-16 h-16 rounded-full border-t-2 border-r-2 border-primary animate-spin" />
-        </div>
-      </div>
-    );
-  }
+  const openMap = () => {
+    if (!gym) return;
+    if (gym.google_map_url) {
+      window.open(gym.google_map_url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (gym.latitude && gym.longitude) {
+      window.open(
+        `https://www.google.com/maps?q=${gym.latitude},${gym.longitude}`,
+        "_blank",
+        "noopener,noreferrer",
+      );
+      return;
+    }
+    navigate("/gym-map");
+  };
+
+  if (loading) return <DetailSkeleton />;
 
   if (error || !gym) {
     return (
-      <div className="min-h-screen bg-[#07070A] flex flex-col items-center justify-center p-4">
-        <div className="text-center">
-          <p className="text-error mb-4">
-            {error || "اطلاعات باشگاه یافت نشد"}
-          </p>
-          <button
-            onClick={() => navigate(-1)}
-            className="px-6 py-2 bg-primary text-on-primary rounded-lg font-bold"
-          >
-            بازگشت
-          </button>
+      <div className="min-h-dvh bg-[#07070A] home-with-rail flex flex-col">
+        <div className="home-shell home-pad pt-[max(0.75rem,env(safe-area-inset-top))] flex-1 flex flex-col items-center justify-center gap-4 text-center">
+          <AlertCircle className="h-10 w-10 text-red-300/80" aria-hidden />
+          <p className="text-sm font-semibold text-white">{error || "اطلاعات باشگاه یافت نشد"}</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="btn btn-secondary min-h-11 px-5 text-sm"
+            >
+              بازگشت
+            </button>
+            <button
+              type="button"
+              onClick={loadGym}
+              className="btn btn-primary min-h-11 px-5 text-sm inline-flex items-center gap-2"
+            >
+              <RefreshCw size={16} aria-hidden />
+              تلاش مجدد
+            </button>
+          </div>
         </div>
+        <BottomNavigation />
       </div>
     );
   }
 
-  const rating = gym.popularity_score ? gym.popularity_score / 20 : 4.5;
-  const mainPrice = gym.prices && gym.prices.length > 0 ? gym.prices[0] : null;
-
   return (
-    <div className="min-h-screen bg-[#07070A] text-on-surface pb-24">
-      {/* Header */}
-      <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 bg-surface-container/60 backdrop-blur-md border-b border-white/5">
-        <button
-          onClick={() => navigate(-1)}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container hover:opacity-80 transition-opacity active:scale-95"
-        >
-          <ArrowLeft size={20} className="text-primary" />
-        </button>
-        <span className="font-bold text-primary">FITOPIA</span>
-        <button
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container hover:opacity-80 transition-opacity active:scale-95"
-          onClick={handleSocialMediaScroll}
-        >
-          <Share2 size={20} className="text-primary" />
-        </button>
+    <div className="min-h-dvh bg-[#07070A] text-right home-with-rail">
+      {/* Top bar */}
+      <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#07070A]/88 backdrop-blur-md">
+        <div className="home-shell home-pad flex items-center justify-between gap-3 py-2.5 pt-[max(0.5rem,env(safe-area-inset-top))]">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.07] transition-colors"
+            aria-label="بازگشت"
+          >
+            <ArrowRight size={20} aria-hidden />
+          </button>
+          <h1 className="min-w-0 flex-1 truncate text-center text-sm font-bold text-white/90">
+            {gym.name}
+          </h1>
+          <button
+            type="button"
+            onClick={handleShare}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.07] transition-colors"
+            aria-label="اشتراک‌گذاری"
+          >
+            <Share2 size={18} aria-hidden />
+          </button>
+        </div>
       </header>
 
-      {/* Hero Image */}
-      <div className="relative w-full h-72 -mt-0 overflow-hidden">
-        {gym.cover_image ? (
-          <img
-            src={gym.cover_image}
-            alt={gym.name}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.src =
-                "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80";
-            }}
-          />
-        ) : (
-          <div className="w-full h-full bg-surface-container" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#07070A] via-transparent to-black/30" />
+      <main className="relative z-10 home-shell home-pad pb-[calc(6.75rem+env(safe-area-inset-bottom))] md:pb-12">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 sm:gap-5 lg:max-w-4xl">
+          {/* Hero */}
+          <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121216]">
+            <div className="relative aspect-[16/10] sm:aspect-[2/1] bg-white/[0.03]">
+              {coverUrl ? (
+                <img
+                  src={coverUrl}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-[#1a1410] to-[#0e0e12] flex items-center justify-center">
+                  <Building2 className="h-12 w-12 text-white/20" aria-hidden />
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#07070A] via-[#07070A]/35 to-transparent" />
 
-        {/* Info Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <div className="bg-primary-container text-on-primary px-3 py-1 rounded-full text-xs font-bold">
-              {gym.is_popular ? "پیشنهادی" : "معمولی"}
-            </div>
-            <div className="flex items-center gap-1 bg-surface-container/60 backdrop-blur px-2 py-1 rounded-full text-xs">
-              <Star size={14} className="text-primary fill-primary" />
-              <span className="font-bold">{rating.toFixed(1)}</span>
+              <div className="absolute top-3 inset-x-3 flex items-start justify-between gap-2">
+                {gym.is_popular ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[10px] font-bold text-black">
+                    <Star size={11} className="fill-current" aria-hidden />
+                    محبوب
+                  </span>
+                ) : (
+                  <span />
+                )}
+                {rating ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-black/55 backdrop-blur-sm px-2.5 py-1 text-[11px] font-semibold text-amber-200">
+                    <Star size={12} className="fill-amber-300 text-amber-300" aria-hidden />
+                    {rating}
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 space-y-1.5">
+                <h2 className="text-[clamp(1.15rem,4vw,1.5rem)] font-extrabold text-white leading-tight tracking-tight">
+                  {gym.name}
+                </h2>
+                {gym.address ? (
+                  <p className="flex items-start justify-end gap-1.5 text-[12px] text-white/65 leading-snug">
+                    <span className="line-clamp-2 min-w-0">{gym.address}</span>
+                    <MapPin size={14} className="shrink-0 mt-0.5 text-primary" aria-hidden />
+                  </p>
+                ) : null}
+              </div>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-white">{gym.name}</h1>
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <main className="relative z-10 -mt-8 px-4 flex flex-col gap-8">
-        {/* Address & Info Card */}
-        <div className="bg-surface-container/70 backdrop-blur border border-white/5 p-6 rounded-2xl">
-          <div className="space-y-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <p className="text-xs text-on-surface-variant mb-1">آدرس</p>
-                <p className="text-sm font-bold text-on-surface">
-                  {gym.address}
-                </p>
-              </div>
-              <button
-                onClick={() =>
-                  window.open(
-                    gym.google_map_url ||
-                      `https://maps.google.com/?q=${gym.latitude},${gym.longitude}`,
-                    "_blank",
-                  )
-                }
-                className="text-primary flex items-center gap-1 text-sm font-bold whitespace-nowrap hover:opacity-80 transition-opacity"
-              >
-                <MapPin size={16} />
-                نقشه
-              </button>
-            </div>
-            <div className="h-px bg-white/5" />
-
-            {/* Working Hours */}
-            {gym.working_hours && (
-              <>
-                <div className="flex items-center gap-2 text-sm text-on-surface-variant">
-                  <Clock size={16} className="text-primary" />
-                  <span>{gym.working_hours}</span>
-                </div>
-                <div className="h-px bg-white/5" />
-              </>
-            )}
-
-            {/* Phone */}
-            <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+          {/* Quick actions */}
+          <div className="grid grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              onClick={openMap}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] text-sm font-semibold text-white/90 hover:bg-white/[0.07] transition-colors"
+            >
+              <Navigation size={16} className="text-primary" aria-hidden />
+              مسیر / نقشه
+            </button>
+            {gym.phone ? (
               <a
                 href={`tel:${gym.phone}`}
-                className="text-primary hover:underline font-bold flex items-center gap-2"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-primary/35 bg-primary/10 text-sm font-semibold text-primary hover:bg-primary/15 transition-colors"
               >
-                <Phone size={16} />
+                <Phone size={16} aria-hidden />
+                تماس
+              </a>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/8 bg-white/[0.03] text-sm font-semibold text-white/35"
+              >
+                <Phone size={16} aria-hidden />
+                تماس
+              </button>
+            )}
+          </div>
+
+          {/* Info chips */}
+          <div className="flex flex-wrap gap-2">
+            {gym.working_hours ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/70">
+                <Clock size={13} className="text-primary/90" aria-hidden />
+                {gym.working_hours}
+              </span>
+            ) : null}
+            {gym.phone ? (
+              <a
+                href={`tel:${gym.phone}`}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/70"
+                dir="ltr"
+              >
+                <Phone size={13} className="text-primary/90" aria-hidden />
                 {gym.phone}
               </a>
-            </div>
+            ) : null}
           </div>
-        </div>
 
-        {/* Sports Section */}
-        <section>
-          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <div className="w-1.5 h-6 bg-primary-container rounded-full" />
-            رشته‌های ورزشی
-          </h3>
-
-          {accessLoading ? (
-            <div className="p-4 bg-surface-container/70 rounded-xl">
-              در حال بارگذاری رشته‌ها...
+          {/* Sports */}
+          <Card>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <SectionTitle>
+                <span className="inline-flex items-center gap-1.5">
+                  <Dumbbell size={15} className="text-primary" aria-hidden />
+                  رشته‌ها
+                </span>
+              </SectionTitle>
+              {accessLoading ? (
+                <span className="text-[11px] text-white/40">بررسی دسترسی…</span>
+              ) : null}
             </div>
-          ) : accessError ? (
-            <div className="p-4 text-error">{accessError}</div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {gym.sports && gym.sports.length > 0 ? (
-                gym.sports.map((sport) => {
+            {sportsList.length === 0 ? (
+              <p className="text-sm text-white/45">رشته‌ای ثبت نشده است.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {sportsList.map((sport) => {
                   const allowed = hasSportAccess(sport.id);
-                  const base =
-                    "p-4 rounded-xl flex items-center gap-3 transition-all";
-                  const classes = allowed
-                    ? `${base} bg-green-800/10 border border-green-500 hover:shadow-lg cursor-pointer`
-                    : `${base} bg-red-800/10 border border-red-500 opacity-70 cursor-not-allowed`;
-
                   return (
                     <button
                       key={sport.id}
+                      type="button"
                       onClick={() => openSport(sport)}
-                      className={classes}
-                      aria-disabled={!allowed}
-                      disabled={!allowed}
+                      className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3.5 text-xs font-semibold transition-colors ${
+                        allowed
+                          ? "border-primary/40 bg-primary/12 text-primary"
+                          : "border-white/10 bg-white/[0.04] text-white/70"
+                      }`}
                     >
                       {allowed ? (
-                        <Check className="text-green-400" />
+                        <Check size={13} aria-hidden />
                       ) : (
-                        <Lock className="text-red-400" />
+                        <Lock size={12} className="opacity-70" aria-hidden />
                       )}
-                      <span className="text-sm font-bold">{sport.name}</span>
+                      {sport.name}
                     </button>
                   );
-                })
-              ) : (
-                <p className="text-sm text-on-surface-variant">
-                  رشته‌ای موجود نیست
-                </p>
-              )}
-            </div>
-          )}
-        </section>
-
-        {/* Facilities Section */}
-        {gym.facilities && gym.facilities.length > 0 && (
-          <section>
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <div className="w-1.5 h-6 bg-primary-container rounded-full" />
-              تسهیلات
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              {gym.facilities.map((facility) => (
-                <div
-                  key={facility.id}
-                  className="bg-surface-container/70 backdrop-blur border border-white/5 p-4 rounded-xl flex items-center gap-3 hover:border-primary/30 transition-all"
-                >
-                  <Award size={18} className="text-primary-container" />
-                  <span className="text-sm font-bold">{facility.title}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Description */}
-        {gym.description && (
-          <section className="bg-surface-container/70 backdrop-blur border border-white/5 p-6 rounded-2xl">
-            <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
-              <div className="w-1.5 h-6 bg-primary-container rounded-full" />
-              درباره
-            </h3>
-            <p className="text-sm text-on-surface-variant leading-relaxed whitespace-pre-wrap">
-              {gym.description}
+                })}
+              </div>
+            )}
+            <p className="mt-3 text-[11px] text-white/40 leading-relaxed">
+              روی رشته‌های فعال بزن تا مربیان را ببینی. رشته‌های قفل‌شده نیاز به اشتراک دارند.
             </p>
-          </section>
-        )}
+          </Card>
 
-        {/* Rules Section */}
-        {gym.rules && (
-          <section className="bg-surface-container/70 backdrop-blur border border-white/5 p-6 rounded-2xl">
-            <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
-              <div className="w-1.5 h-6 bg-primary-container rounded-full" />
-              قوانین و مقررات
-            </h3>
-            <div className="text-sm text-on-surface-variant leading-relaxed whitespace-pre-wrap">
-              {gym.rules}
-            </div>
-          </section>
-        )}
-
-        {/* Image Gallery Slider */}
-        {gym.images && gym.images.length > 0 && (
-          <section>
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <div className="w-1.5 h-6 bg-primary-container rounded-full" />
-              گالری تصاویر ({gym.images.length})
-            </h3>
-            <div className="relative group">
-              <div className="relative w-full h-96 rounded-2xl overflow-hidden border border-white/5">
-                <img
-                  key={currentImageIndex}
-                  src={getImageUrl(gym.images[currentImageIndex])}
-                  alt={`تصویر ${currentImageIndex + 1}`}
-                  className="w-full h-full object-cover transition-all duration-500"
-                  onError={(e) => {
-                    e.currentTarget.src =
-                      "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80";
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+          {/* Prices */}
+          {gym.prices && gym.prices.length > 0 ? (
+            <Card>
+              <div className="mb-3">
+                <SectionTitle>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Wallet size={15} className="text-primary" aria-hidden />
+                    پکیج‌های قیمتی
+                  </span>
+                </SectionTitle>
               </div>
-
-              {/* Navigation Buttons */}
-              <button
-                onClick={prevImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary/80 hover:bg-primary text-on-primary flex items-center justify-center transition-all active:scale-95"
-              >
-                <ChevronRight size={20} />
-              </button>
-              <button
-                onClick={nextImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary/80 hover:bg-primary text-on-primary flex items-center justify-center transition-all active:scale-95"
-              >
-                <ChevronLeft size={20} />
-              </button>
-
-              {/* Image Counter */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur px-3 py-1 rounded-full text-xs text-on-surface font-bold">
-                {currentImageIndex + 1} / {gym.images.length}
-              </div>
-
-              {/* Thumbnail Strip */}
-              <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
-                {gym.images.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentImageIndex(idx)}
-                    className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                      idx === currentImageIndex
-                        ? "border-primary scale-105"
-                        : "border-white/10 opacity-60 hover:opacity-100"
-                    }`}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {gym.prices.map((price, idx) => (
+                  <div
+                    key={price.id ?? idx}
+                    className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 space-y-3"
                   >
-                    <img
-                      src={getImageUrl(img)}
-                      alt={`تصویر ${idx + 1}`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src =
-                          "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=100&q=80";
-                      }}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Pricing Section - With Select Button */}
-        {gym.prices && gym.prices.length > 0 && (
-          <section>
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <div className="w-1.5 h-6 bg-primary-container rounded-full" />
-              پکیج‌های قیمتی
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {gym.prices.map((price, idx) => (
-                <div
-                  key={idx}
-                  className="group relative bg-gradient-to-br from-surface-container/50 to-surface-container/20 backdrop-blur border border-white/10 hover:border-primary/30 p-6 rounded-2xl transition"
-                >
-                  {/* Decorative Background */}
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                  <div className="relative">
-                    {/* Sport Name */}
-                    <p className="text-sm font-bold text-primary mb-4">
+                    <p className="text-sm font-bold text-primary">
                       {price.sport?.name || "پکیج عمومی"}
                     </p>
-
-                    {/* Price Grid */}
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      {price.session_price && (
-                        <div className="bg-surface-container/50 p-3 rounded-lg">
-                          <p className="text-xs text-on-surface-variant mb-1">
-                            یک جلسه
+                    <div className="grid grid-cols-2 gap-2">
+                      {price.session_price != null && price.session_price > 0 ? (
+                        <div className="rounded-lg bg-black/25 px-2.5 py-2">
+                          <p className="text-[10px] text-white/45">جلسه‌ای</p>
+                          <p className="text-sm font-extrabold text-white tabular-nums">
+                            {formatToman(price.session_price)}
                           </p>
-                          <p className="text-lg font-black text-primary">
-                            {price.session_price.toLocaleString("fa-IR")}
-                          </p>
-                          <p className="text-xs text-on-surface-variant">
-                            تومان
-                          </p>
+                          <p className="text-[10px] text-white/40">تومان</p>
                         </div>
-                      )}
-                      {price.monthly_price && (
-                        <div className="bg-primary/10 border border-primary/20 p-3 rounded-lg">
-                          <p className="text-xs text-primary mb-1 font-bold">
-                            ماهانه
+                      ) : null}
+                      {price.monthly_price != null && price.monthly_price > 0 ? (
+                        <div className="rounded-lg bg-black/25 px-2.5 py-2">
+                          <p className="text-[10px] text-white/45">ماهانه</p>
+                          <p className="text-sm font-extrabold text-white tabular-nums">
+                            {formatToman(price.monthly_price)}
                           </p>
-                          <p className="text-lg font-black text-primary">
-                            {price.monthly_price.toLocaleString("fa-IR")}
-                          </p>
-                          <p className="text-xs text-primary/70">تومان</p>
+                          <p className="text-[10px] text-white/40">تومان</p>
                         </div>
-                      )}
+                      ) : null}
+                      {price.quarterly_price != null && price.quarterly_price > 0 ? (
+                        <div className="rounded-lg bg-black/25 px-2.5 py-2">
+                          <p className="text-[10px] text-white/45">سه‌ماهه</p>
+                          <p className="text-sm font-extrabold text-white tabular-nums">
+                            {formatToman(price.quarterly_price)}
+                          </p>
+                          <p className="text-[10px] text-white/40">تومان</p>
+                        </div>
+                      ) : null}
+                      {price.yearly_price != null && price.yearly_price > 0 ? (
+                        <div className="rounded-lg bg-black/25 px-2.5 py-2">
+                          <p className="text-[10px] text-white/45">سالیانه</p>
+                          <p className="text-sm font-extrabold text-white tabular-nums">
+                            {formatToman(price.yearly_price)}
+                          </p>
+                          <p className="text-[10px] text-white/40">تومان</p>
+                        </div>
+                      ) : null}
                     </div>
-
-                    {/* Quarterly & Yearly */}
-                    {(price.quarterly_price || price.yearly_price) && (
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        {price.quarterly_price && (
-                          <div className="bg-surface-container/50 p-3 rounded-lg">
-                            <p className="text-xs text-on-surface-variant mb-1">
-                              فصلی (3 ماه)
-                            </p>
-                            <p className="text-base font-black text-on-surface">
-                              {price.quarterly_price.toLocaleString("fa-IR")}
-                            </p>
-                            <p className="text-xs text-on-surface-variant">
-                              تومان
-                            </p>
-                          </div>
-                        )}
-                        {price.yearly_price && (
-                          <div className="bg-surface-container/50 p-3 rounded-lg border border-white/5">
-                            <p className="text-xs text-on-surface-variant mb-1">
-                              سالیانه
-                            </p>
-                            <p className="text-base font-black text-on-surface">
-                              {price.yearly_price.toLocaleString("fa-IR")}
-                            </p>
-                            <p className="text-xs text-on-surface-variant">
-                              تومان
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Select/Payment Button */}
-                    <button className="w-full mt-4 bg-gradient-to-r from-primary-container to-primary text-on-primary px-4 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-primary/30 transition-transform active:scale-95">
+                    <button
+                      type="button"
+                      onClick={() => navigate("/subscriptions")}
+                      className="btn btn-primary w-full min-h-11 text-sm"
+                    >
                       انتخاب و پرداخت
                     </button>
                   </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+                ))}
+              </div>
+            </Card>
+          ) : null}
 
-        {/* Coaches Section - Animated */}
-        {gym.coaches && gym.coaches.length > 0 && (
-          <section>
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <div className="w-1.5 h-6 bg-primary-container rounded-full" />
-              مربیان ({gym.coaches.length})
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {gym.coaches.map((coach: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="group relative bg-surface-container/70 backdrop-blur border border-white/5 hover:border-primary/30 rounded-2xl p-4 transition-all duration-300 hover:shadow-lg"
-                  style={{
-                    animation: `slideIn 0.5s ease-out ${idx * 0.1}s backwards`,
-                  }}
-                >
-                  <style>{`
-                    @keyframes slideIn {
-                      from {
-                        opacity: 0;
-                        transform: translateY(20px);
-                      }
-                      to {
-                        opacity: 1;
-                        transform: translateY(0);
-                      }
-                    }
-                  `}</style>
+          {/* Facilities */}
+          {gym.facilities && gym.facilities.length > 0 ? (
+            <Card>
+              <div className="mb-3">
+                <SectionTitle>امکانات</SectionTitle>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {gym.facilities.map((f) => (
+                  <span
+                    key={f.id}
+                    className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-medium text-white/75"
+                  >
+                    {f.title}
+                  </span>
+                ))}
+              </div>
+            </Card>
+          ) : null}
 
-                  <div className="relative mb-3">
-                    {coach.image ? (
-                      <img
-                        src={coach.image}
-                        alt={coach.name}
-                        className="w-24 h-24 rounded-full mx-auto object-cover border-2 border-primary/30 group-hover:border-primary transition-all group-hover:scale-110"
-                        onError={(e) => {
-                          e.currentTarget.src =
-                            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80";
-                        }}
-                      />
-                    ) : (
-                      <div className="w-24 h-24 rounded-full mx-auto bg-primary/20 flex items-center justify-center">
-                        <Users size={32} className="text-primary" />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="text-center">
-                    <p className="font-bold text-sm text-on-surface group-hover:text-primary transition-colors">
-                      {coach.name}
-                    </p>
-                    {coach.specialty && (
-                      <p className="text-xs text-on-surface-variant mt-1 line-clamp-2">
-                        {coach.specialty}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Hover Effect */}
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Reviews Section - Fixed Display */}
-        <section>
-          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <div className="w-1.5 h-6 bg-primary-container rounded-full" />
-            نظرات کاربران ({comments.length})
-          </h3>
-
-          {/* Add Comment Section */}
-          <div className="bg-surface-container/70 backdrop-blur border border-white/5 p-6 rounded-2xl mb-6">
-            <p className="text-sm text-on-surface-variant mb-3 font-bold">
-              نظر خود را بنویسید
-            </p>
-            <div className="flex flex-wrap gap-2 mb-4">
-              <input
-                type="text"
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleAddComment()}
-                placeholder="نظر خود را اینجا بنویسید..."
-                className="flex-1 bg-surface-container/50 border border-white/10 text-on-surface placeholder-on-surface-variant/50 px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition"
-              />
-              <button
-                onClick={handleAddComment}
-                className="bg-primary hover:bg-primary-container text-on-primary px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 w-full"
-              >
-                <Send size={16} />
-                ارسال
-              </button>
-            </div>
-
-            {/* Comments List - Debug Info */}
-            {comments.length > 0 ? (
-              <div className="space-y-3">
-                {comments.map((review: any, idx: number) => {
-                  console.log("Rendering review:", review); // Debug
+          {/* Coaches */}
+          {gym.coaches && gym.coaches.length > 0 ? (
+            <Card>
+              <div className="mb-3 flex items-center justify-between">
+                <SectionTitle>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Users size={15} className="text-primary" aria-hidden />
+                    مربیان
+                  </span>
+                </SectionTitle>
+                <span className="text-[11px] text-white/40">{gym.coaches.length} نفر</span>
+              </div>
+              <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-1">
+                {gym.coaches.map((coach, idx) => {
+                  const img = resolveMedia(coach.image ?? null);
                   return (
                     <div
-                      key={review.id || idx}
-                      className="bg-surface-container/70 backdrop-blur border border-white/5 p-5 rounded-xl hover:border-primary/30 transition-all"
+                      key={coach.id ?? idx}
+                      className="shrink-0 w-[7.5rem] rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 text-center"
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <p className="font-bold text-sm text-on-surface">
-                            {review.user_name ||
-                              review.userName ||
-                              review.name ||
-                              "کاربر ناشناس"}
-                          </p>
-                          <p className="text-xs text-on-surface-variant mt-1">
-                            {review.date
-                              ? new Date(review.date).toLocaleDateString(
-                                  "fa-IR",
-                                  {
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                  },
-                                )
-                              : "امروز"}
-                          </p>
-                        </div>
+                      <div className="mx-auto mb-2 h-14 w-14 overflow-hidden rounded-full border border-white/10 bg-white/[0.05]">
+                        {img ? (
+                          <img
+                            src={img}
+                            alt=""
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center">
+                            <Users size={20} className="text-white/25" aria-hidden />
+                          </div>
+                        )}
                       </div>
-
-                      <p className="text-sm text-on-surface leading-relaxed mb-3">
-                        {review.text || review.comment || "بدون متن"}
-                      </p>
-
-                      {/* Rating Display */}
-                      {review.rating && (
-                        <div className="flex items-center gap-1 text-xs">
-                          <span className="text-on-surface-variant">
-                            امتیاز:
-                          </span>
-                          <span className="bg-primary/20 text-primary px-2 py-1 rounded-full font-bold">
-                            {review.rating}/5
-                          </span>
-                        </div>
-                      )}
+                      <p className="text-xs font-bold text-white line-clamp-1">{coach.name}</p>
+                      {coach.specialty ? (
+                        <p className="mt-0.5 text-[10px] text-white/45 line-clamp-1">
+                          {coach.specialty}
+                        </p>
+                      ) : null}
                     </div>
                   );
                 })}
               </div>
-            ) : (
-              <div className="bg-surface-container/70 backdrop-blur border border-white/5 p-8 rounded-2xl text-center">
-                <p className="text-on-surface-variant text-sm">
-                  هنوز نظری ثبت نشده است
-                </p>
+            </Card>
+          ) : null}
+
+          {/* Gallery */}
+          {gallery.length > 0 ? (
+            <Card className="!p-0 overflow-hidden">
+              <div className="flex items-center justify-between px-4 pt-4 pb-3">
+                <SectionTitle>
+                  <span className="inline-flex items-center gap-1.5">
+                    <ImageIcon size={15} className="text-primary" aria-hidden />
+                    گالری
+                  </span>
+                </SectionTitle>
+                <span className="text-[11px] text-white/40">
+                  {currentImageIndex + 1} / {gallery.length}
+                </span>
               </div>
+              <div className="relative aspect-[16/10] bg-black/40">
+                <img
+                  src={gallery[currentImageIndex]}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
+                  }}
+                />
+                {gallery.length > 1 ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={prevImage}
+                      className="absolute start-2 top-1/2 -translate-y-1/2 inline-flex min-h-10 min-w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm"
+                      aria-label="تصویر قبلی"
+                    >
+                      <ChevronRight size={18} aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={nextImage}
+                      className="absolute end-2 top-1/2 -translate-y-1/2 inline-flex min-h-10 min-w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm"
+                      aria-label="تصویر بعدی"
+                    >
+                      <ChevronLeft size={18} aria-hidden />
+                    </button>
+                  </>
+                ) : null}
+              </div>
+              {gallery.length > 1 ? (
+                <div className="flex gap-2 overflow-x-auto hide-scrollbar p-3">
+                  {gallery.map((src, idx) => (
+                    <button
+                      key={src + idx}
+                      type="button"
+                      onClick={() => setCurrentImageIndex(idx)}
+                      className={`shrink-0 h-14 w-14 overflow-hidden rounded-lg border-2 transition-all ${
+                        idx === currentImageIndex
+                          ? "border-primary scale-[1.02]"
+                          : "border-white/10 opacity-60"
+                      }`}
+                      aria-label={`تصویر ${idx + 1}`}
+                    >
+                      <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </Card>
+          ) : null}
+
+          {/* Description */}
+          {gym.description ? (
+            <Card>
+              <div className="mb-2">
+                <SectionTitle>درباره</SectionTitle>
+              </div>
+              <p className="text-sm text-white/65 leading-relaxed whitespace-pre-wrap">
+                {gym.description}
+              </p>
+            </Card>
+          ) : null}
+
+          {/* Rules */}
+          {gym.rules ? (
+            <Card>
+              <div className="mb-2">
+                <SectionTitle>قوانین و مقررات</SectionTitle>
+              </div>
+              <p className="text-sm text-white/65 leading-relaxed whitespace-pre-wrap">{gym.rules}</p>
+            </Card>
+          ) : null}
+
+          {/* Reviews */}
+          <Card>
+            <div className="mb-3">
+              <SectionTitle>نظرات</SectionTitle>
+            </div>
+            <div className="mb-3 flex gap-2">
+              <input
+                type="text"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAddComment();
+                }}
+                placeholder="نظر خود را بنویسید…"
+                className="field min-h-11 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white placeholder:text-white/35 focus:border-primary/45 focus:outline-none"
+                aria-label="نظر جدید"
+              />
+              <button
+                type="button"
+                onClick={handleAddComment}
+                disabled={!newComment.trim()}
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-primary text-black disabled:opacity-40"
+                aria-label="ارسال نظر"
+              >
+                <Send size={16} aria-hidden />
+              </button>
+            </div>
+            {comments.length === 0 ? (
+              <p className="text-sm text-white/40 py-2">هنوز نظری ثبت نشده است.</p>
+            ) : (
+              <ul className="space-y-3">
+                {comments.map((c) => (
+                  <li
+                    key={c.id}
+                    className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 text-right"
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-xs font-bold text-white/90">{c.user_name}</span>
+                      {typeof c.rating === "number" ? (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-200/90">
+                          <Star size={10} className="fill-amber-300 text-amber-300" aria-hidden />
+                          {c.rating}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="text-sm text-white/65 leading-relaxed">{c.text}</p>
+                  </li>
+                ))}
+              </ul>
             )}
-          </div>
-        </section>
+          </Card>
 
-        {/* Videos Section */}
-        {gym.videos && gym.videos.length > 0 && (
-          <section>
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <div className="w-1.5 h-6 bg-primary-container rounded-full" />
-              ویدیو‌ها ({gym.videos.length})
-            </h3>
-            <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 snap-x">
-              {gym.videos.map((video, idx) => (
-                <a
-                  key={idx}
-                  href={video}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="snap-center shrink-0 w-64 h-40 rounded-2xl overflow-hidden border border-white/5 hover:border-primary/50 transition-all flex items-center justify-center bg-surface-container"
-                >
-                  <Play
-                    size={40}
-                    className="text-primary group-hover:scale-125 transition-transform"
-                  />
-                </a>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Social Media Links - Last */}
-        {(gym.instagram || gym.telegram || gym.whatsapp || gym.website) && (
-          <section ref={socialMediaRef}>
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <div className="w-1.5 h-6 bg-primary-container rounded-full" />
-              شبکه‌های اجتماعی
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {gym.instagram && (
-                <a
-                  href={gym.instagram}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-2"
-                >
-                  <Instagram size={20} className="text-primary" />
-                  <span className="text-xs font-bold">Instagram</span>
-                </a>
-              )}
-              {gym.telegram && (
-                <a
-                  href={gym.telegram}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-2"
-                >
-                  <MessageCircle size={20} className="text-primary" />
-                  <span className="text-xs font-bold">Telegram</span>
-                </a>
-              )}
-              {gym.whatsapp && (
-                <a
-                  href={`https://wa.me/${gym.whatsapp.replace(/\D/g, "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-2"
-                >
-                  <MessageCircle size={20} className="text-primary" />
-                  <span className="text-xs font-bold">WhatsApp</span>
-                </a>
-              )}
-              {gym.website && (
-                <a
-                  href={gym.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-surface-container/70 hover:bg-surface-container/90 backdrop-blur border border-white/5 hover:border-primary/30 p-4 rounded-xl flex items-center justify-center gap-2"
-                >
-                  <Globe size={20} className="text-primary" />
-                  <span className="text-xs font-bold">Website</span>
-                </a>
-              )}
-            </div>
-          </section>
-        )}
+          {/* Social / contact */}
+          {hasSocial ? (
+            <Card>
+              <div className="mb-3" ref={socialMediaRef as RefObject<HTMLDivElement>}>
+                <SectionTitle>شبکه‌های اجتماعی</SectionTitle>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {gym.instagram ? (
+                  <a
+                    href={gym.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] text-[11px] font-semibold text-white/80 hover:border-primary/30"
+                  >
+                    <Instagram size={18} className="text-primary" aria-hidden />
+                    اینستاگرام
+                  </a>
+                ) : null}
+                {gym.telegram ? (
+                  <a
+                    href={gym.telegram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] text-[11px] font-semibold text-white/80 hover:border-primary/30"
+                  >
+                    <Send size={18} className="text-primary" aria-hidden />
+                    تلگرام
+                  </a>
+                ) : null}
+                {gym.whatsapp ? (
+                  <a
+                    href={`https://wa.me/${String(gym.whatsapp).replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] text-[11px] font-semibold text-white/80 hover:border-primary/30"
+                  >
+                    <MessageCircle size={18} className="text-primary" aria-hidden />
+                    واتساپ
+                  </a>
+                ) : null}
+                {gym.website ? (
+                  <a
+                    href={gym.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] text-[11px] font-semibold text-white/80 hover:border-primary/30"
+                  >
+                    <Globe size={18} className="text-primary" aria-hidden />
+                    وب‌سایت
+                  </a>
+                ) : null}
+              </div>
+            </Card>
+          ) : null}
+        </div>
       </main>
 
-      {/* Sport Coaches Modal */}
       <SportCoachesModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -835,16 +844,10 @@ export function GymDetailPage() {
         error={coachesError}
       />
 
-      {/* Toast */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+      {toast ? (
+        <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
+      ) : null}
 
-      {/* Bottom Navigation */}
       <BottomNavigation />
     </div>
   );
