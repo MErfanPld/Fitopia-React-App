@@ -1,21 +1,31 @@
 /**
- * @file GymAccessTokenPage.tsx
- * @description صفحه دریافت و مدیریت توکن‌های ورود به باشگاه‌های عضو اشتراک
- * - نمایش لیست توکن‌های فعال/منقضی
- * - دریافت توکن روزانه برای هر باشگاه
- * - نمایش QR Code
- * - کپی توکن به کلیپ‌بورد
+ * Gym access tokens — request & show daily entry tokens
+ * Route: /gym-access/tokens
+ * API: /subscriptions/my/, /subscriptions/subscriptions/me/gyms/,
+ *      /tokens/my/, POST /tokens/request/
  */
 
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Copy, QrCode, CheckCircle, AlertCircle, Clock, Download, Loader, X } from 'lucide-react';
-import { Header } from '../components/Header';
-import { BottomNavigation } from '../components/BottomNavigation';
-import { ShaderBackground } from '../components/ShaderBackground';
-import { ParticleOverlay } from '../components/ParticleOverlay';
-import apiService from '../services/api';
-import { formatPersianNumber, formatPersianDate, formatPersianDateShort } from '../utils/formatting';
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  ArrowRight,
+  Copy,
+  QrCode,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Download,
+  Loader2,
+  X,
+  Building2,
+  Coins,
+  RefreshCw,
+  Ticket,
+} from "lucide-react";
+import { Header } from "../components/Header";
+import { BottomNavigation } from "../components/BottomNavigation";
+import apiService from "../services/api";
+import { formatPersianNumber } from "../utils/formatting";
 
 interface Token {
   id: number;
@@ -24,7 +34,7 @@ interface Token {
   gym: number;
   gym_name: string;
   gym_address: string;
-  status: 'active' | 'used' | 'expired';
+  status: "active" | "used" | "expired";
   is_valid: boolean;
   issued_at: string;
   valid_until: string;
@@ -61,6 +71,63 @@ interface Subscription {
   days_remaining: number;
 }
 
+function calculateTimeRemaining(validUntil: string): string {
+  try {
+    const now = new Date();
+    const expiryTime = new Date(validUntil);
+    const diff = expiryTime.getTime() - now.getTime();
+    if (diff <= 0) return "منقضی شده";
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    return `${formatPersianNumber(hours)}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  } catch {
+    return "—";
+  }
+}
+
+function formatDisplayTime(validUntil: string): string {
+  try {
+    return new Date(validUntil).toLocaleTimeString("fa-IR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+  } catch {
+    return "";
+  }
+}
+
+function statusMeta(status: string) {
+  switch (status) {
+    case "active":
+      return {
+        label: "فعال",
+        className: "bg-emerald-500/15 text-emerald-300 border-emerald-500/25",
+        Icon: CheckCircle2,
+      };
+    case "used":
+      return {
+        label: "استفاده‌شده",
+        className: "bg-white/8 text-white/55 border-white/10",
+        Icon: Clock,
+      };
+    case "expired":
+      return {
+        label: "منقضی",
+        className: "bg-red-500/15 text-red-300 border-red-500/25",
+        Icon: AlertCircle,
+      };
+    default:
+      return {
+        label: status,
+        className: "bg-white/8 text-white/55 border-white/10",
+        Icon: Clock,
+      };
+  }
+}
+
 export function GymAccessTokenPage() {
   const navigate = useNavigate();
   const [gyms, setGyms] = useState<GymWithToken[]>([]);
@@ -74,101 +141,111 @@ export function GymAccessTokenPage() {
   const [copyFeedback, setCopyFeedback] = useState<number | null>(null);
   const [subscriptionInfo, setSubscriptionInfo] = useState<Subscription | null>(null);
 
-  useEffect(() => {
-    document.title = 'FITOPIA | توکن‌های دسترسی';
-    loadData();
-    
-    // بروزرسانی مقدار زمان باقیمانده هر 10 ثانیه
-    const interval = setInterval(updateTimeRemaining, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // 1. دریافت اطلاعات اشتراک فعال
-      const subscription = await apiService.get<Subscription>('/subscriptions/my/');
-      console.log('📦 Subscription:', subscription);
-      
+      const subscription = await apiService.get<Subscription>("/subscriptions/my/");
       if (!subscription || !subscription.is_active) {
-        setError('هیچ اشتراک فعالی وجود ندارد');
-        setLoading(false);
+        setError("هیچ اشتراک فعالی وجود ندارد");
+        setSubscriptionInfo(null);
+        setGyms([]);
         return;
       }
-
       setSubscriptionInfo(subscription);
 
-      // 2. دریافت باشگاه‌های اشتراک
-      const subscriptionGymsData = await apiService.get<any>('/subscriptions/subscriptions/me/gyms/');
-      console.log('🏢 Subscription Gyms:', subscriptionGymsData);
-      
-      if (!subscriptionGymsData || !subscriptionGymsData.gyms || subscriptionGymsData.gyms.length === 0) {
-        setError('هیچ باشگاهی برای این اشتراک موجود نیست');
-        setLoading(false);
+      const subscriptionGymsData = await apiService.get<{ gyms?: Gym[] }>(
+        "/subscriptions/subscriptions/me/gyms/",
+      );
+      if (!subscriptionGymsData?.gyms?.length) {
+        setError("هیچ باشگاهی برای این اشتراک موجود نیست");
+        setGyms([]);
         return;
       }
 
-      // 3. دریافت تمام توکن‌های کاربر
-      const tokens = await apiService.get<Token[]>('/tokens/my/');
-      console.log('📤 Tokens:', tokens);
-
-      const expandedTokens: ExpandedToken[] = (tokens || []).map(token => ({
+      const tokens = await apiService.get<Token[]>("/tokens/my/");
+      const expandedTokens: ExpandedToken[] = (tokens || []).map((token) => ({
         ...token,
         timeRemaining: calculateTimeRemaining(token.valid_until),
         displayTime: formatDisplayTime(token.valid_until),
       }));
 
-      // 4. ترکیب اطلاعات: برای هر باشگاه توکن‌های آن رو پیدا کن
-      const gymsWithTokens: GymWithToken[] = subscriptionGymsData.gyms.map((gym: Gym) => {
-        const gymTokens = expandedTokens.filter(t => t.gym === gym.id);
-        const activeToken = gymTokens.find(t => t.status === 'active') || null;
-        const inactiveTokens = gymTokens.filter(t => t.status !== 'active');
-
-        return {
-          gym,
-          activeToken,
-          inactiveTokens,
-        };
+      const gymsWithTokens: GymWithToken[] = subscriptionGymsData.gyms.map((gym) => {
+        const gymTokens = expandedTokens.filter((t) => t.gym === gym.id);
+        const activeToken = gymTokens.find((t) => t.status === "active") || null;
+        const inactiveTokens = gymTokens.filter((t) => t.status !== "active");
+        return { gym, activeToken, inactiveTokens };
       });
 
       setGyms(gymsWithTokens);
-    } catch (err: any) {
-      console.error('❌ Error loading data:', err);
-      setError(err.message || 'خطا در بارگذاری اطلاعات');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "خطا در بارگذاری اطلاعات";
+      setError(msg);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    document.title = "FITOPIA | توکن‌های دسترسی";
+    loadData();
+    const interval = window.setInterval(() => {
+      setGyms((prev) =>
+        prev.map((item) => ({
+          ...item,
+          activeToken: item.activeToken
+            ? {
+                ...item.activeToken,
+                timeRemaining: calculateTimeRemaining(item.activeToken.valid_until),
+              }
+            : null,
+        })),
+      );
+    }, 10000);
+    return () => window.clearInterval(interval);
+  }, [loadData]);
+
+  useEffect(() => {
+    if (!showQRModal && !showCopyModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowQRModal(false);
+        setShowCopyModal(false);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [showQRModal, showCopyModal]);
 
   const requestToken = async (gymId: number) => {
     try {
       setRequestingToken(gymId);
       setError(null);
-      
-      const newToken = await apiService.post<Token>('/tokens/request/', {
+
+      const newToken = await apiService.post<Token>("/tokens/request/", {
         gym_id: gymId,
       });
-      
-      console.log('✅ Token requested:', newToken);
-      
-      // اضافه کردن توکن جدید و بروزرسانی لیست
+
       const expandedToken: ExpandedToken = {
         ...newToken,
         timeRemaining: calculateTimeRemaining(newToken.valid_until),
         displayTime: formatDisplayTime(newToken.valid_until),
       };
 
-      setGyms(prev => 
-        prev.map(item => 
-          item.gym.id === gymId 
-            ? { ...item, activeToken: expandedToken, inactiveTokens: [] }
-            : item
-        )
+      setGyms((prev) =>
+        prev.map((item) =>
+          item.gym.id === gymId
+            ? { ...item, activeToken: expandedToken, inactiveTokens: item.inactiveTokens }
+            : item,
+        ),
       );
 
-      // بروزرسانی توکن‌های باقی‌مانده
       if (subscriptionInfo) {
         setSubscriptionInfo({
           ...subscriptionInfo,
@@ -179,60 +256,12 @@ export function GymAccessTokenPage() {
 
       setSelectedToken(expandedToken);
       setShowQRModal(true);
-      
-    } catch (err: any) {
-      console.error('❌ Error requesting token:', err);
-      setError(err.message || 'خطا در دریافت توکن');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "خطا در دریافت توکن";
+      setError(msg);
     } finally {
       setRequestingToken(null);
     }
-  };
-
-  const calculateTimeRemaining = (validUntil: string): string => {
-    try {
-      const now = new Date();
-      const expiryTime = new Date(validUntil);
-      const diff = expiryTime.getTime() - now.getTime();
-      
-      if (diff <= 0) return 'منقضی شده';
-      
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-      
-      return `${formatPersianNumber(hours)}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    } catch (error) {
-      return 'خطا';
-    }
-  };
-
-  const formatDisplayTime = (validUntil: string): string => {
-    try {
-      const date = new Date(validUntil);
-      const time = date.toLocaleTimeString('fa-IR', { 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        second: '2-digit',
-        hour12: false 
-      });
-      return time;
-    } catch (error) {
-      return '';
-    }
-  };
-
-  const updateTimeRemaining = () => {
-    setGyms(prev => 
-      prev.map(item => ({
-        ...item,
-        activeToken: item.activeToken 
-          ? {
-              ...item.activeToken,
-              timeRemaining: calculateTimeRemaining(item.activeToken.valid_until),
-            }
-          : null,
-      }))
-    );
   };
 
   const openCopyModal = (token: ExpandedToken) => {
@@ -242,490 +271,422 @@ export function GymAccessTokenPage() {
 
   const copyToClipboard = async () => {
     if (!copyModalToken) return;
-    
     try {
       await navigator.clipboard.writeText(copyModalToken.token_code);
       setCopyFeedback(copyModalToken.id);
-      setTimeout(() => {
+      window.setTimeout(() => {
         setCopyFeedback(null);
         setShowCopyModal(false);
       }, 1500);
-    } catch (err) {
-      console.error('Error copying to clipboard:', err);
+    } catch {
+      /* ignore */
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-500/10 text-green-400 border-green-500/20';
-      case 'used':
-        return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
-      case 'expired':
-        return 'bg-red-500/10 text-red-400 border-red-500/20';
-      default:
-        return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
-    }
+  const downloadQr = (token: ExpandedToken) => {
+    if (!token.qr_code) return;
+    const link = document.createElement("a");
+    link.href = token.qr_code;
+    link.download = `token-${token.token_code}.png`;
+    link.click();
   };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'فعال';
-      case 'used':
-        return 'استفاده‌شده';
-      case 'expired':
-        return 'منقضی‌شده';
-      default:
-        return status;
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <CheckCircle className="w-4 h-4" />;
-      case 'used':
-        return <Clock className="w-4 h-4" />;
-      case 'expired':
-        return <AlertCircle className="w-4 h-4" />;
-      default:
-        return null;
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="fixed inset-0 bg-[#07070A] z-50 flex flex-col justify-center items-center">
-        <div className="relative w-20 h-20 flex items-center justify-center">
-          <div className="absolute inset-0 bg-primary/25 rounded-full blur-2xl animate-pulse" />
-          <div className="w-16 h-16 rounded-full border-t-2 border-r-2 border-primary animate-spin" />
-          <div className="absolute w-12 h-12 rounded-full border-b-2 border-l-2 border-[#FFB000]/60 animate-spin-[reverse_1.5s_linear_infinite]" />
-        </div>
-        <p className="mt-6 text-sm font-black font-vazir text-primary tracking-widest animate-pulse">FITOPIA</p>
-      </div>
-    );
-  }
 
   return (
-    <>
-      <ShaderBackground />
-      <ParticleOverlay />
-
+    <div className="min-h-dvh bg-[#07070A] text-right home-with-rail">
       <Header />
 
-      <main className="relative z-10 pt-24 pb-36 px-4 md:px-8 max-w-4xl mx-auto w-full">
-        {/* Back Button & Title */}
-        <div className="mb-8 flex items-center gap-4">
-          <button
-            onClick={() => navigate('/home')}
-            className="p-2 hover:bg-white/5 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-6 h-6 text-on-surface" />
-          </button>
-          <div className="flex-1">
-            <h1 className="text-display-lg-mobile font-bold text-white">دریافت توکن</h1>
-            <p className="text-body-md text-on-surface-variant">
-              اشتراک: {subscriptionInfo?.plan_name || '...'}
-            </p>
-          </div>
-        </div>
-
-        {/* Subscription Info */}
-        {subscriptionInfo && (
-          <div className="mb-6 glass-panel rounded-2xl p-4 border border-primary/20 space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-label-sm text-on-surface-variant">توکن باقی‌مانده:</span>
-              <span className="text-headline-md text-primary font-bold">
-                {formatPersianNumber(subscriptionInfo.tokens_remaining || 0)} / {formatPersianNumber(subscriptionInfo.tokens_total || 0)}
-              </span>
+      <main className="relative z-10 home-shell home-pad pb-[calc(6.75rem+env(safe-area-inset-bottom))] md:pb-12">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 sm:gap-5 lg:max-w-4xl">
+          <div className="flex items-center gap-3 pt-1">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.07]"
+              aria-label="بازگشت"
+            >
+              <ArrowRight size={20} aria-hidden />
+            </button>
+            <div className="min-w-0 flex-1 text-right">
+              <h1 className="text-lg font-extrabold tracking-tight text-white sm:text-xl">
+                توکن‌های دسترسی
+              </h1>
+              <p className="text-[11px] text-white/45 mt-0.5">ورود روزانه به باشگاه‌های اشتراک</p>
             </div>
-            <div className="w-full bg-surface-container rounded-full h-2">
-              <div 
-                className="bg-gradient-to-r from-primary to-[#FFB000] h-2 rounded-full transition-all"
-                style={{
-                  width: `${subscriptionInfo.tokens_total ? (subscriptionInfo.tokens_remaining / subscriptionInfo.tokens_total * 100) : 0}%`
-                }}
-              />
-            </div>
-            <div className="flex justify-between text-xs text-on-surface-variant pt-2">
-              <span>استفاده شده: {formatPersianNumber(subscriptionInfo.tokens_used || 0)}</span>
-              <span>روزهای باقی: {formatPersianNumber(subscriptionInfo.days_remaining || 0)}</span>
-            </div>
+            <button
+              type="button"
+              onClick={loadData}
+              disabled={loading}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white/80 disabled:opacity-50"
+              aria-label="بروزرسانی"
+            >
+              <RefreshCw size={18} className={loading ? "animate-spin" : ""} aria-hidden />
+            </button>
           </div>
-        )}
 
-        {/* Error Alert */}
-        {error && (
-          <div className="mb-6 bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-lg flex gap-3">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <p className="text-body-md">{error}</p>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {gyms.length === 0 ? (
-          <div className="text-center py-12 space-y-4">
-            <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
-              <QrCode className="w-8 h-8 text-primary" />
+          {loading ? (
+            <div className="space-y-3" aria-busy="true" aria-label="در حال بارگذاری">
+              <div className="skeleton h-28 w-full rounded-2xl" />
+              <div className="skeleton h-40 w-full rounded-2xl" />
+              <div className="skeleton h-40 w-full rounded-2xl" />
             </div>
-            <h2 className="text-headline-md text-white">هیچ باشگاهی دسترسی‌دار نیست</h2>
-            <p className="text-body-md text-on-surface-variant max-w-xs mx-auto">
-              برای این اشتراک هیچ باشگاهی تعریف نشده است.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Gym Cards */}
-            {gyms.map((item) => (
-              <div key={item.gym.id} className="glass-panel rounded-2xl p-6 space-y-4 border border-white/5">
-                {/* Gym Header */}
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-headline-md text-white font-bold">{item.gym.name}</h3>
-                    <div className="flex items-start gap-2 mt-1">
-                      <span className="text-label-sm text-on-surface-variant mt-0.5">📍</span>
-                      <p className="text-label-sm text-on-surface-variant">{item.gym.address}</p>
-                    </div>
-                    {item.gym.phone && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-label-sm text-on-surface-variant">📞</span>
-                        <a href={`tel:${item.gym.phone}`} className="text-label-sm text-primary hover:text-primary/80">
-                          {item.gym.phone}
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </div>
+          ) : null}
 
-                {/* Active Token */}
-                {item.activeToken ? (
-                  <div className="bg-gradient-to-r from-green-500/5 to-emerald-500/5 border border-green-500/20 rounded-xl p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                        <span className="text-label-sm font-bold text-green-400">توکن فعال</span>
-                      </div>
-                      <span className="text-label-sm text-on-surface-variant">
-                        {item.activeToken.timeRemaining}
-                      </span>
-                    </div>
-
-                    {/* Token Code Box */}
-                    <div className="flex items-center gap-2 bg-surface-container rounded-lg p-3">
-                      <input
-                        type="text"
-                        value={item.activeToken.token_code}
-                        readOnly
-                        className="flex-1 bg-transparent text-body-md text-white font-mono outline-none text-xs md:text-sm"
-                      />
-                      <button
-                        onClick={() => openCopyModal(item.activeToken!)}
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors text-primary flex-shrink-0"
-                        title="کپی توکن"
-                      >
-                        <Copy className="w-5 h-5" />
-                      </button>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedToken(item.activeToken!);
-                          setShowQRModal(true);
-                        }}
-                        className="flex-1 flex items-center justify-center gap-2 bg-primary/20 text-primary py-2.5 rounded-lg hover:bg-primary/30 transition-colors font-label-sm"
-                      >
-                        <QrCode className="w-4 h-4" />
-                        نمایش QR
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (item.activeToken?.qr_code) {
-                            const link = document.createElement('a');
-                            link.href = item.activeToken.qr_code;
-                            link.download = `token-${item.activeToken.token_code}.png`;
-                            link.click();
-                          }
-                        }}
-                        className="p-2.5 hover:bg-white/10 rounded-lg transition-colors text-on-surface-variant"
-                        title="دانلود QR"
-                      >
-                        <Download className="w-5 h-5" />
-                      </button>
-                    </div>
-
-                    {/* Token Info */}
-                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5 text-xs text-on-surface-variant">
-                      <div>
-                        <p className="text-on-surface-variant/70">صادر شده:</p>
-                        <p className="text-white font-vazir">{formatPersianDateShort(item.activeToken.issued_at)}</p>
-                      </div>
-                      <div className="text-left">
-                        <p className="text-on-surface-variant/70">منقضی شدن:</p>
-                        <p className="text-white font-vazir">{formatPersianDateShort(item.activeToken.valid_until)}</p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  /* Request Token Button */
-                  <button
-                    onClick={() => requestToken(item.gym.id)}
-                    disabled={requestingToken === item.gym.id || (subscriptionInfo?.tokens_remaining || 0) <= 0}
-                    className="w-full amber-gradient py-3 rounded-xl font-headline-md text-white hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {requestingToken === item.gym.id ? (
-                      <>
-                        <Loader className="w-5 h-5 animate-spin" />
-                        در حال دریافت...
-                      </>
-                    ) : (subscriptionInfo?.tokens_remaining || 0) <= 0 ? (
-                      <>
-                        <AlertCircle className="w-5 h-5" />
-                        توکن باقی‌مانده نیست
-                      </>
-                    ) : (
-                      <>
-                        <QrCode className="w-5 h-5" />
-                        دریافت توکن روزانه
-                      </>
-                    )}
-                  </button>
-                )}
-
-                {/* Inactive Tokens */}
-                {item.inactiveTokens.length > 0 && (
-                  <details className="pt-2 border-t border-white/5">
-                    <summary className="cursor-pointer text-label-sm text-on-surface-variant hover:text-on-surface transition-colors">
-                      {item.inactiveTokens.length} توکن منقضی‌شده
-                    </summary>
-                    <div className="mt-3 space-y-2">
-                      {item.inactiveTokens.map((token) => (
-                        <div
-                          key={token.id}
-                          className={`flex items-center justify-between p-3 rounded-lg border ${getStatusColor(
-                            token.status
-                          )}`}
-                        >
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            {getStatusIcon(token.status)}
-                            <span className="text-label-sm font-mono text-xs truncate">
-                              {token.token_code.substring(0, 8)}...
-                            </span>
-                          </div>
-                          <span className="text-label-sm flex-shrink-0">{getStatusLabel(token.status)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </details>
-                )}
+          {!loading && error && gyms.length === 0 ? (
+            <div className="rounded-2xl border border-red-500/20 bg-red-500/5 px-5 py-10 text-center space-y-3">
+              <AlertCircle className="mx-auto h-9 w-9 text-red-300/80" aria-hidden />
+              <p className="text-sm font-semibold text-white">{error}</p>
+              <div className="flex flex-wrap justify-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={loadData}
+                  className="btn btn-primary min-h-11 px-5 text-sm inline-flex items-center gap-2"
+                >
+                  <RefreshCw size={16} aria-hidden />
+                  تلاش مجدد
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/subscriptions")}
+                  className="min-h-11 rounded-xl border border-white/12 bg-white/[0.04] px-5 text-sm font-semibold text-white/80"
+                >
+                  مشاهده اشتراک‌ها
+                </button>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ) : null}
+
+          {!loading && subscriptionInfo ? (
+            <section className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/[0.12] to-[#121216] p-4 sm:p-5">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -left-6 top-0 h-24 w-24 rounded-full bg-primary/20 blur-3xl"
+              />
+              <div className="relative z-10 flex flex-wrap items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-bold text-emerald-300">
+                  <Ticket size={12} aria-hidden />
+                  {subscriptionInfo.plan_name || "اشتراک فعال"}
+                </span>
+                {subscriptionInfo.days_remaining != null ? (
+                  <span className="text-xs font-semibold text-primary">
+                    {formatPersianNumber(subscriptionInfo.days_remaining)} روز باقی
+                  </span>
+                ) : null}
+              </div>
+              <div className="relative z-10 mt-3 grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-black/25 px-2.5 py-2 text-center">
+                  <p className="text-[10px] text-white/40">باقی‌مانده</p>
+                  <p className="text-sm font-black text-white tabular-nums mt-0.5">
+                    {formatPersianNumber(subscriptionInfo.tokens_remaining ?? 0)}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-black/25 px-2.5 py-2 text-center">
+                  <p className="text-[10px] text-white/40">مصرف‌شده</p>
+                  <p className="text-sm font-black text-white tabular-nums mt-0.5">
+                    {formatPersianNumber(subscriptionInfo.tokens_used ?? 0)}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-black/25 px-2.5 py-2 text-center">
+                  <p className="text-[10px] text-white/40">کل</p>
+                  <p className="text-sm font-black text-white tabular-nums mt-0.5">
+                    {formatPersianNumber(subscriptionInfo.tokens_total ?? 0)}
+                  </p>
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+          {!loading && error && gyms.length > 0 ? (
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-2xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+            >
+              <AlertCircle size={18} className="shrink-0 mt-0.5" aria-hidden />
+              <p>{error}</p>
+            </div>
+          ) : null}
+
+          {!loading && gyms.length > 0 ? (
+            <section className="space-y-3" aria-label="باشگاه‌های اشتراک">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="flex items-center gap-2 text-[0.95rem] font-bold text-white">
+                  <span className="inline-block h-4 w-1 rounded-full bg-primary-container" aria-hidden />
+                  <Building2 size={15} className="text-primary" aria-hidden />
+                  باشگاه‌ها
+                </h2>
+                <span className="text-[11px] text-white/40">
+                  {formatPersianNumber(gyms.length)} باشگاه
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {gyms.map((item) => (
+                  <article
+                    key={item.gym.id}
+                    className="rounded-2xl border border-white/[0.08] bg-[#121216] p-4 sm:p-5 space-y-3"
+                  >
+                    <div className="text-right">
+                      <h3 className="text-sm font-extrabold text-white leading-snug">
+                        {item.gym.name}
+                      </h3>
+                      {item.gym.address ? (
+                        <p className="mt-0.5 text-[11px] text-white/45 line-clamp-1">
+                          {item.gym.address}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    {item.activeToken ? (
+                      <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-3 space-y-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-300">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
+                            توکن فعال
+                          </span>
+                          <span className="font-mono text-xs text-white/70 tabular-nums">
+                            {item.activeToken.timeRemaining}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 rounded-lg bg-black/30 px-3 py-2.5">
+                          <code className="flex-1 min-w-0 truncate text-xs sm:text-sm font-mono text-white text-left" dir="ltr">
+                            {item.activeToken.token_code}
+                          </code>
+                          <button
+                            type="button"
+                            onClick={() => openCopyModal(item.activeToken!)}
+                            className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-lg text-primary hover:bg-white/5"
+                            aria-label="کپی توکن"
+                          >
+                            <Copy size={16} aria-hidden />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedToken(item.activeToken!);
+                              setShowQRModal(true);
+                            }}
+                            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-primary/15 text-sm font-semibold text-primary border border-primary/25"
+                          >
+                            <QrCode size={16} aria-hidden />
+                            QR
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => downloadQr(item.activeToken!)}
+                            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] text-sm font-semibold text-white/80"
+                          >
+                            <Download size={16} aria-hidden />
+                            دانلود
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => requestToken(item.gym.id)}
+                        disabled={
+                          requestingToken === item.gym.id ||
+                          (subscriptionInfo?.tokens_remaining ?? 0) <= 0
+                        }
+                        className="btn btn-primary w-full min-h-12 text-sm inline-flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {requestingToken === item.gym.id ? (
+                          <>
+                            <Loader2 size={18} className="animate-spin" aria-hidden />
+                            در حال دریافت…
+                          </>
+                        ) : (
+                          <>
+                            <Coins size={18} aria-hidden />
+                            دریافت توکن ورود
+                          </>
+                        )}
+                      </button>
+                    )}
+
+                    {item.inactiveTokens.length > 0 ? (
+                      <div className="space-y-1.5 pt-1">
+                        <p className="text-[11px] text-white/40">سوابق این باشگاه</p>
+                        {item.inactiveTokens.slice(0, 3).map((t) => {
+                          const meta = statusMeta(t.status);
+                          const Icon = meta.Icon;
+                          return (
+                            <div
+                              key={t.id}
+                              className="flex items-center justify-between gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2"
+                            >
+                              <code className="text-[11px] font-mono text-white/50 truncate" dir="ltr">
+                                {t.token_code}
+                              </code>
+                              <span
+                                className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${meta.className}`}
+                              >
+                                <Icon size={11} aria-hidden />
+                                {meta.label}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </div>
       </main>
 
-      {/* QR Modal */}
-      {selectedToken && (
+      {showQRModal && selectedToken ? (
         <div
-          className={`fixed inset-0 z-50 flex items-end justify-center transition-opacity duration-300 ${
-            showQRModal ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          }`}
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="کد QR توکن"
         >
-          <div
-            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            aria-label="بستن"
             onClick={() => setShowQRModal(false)}
           />
-          <div className="relative w-full max-w-md glass-panel rounded-t-3xl p-6 space-y-6 transform transition-transform duration-300 max-h-[90vh] overflow-y-auto">
-            <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto" />
-
-            {/* Header */}
-            <div className="text-center space-y-2">
-              <h3 className="text-display-lg-mobile text-white font-bold">تأییدیه ورود</h3>
-              <p className="text-body-md text-on-surface-variant">
-                QR کد را مقابل اسکنر باشگاه قرار دهید
-              </p>
+          <div className="relative z-10 w-full max-w-sm rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#121216] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-extrabold text-white">کد QR ورود</h3>
+              <button
+                type="button"
+                onClick={() => setShowQRModal(false)}
+                className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-white/10 text-white/70"
+                aria-label="بستن"
+              >
+                <X size={18} aria-hidden />
+              </button>
             </div>
-
-            {/* Ticket-Style Card */}
-            <div className="bg-white rounded-2xl p-6 space-y-4 text-black overflow-hidden relative">
-              {/* QR Code */}
+            <p className="text-xs text-white/50 text-center">{selectedToken.gym_name}</p>
+            <div className="mx-auto flex aspect-square w-52 items-center justify-center rounded-2xl border border-white/10 bg-white p-3">
               {selectedToken.qr_code ? (
                 <img
                   src={selectedToken.qr_code}
                   alt="QR Code"
-                  className="w-full aspect-square bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 object-contain p-2"
+                  className="h-full w-full object-contain"
                 />
               ) : (
-                <div className="aspect-square w-full bg-slate-100 flex items-center justify-center rounded-xl border-2 border-dashed border-slate-300">
-                  <QrCode className="w-16 h-16 text-slate-300" />
-                </div>
+                <QrCode className="h-16 w-16 text-black/30" aria-hidden />
               )}
-
-              {/* Token Info */}
-              <div className="space-y-2 border-t border-slate-200 pt-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-label-sm text-slate-500 font-bold">باشگاه</p>
-                    <p className="text-body-md font-bold">{selectedToken.gym_name}</p>
-                  </div>
-                  <div className="text-left">
-                    <p className="text-label-sm text-slate-500 font-bold">وضعیت</p>
-                    <div className="flex items-center gap-1 mt-1">
-                      <div className="w-2 h-2 bg-green-500 rounded-full" />
-                      <span className="text-label-sm font-bold text-green-600">
-                        {getStatusLabel(selectedToken.status)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Time Info */}
-              <div className="flex justify-between items-center border-t border-slate-200 pt-4">
-                <div>
-                  <p className="text-label-sm text-slate-500 font-bold">اعتبار تا</p>
-                  <p className="text-body-md font-bold font-mono">{selectedToken.displayTime}</p>
-                </div>
-                <div className="text-left">
-                  <p className="text-label-sm text-slate-500 font-bold">زمان باقی‌مانده</p>
-                  <p className="text-body-md font-bold font-mono text-green-600">
-                    {selectedToken.timeRemaining}
-                  </p>
-                </div>
-              </div>
-
-              {/* Ticket Notch Decorations */}
-              <div className="absolute top-1/2 -left-4 w-8 h-8 bg-[#07070A] rounded-full -translate-y-1/2" />
-              <div className="absolute top-1/2 -right-4 w-8 h-8 bg-[#07070A] rounded-full -translate-y-1/2" />
             </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3">
+            <code className="block text-center font-mono text-sm text-white tracking-wide" dir="ltr">
+              {selectedToken.token_code}
+            </code>
+            <p className="text-center text-[11px] text-white/45">
+              اعتبار تا: <span className="font-mono text-white/70">{selectedToken.timeRemaining}</span>
+            </p>
+            <div className="grid grid-cols-2 gap-2">
               <button
+                type="button"
                 onClick={() => openCopyModal(selectedToken)}
-                className="flex-1 bg-surface-container-high text-white py-3 rounded-lg font-label-sm flex items-center justify-center gap-2 hover:bg-surface-variant transition-colors border border-white/5"
+                className="min-h-11 rounded-xl border border-white/12 bg-white/[0.04] text-sm font-semibold text-white/85 inline-flex items-center justify-center gap-1.5"
               >
-                <Copy className="w-4 h-4" />
-                کپی کد
+                <Copy size={15} aria-hidden />
+                کپی
               </button>
               <button
-                onClick={() => {
-                  if (selectedToken.qr_code) {
-                    const link = document.createElement('a');
-                    link.href = selectedToken.qr_code;
-                    link.download = `token-${selectedToken.token_code}.png`;
-                    link.click();
-                  }
-                }}
-                className="flex-1 border border-primary/40 text-primary py-3 rounded-lg font-label-sm hover:bg-primary/10 transition-colors flex items-center justify-center gap-2"
+                type="button"
+                onClick={() => downloadQr(selectedToken)}
+                className="btn btn-primary min-h-11 text-sm inline-flex items-center justify-center gap-1.5"
               >
-                <Download className="w-4 h-4" />
-                ذخیره
+                <Download size={15} aria-hidden />
+                دانلود
               </button>
             </div>
-
-            {/* Close Button */}
-            <button
-              onClick={() => setShowQRModal(false)}
-              className="w-full bg-surface-container text-on-surface py-3 rounded-lg font-label-sm hover:bg-surface-container-high transition-colors"
-            >
-              بستن
-            </button>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* Copy Token Modal */}
-      {copyModalToken && (
+      {showCopyModal && copyModalToken ? (
         <div
-          className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${
-            showCopyModal ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          }`}
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="کپی توکن"
         >
-          <div
-            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            aria-label="بستن"
             onClick={() => setShowCopyModal(false)}
           />
-          <div className="relative w-full max-w-sm glass-panel rounded-3xl p-6 space-y-6 transform transition-transform duration-300">
+          <div className="relative z-10 w-full max-w-sm rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#121216] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-headline-md text-white font-bold">کپی توکن</h3>
+              <h3 className="text-base font-extrabold text-white">کپی کد توکن</h3>
               <button
+                type="button"
                 onClick={() => setShowCopyModal(false)}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-white/10 text-white/70"
+                aria-label="بستن"
               >
-                <X className="w-5 h-5 text-on-surface" />
+                <X size={18} aria-hidden />
               </button>
             </div>
-
-            {/* Token Code Display */}
-            <div className="space-y-3">
-              <p className="text-label-sm text-on-surface-variant">کد توکن ورود به باشگاه:</p>
-              <div className="bg-surface-container rounded-xl p-4 space-y-3">
-                <input
-                  type="text"
-                  value={copyModalToken.token_code}
-                  readOnly
-                  className="w-full bg-surface-container-high text-white font-mono text-sm p-3 rounded-lg border border-white/10 outline-none"
-                  onClick={(e) => e.currentTarget.select()}
-                />
-                <p className="text-xs text-on-surface-variant text-center">
-                  برای انتخاب تمام متن روی input کلیک کن
-                </p>
+            <input
+              type="text"
+              readOnly
+              value={copyModalToken.token_code}
+              dir="ltr"
+              className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-center font-mono text-sm text-white outline-none"
+              onFocus={(e) => e.currentTarget.select()}
+            />
+            <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 space-y-1.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-emerald-300 font-semibold">فعال</span>
+                <span className="text-white/45">وضعیت</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-mono text-white/80">{copyModalToken.timeRemaining}</span>
+                <span className="text-white/45">زمان باقی</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/80 truncate max-w-[60%]">{copyModalToken.gym_name}</span>
+                <span className="text-white/45">باشگاه</span>
               </div>
             </div>
-
-            {/* Token Info */}
-            <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-on-surface-variant">وضعیت:</span>
-                <span className="text-green-400 font-bold">فعال</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-on-surface-variant">زمان باقی:</span>
-                <span className="text-white font-mono">{copyModalToken.timeRemaining}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-on-surface-variant">باشگاه:</span>
-                <span className="text-white font-vazir">{copyModalToken.gym_name}</span>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <button
+                type="button"
+                onClick={() => setShowCopyModal(false)}
+                className="min-h-11 rounded-xl border border-white/12 bg-white/[0.04] text-sm font-semibold text-white/80"
+              >
+                بستن
+              </button>
+              <button
+                type="button"
                 onClick={copyToClipboard}
-                className={`flex-1 py-3 rounded-lg font-label-sm flex items-center justify-center gap-2 transition-all ${
+                className={`min-h-11 rounded-xl text-sm font-bold inline-flex items-center justify-center gap-1.5 ${
                   copyFeedback === copyModalToken.id
-                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                    : 'amber-gradient text-white hover:shadow-lg hover:shadow-primary/30'
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                    : "btn btn-primary"
                 }`}
               >
                 {copyFeedback === copyModalToken.id ? (
                   <>
-                    <CheckCircle className="w-5 h-5" />
-                    کپی شد ✓
+                    <CheckCircle2 size={16} aria-hidden />
+                    کپی شد
                   </>
                 ) : (
                   <>
-                    <Copy className="w-5 h-5" />
+                    <Copy size={16} aria-hidden />
                     کپی کن
                   </>
                 )}
               </button>
-              <button
-                onClick={() => setShowCopyModal(false)}
-                className="flex-1 bg-surface-container text-on-surface py-3 rounded-lg font-label-sm hover:bg-surface-container-high transition-colors"
-              >
-                بستن
-              </button>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       <BottomNavigation />
-    </>
+    </div>
   );
 }
