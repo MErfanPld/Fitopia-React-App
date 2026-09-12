@@ -1,5 +1,5 @@
 /**
- * Nearby gyms map — dark tiles + pin markers + nearby panel overlay
+ * Nearby gyms map — OpenStreetMap tiles + pin markers + nearby panel overlay
  * Map fills viewport; panel sits ON TOP of map (both always visible)
  */
 
@@ -102,7 +102,7 @@ export default function GymMap() {
           zoom={14}
           className="gym-map"
           zoomControl={false}
-          style={{ height: "100%", width: "100%", background: "#0a0a0e" }}
+          style={{ height: "100%", width: "100%", background: "#e5e7eb" }}
         >
           <MapResizeFix panelKey={panel} />
           <RecenterMap
@@ -114,9 +114,8 @@ export default function GymMap() {
           <FocusGym gym={selectedGym} nonce={focusNonce} />
 
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CARTO'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            subdomains="abcd"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             maxZoom={19}
           />
 
@@ -153,7 +152,7 @@ export default function GymMap() {
         <div className="gym-map-top">
           <div className="gym-map-status">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[11px] text-white/45">نقشه تاریک</p>
+              <p className="text-[11px] text-white/45">OpenStreetMap</p>
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
                 <MapPin size={12} aria-hidden />
                 {isFallback ? "تقریبی" : "موقعیت شما"}
