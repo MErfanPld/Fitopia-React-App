@@ -1,130 +1,151 @@
-/* Gym map styles */
+/* Gym map shell + dark theme + pins */
 
-.retry-btn {
-  margin-top: 12px;
-  padding: 8px 24px;
-  background: linear-gradient(135deg, #ff6a00 0%, #ff8c1a 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+.gym-map-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  background: #07070a;
+  overflow: hidden;
 }
 
-.retry-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 106, 0, 0.4);
+.gym-map-canvas {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
 }
 
-.gyms-error-banner {
-  margin-top: 10px;
-  padding: 10px 16px;
-  background: rgba(255, 106, 0, 0.15);
-  border: 1px solid rgba(255, 106, 0, 0.3);
-  border-radius: 8px;
+.gym-map {
+  font-family: Vazirmatn, system-ui, sans-serif;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.gym-map .leaflet-control-attribution {
+  font-size: 9px;
+  background: rgba(12, 12, 16, 0.8) !important;
+  color: rgba(255, 255, 255, 0.45) !important;
+  border-radius: 6px 0 0 0;
+  max-width: 55vw;
+}
+
+.gym-map .leaflet-control-attribution a {
+  color: #ff8a4c !important;
+}
+
+.gym-map-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: rgba(7, 7, 10, 0.88);
+  backdrop-filter: blur(4px);
+}
+
+.gym-map-top {
+  pointer-events: none;
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 500;
+  padding: max(0.4rem, env(safe-area-inset-top, 0px)) 0.75rem 0;
+}
+
+.gym-map-status {
+  pointer-events: auto;
+  max-width: 22rem;
+  margin-inline: auto;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(12, 12, 16, 0.92);
+  backdrop-filter: blur(10px);
+  padding: 0.65rem 0.85rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.gym-map-fabs {
+  position: absolute;
+  left: 0.75rem;
+  bottom: 0.75rem;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.gym-map-fab {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  color: #ff8c1a;
-  font-size: 13px;
-}
-
-.retry-small-btn {
-  padding: 4px 16px;
-  background: #ff6a00;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 12px;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(18, 18, 22, 0.95);
+  color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
   cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.3s ease;
 }
 
-.retry-small-btn:hover {
-  background: #e55d00;
+.gym-map-fab--primary {
+  color: #ff6a00;
+  border-color: rgba(255, 106, 0, 0.35);
 }
 
-.spinner-small {
-  width: 24px;
-  height: 24px;
-  border: 3px solid rgba(255, 106, 0, 0.2);
-  border-top-color: #ff6a00;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 0 auto 12px;
+.gym-pin-marker {
+  background: transparent !important;
+  border: none !important;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.gym-pin {
+  position: relative;
+  width: 36px;
+  height: 44px;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.45));
+  transition: transform 0.15s ease;
 }
 
-.empty-hint {
-  font-size: 12px;
-  color: #666;
-  margin-top: 4px;
+.gym-pin.is-active {
+  transform: scale(1.12);
+  filter: drop-shadow(0 6px 10px rgba(255, 106, 0, 0.55));
 }
 
-.user-marker.fallback .inner {
-  background: #ff6a00;
-  border-color: #ff8c1a;
-  animation: fallback-pulse 1.5s infinite;
-}
-
-.fallback-badge {
+.gym-pin-badge {
   position: absolute;
-  bottom: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255, 106, 0, 0.9);
-  color: white;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 8px;
-  white-space: nowrap;
-  font-weight: 700;
-  z-index: 20;
+  top: -2px;
+  left: -2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #ffb020;
+  color: #000;
+  font-size: 9px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #fff;
 }
 
-@keyframes fallback-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 106, 0, 0.4); }
-  50% { box-shadow: 0 0 0 10px rgba(255, 106, 0, 0); }
-}
-
-.loading-hint {
-  font-size: 12px;
-  color: #666;
-  margin-top: 8px;
-}
-
-.user-popup .retry-small-btn {
-  margin-top: 8px;
-  padding: 4px 12px;
-  background: #ff6a00;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.user-popup .retry-small-btn:hover {
-  background: #e55d00;
-}
-
-/* User GPS marker */
 .user-location-marker {
   background: transparent !important;
   border: none !important;
 }
+
 .user-dot-wrap {
   position: relative;
   width: 24px;
   height: 24px;
 }
+
 .user-dot {
   position: absolute;
   inset: 6px;
@@ -133,6 +154,7 @@
   border: 2px solid #fff;
   box-shadow: 0 0 0 2px rgba(255, 106, 0, 0.35);
 }
+
 .user-dot-pulse {
   position: absolute;
   inset: 0;
@@ -140,21 +162,131 @@
   background: rgba(255, 106, 0, 0.25);
   animation: user-pulse 2s ease-out infinite;
 }
+
 @keyframes user-pulse {
   0% { transform: scale(0.6); opacity: 0.8; }
   100% { transform: scale(1.8); opacity: 0; }
 }
 
-.gym-map {
-  font-family: Vazirmatn, system-ui, sans-serif;
+.nearby-panel {
+  position: relative;
+  z-index: 520;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: #0c0c10;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.1rem 1.1rem 0 0;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+  transition: height 0.25s ease;
+  min-height: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-.gym-map .leaflet-control-attribution {
-  font-size: 10px;
-  background: rgba(12, 12, 16, 0.75) !important;
-  color: rgba(255, 255, 255, 0.55) !important;
-  border-radius: 6px 0 0 0;
-  max-width: 70vw;
+
+.nearby-panel--collapsed {
+  height: 3.5rem;
 }
-.gym-map .leaflet-control-attribution a {
-  color: #ff8a4c !important;
+
+.nearby-panel--half {
+  height: min(42vh, 22rem);
+}
+
+.nearby-panel--full {
+  height: min(68vh, 36rem);
+}
+
+.nearby-panel__handle-row {
+  flex-shrink: 0;
+}
+
+.nearby-panel__handle {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  padding: 0.4rem 0 0.15rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.nearby-panel__grip {
+  width: 2.5rem;
+  height: 0.25rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.nearby-panel__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.75rem 0.5rem;
+}
+
+.nearby-panel__chev,
+.nearby-panel__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.nearby-panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.retry-btn,
+.retry-small-btn {
+  padding: 4px 12px;
+  background: #ff6a00;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+@media (max-width: 379px) {
+  .nearby-panel--half {
+    height: min(48vh, 20rem);
+  }
+  .gym-map-status {
+    max-width: 100%;
+  }
+}
+
+@media (min-width: 768px) {
+  .nearby-panel--half {
+    height: min(40vh, 24rem);
+  }
+  .nearby-panel--full {
+    height: min(60vh, 40rem);
+  }
+  .gym-map-fabs {
+    left: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .nearby-panel--half {
+    height: min(38vh, 26rem);
+  }
+  .gym-map-top {
+    padding-inline: 1rem;
+  }
+  .gym-map-status {
+    margin-inline: 0;
+    margin-inline-end: auto;
+  }
 }
