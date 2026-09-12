@@ -1,6 +1,7 @@
 /**
  * Full-screen nearby gym map
  * Route: /gym-map
+ * Layout: fixed viewport — map + overlay panel always together
  */
 
 import { useEffect } from "react";
@@ -14,10 +15,14 @@ export function GymMapPage() {
   }, []);
 
   return (
-    <div className="relative flex min-h-dvh flex-col bg-[#07070A] home-with-rail">
+    <div className="home-with-rail relative bg-[#07070A]">
       <Header />
-      <main className="relative z-0 flex min-h-0 flex-1 flex-col pt-14 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pt-16 md:pb-4">
-        <div className="min-h-0 flex-1">
+      {/* Explicit viewport height so map never collapses to 0 */}
+      <main
+        className="fixed inset-0 z-0 pt-14 pb-[calc(4.25rem+env(safe-area-inset-bottom,0px))] md:pt-16 md:pb-3"
+        style={{ boxSizing: "border-box" }}
+      >
+        <div className="relative h-full w-full overflow-hidden">
           <GymMap />
         </div>
       </main>

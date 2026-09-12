@@ -1,21 +1,28 @@
 import { useMap } from "react-leaflet";
 import { useEffect } from "react";
 
-/** Invalidate size after mount (flex/fullscreen layout). */
-function MapResizeFix() {
+/** Keep Leaflet sized when parent/panel layout changes */
+function MapResizeFix({ panelKey }: { panelKey?: string }) {
   const map = useMap();
 
   useEffect(() => {
-    const t = window.setTimeout(() => {
-      map.invalidateSize();
-    }, 120);
-    const onResize = () => map.invalidateSize();
-    window.addEventListener("resize", onResize);
-    return () => {
-      window.clearTimeout(t);
-      window.removeEventListener("resize", onResize);
+    const invalidate = () => {
+      map.invalidateSize({ animate: false });
     };
-  }, [map]);
+
+    invalidate();
+    const t1 = window.setTimeout(invalidate, 50);
+    const t2 = window.setTimeout(invalidate, 250);
+    const t3 = window.setTimeout(invalidate, 500);
+
+    window.addEventListener("resize", invalidate);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.clearTimeout(t3);
+      window.removeEventListener("resize", invalidate);
+    };
+  }, [map, panelKey]);
 
   return null;
 }
