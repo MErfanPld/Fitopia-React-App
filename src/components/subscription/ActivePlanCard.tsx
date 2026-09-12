@@ -1,67 +1,87 @@
-import { FC } from 'react';
-import { MySubscription } from '../../types/subscription';
-import { formatPersianNumber } from '../../utils/formatting';
+import { Sparkles, Coins, CalendarDays } from "lucide-react";
+import type { MySubscription } from "../../types/subscription";
+import { formatPersianDate, formatPersianNumber } from "../../utils/formatting";
 
 interface ActivePlanCardProps {
   subscription: MySubscription;
 }
 
-const ActivePlanCard: FC<ActivePlanCardProps> = ({ subscription }) => {
-  const tokenUsagePercent = (subscription.tokens_used / subscription.tokens_total) * 100;
+function daysLabel(days: number | string | null | undefined): number | null {
+  if (days == null) return null;
+  const n = typeof days === "string" ? parseInt(days, 10) : days;
+  return Number.isFinite(n) ? n : null;
+}
+
+export default function ActivePlanCard({ subscription }: ActivePlanCardProps) {
+  const days = daysLabel(subscription.days_remaining);
+  const statusActive = subscription.is_active && subscription.status === "active";
+  const total = subscription.tokens_total || 0;
+  const remaining = subscription.tokens_remaining || 0;
+  const progress =
+    total > 0 ? Math.min(100, Math.max(0, (remaining / total) * 100)) : 0;
 
   return (
-    <section className="relative group">
-      <div className="glass-panel rounded-xl p-6 relative overflow-hidden amber-glow border-primary/30">
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary font-label-sm text-xs mb-2">
-              اشتراک فعلی
-            </span>
-            <h2 className="font-headline-md text-headline-md text-white">
-              {subscription.plan_name}
-            </h2>
-          </div>
-          <div className="text-left">
-            <div className="text-primary font-bold text-2xl">
-              {subscription.days_remaining}
-            </div>
-            <div className="text-on-surface-variant font-label-sm uppercase tracking-widest text-[10px]">
-              مانده تا تمدید
-            </div>
-          </div>
-        </div>
+    <section
+      className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/[0.12] to-[#121216] p-4 sm:p-5"
+      aria-label="اشتراک فعال"
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-6 top-0 h-24 w-24 rounded-full bg-primary/20 blur-3xl"
+      />
 
-        <div className="space-y-3">
-          <div className="flex justify-between text-sm font-medium">
-            <span className="text-on-surface-variant">مصرف توکن آموزشی</span>
-            <span className="text-white">
-              {formatPersianNumber(subscription.tokens_used)} از {formatPersianNumber(subscription.tokens_total)} توکن
-            </span>
-          </div>
-          <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
-            <div
-              className="h-full energy-gradient rounded-full shadow-[0_0_10px_rgba(255,106,0,0.5)]"
-              style={{ width: `${tokenUsagePercent}%` }}
-            />
-          </div>
-        </div>
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-2">
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+            statusActive
+              ? "bg-emerald-500/15 text-emerald-300"
+              : "bg-white/8 text-white/60"
+          }`}
+        >
+          <Sparkles size={11} aria-hidden />
+          {statusActive ? "اشتراک فعال" : subscription.status === "expired" ? "منقضی" : "غیرفعال"}
+        </span>
+        {days != null ? (
+          <span className="text-xs font-semibold text-primary">
+            {days > 0
+              ? `${formatPersianNumber(days)} روز باقی‌مانده`
+              : "امروز آخرین روز"}
+          </span>
+        ) : null}
+      </div>
 
-        <div className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center">
-          <div className="flex -space-x-2 space-x-reverse">
-            <div className="w-8 h-8 rounded-full border-2 border-surface bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-              +
-            </div>
-          </div>
-          <button className="text-primary font-label-sm flex items-center gap-1 hover:opacity-80">
-            جزئیات پلن
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
+      <h2 className="relative z-10 mt-2 text-base font-extrabold text-white">
+        {subscription.plan_name || "اشتراک فیتوپیا"}
+      </h2>
+
+      <div className="relative z-10 mt-3 flex items-center gap-1.5 text-[11px] text-white/50">
+        <CalendarDays size={12} className="text-primary/80" aria-hidden />
+        <span dir="ltr">
+          {formatPersianDate(subscription.start_date)} — {formatPersianDate(subscription.end_date)}
+        </span>
+      </div>
+
+      <div className="relative z-10 mt-4">
+        <div className="mb-1.5 flex items-center justify-between text-[11px]">
+          <span className="inline-flex items-center gap-1 font-semibold text-white/80">
+            <Coins size={12} className="text-primary" aria-hidden />
+            {formatPersianNumber(remaining)} / {formatPersianNumber(total)} توکن
+          </span>
+          <span className="text-white/40">باقی‌مانده</span>
+        </div>
+        <div
+          className="h-1.5 w-full overflow-hidden rounded-full bg-white/10"
+          role="progressbar"
+          aria-valuenow={Math.round(progress)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
+          <div
+            className="h-full rounded-full bg-gradient-to-l from-primary-container to-primary transition-[width] duration-500"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </div>
     </section>
   );
-};
-
-export default ActivePlanCard;
+}

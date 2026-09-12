@@ -1,121 +1,100 @@
-import { FC } from 'react';
-import { SubscriptionHistoryItem } from '../../types/subscription';
-import { formatPersianDate, formatPersianNumber } from '../../utils/formatting';
-import { CheckCircle, Clock, XCircle } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, Coins } from "lucide-react";
+import type { SubscriptionHistoryItem } from "../../types/subscription";
+import { formatPersianDate, formatPersianNumber } from "../../utils/formatting";
 
 interface HistoryItemProps {
   item: SubscriptionHistoryItem;
   isActive?: boolean;
 }
 
-const HistoryItem: FC<HistoryItemProps> = ({ item, isActive = false }) => {
-  const getStatusConfig = (status: string) => {
-    const configs: Record<string, { badge: string; icon: string; textColor: string; bgColor: string }> = {
-      active: {
-        badge: 'فعال',
-        icon: 'CheckCircle',
-        textColor: 'text-green-400',
-        bgColor: 'bg-green-500/10',
-      },
-      expired: {
-        badge: 'پایان یافته',
-        icon: 'Clock',
-        textColor: 'text-yellow-400',
-        bgColor: 'bg-yellow-500/10',
-      },
-      cancelled: {
-        badge: 'لغوشده',
-        icon: 'XCircle',
-        textColor: 'text-red-400',
-        bgColor: 'bg-red-500/10',
-      },
-    };
-    return configs[status] || configs.expired;
-  };
+const STATUS: Record<
+  string,
+  { label: string; className: string; Icon: typeof CheckCircle2 }
+> = {
+  active: {
+    label: "فعال",
+    className: "bg-emerald-500/15 text-emerald-300 border-emerald-500/25",
+    Icon: CheckCircle2,
+  },
+  expired: {
+    label: "منقضی",
+    className: "bg-amber-500/15 text-amber-200 border-amber-500/25",
+    Icon: Clock,
+  },
+  cancelled: {
+    label: "لغوشده",
+    className: "bg-red-500/15 text-red-300 border-red-500/25",
+    Icon: XCircle,
+  },
+};
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <CheckCircle className="w-5 h-5" />;
-      case 'expired':
-        return <Clock className="w-5 h-5" />;
-      case 'cancelled':
-        return <XCircle className="w-5 h-5" />;
-      default:
-        return null;
-    }
-  };
-
-  const config = getStatusConfig(item.status);
-  const isInactive = item.status !== 'active';
+export default function HistoryItem({ item, isActive = false }: HistoryItemProps) {
+  const status = STATUS[item.status] || STATUS.expired;
+  const Icon = status.Icon;
+  const paid = item.paid_amount ?? 0;
+  const discount = item.discount_applied ?? 0;
 
   return (
-    <div
-      className={`glass-panel rounded-2xl p-6 transition-all duration-300 ${
-        isInactive ? 'opacity-60 hover:opacity-100' : 'hover:shadow-lg hover:shadow-primary/10'
+    <article
+      className={`rounded-2xl border bg-[#121216] p-4 sm:p-5 transition-opacity ${
+        item.status === "active"
+          ? "border-primary/30"
+          : "border-white/[0.08] opacity-90"
       }`}
     >
-      {/* Header: Title + Status Badge */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-3">
-          <div className={`p-2.5 rounded-lg ${config.bgColor}`}>
-            {getStatusIcon(item.status)}
-          </div>
-          <div>
-            <h3 className="font-bold text-lg text-white">
-              {item.plan_name}
-              {item.is_active && <span className="text-xs text-primary ml-2">(فعلی)</span>}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 text-right flex-1">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <h3 className="text-sm font-extrabold text-white leading-snug">
+              {item.plan_name || "اشتراک"}
             </h3>
-            <p className="text-on-surface-variant text-sm mt-1">
-              {formatPersianDate(item.start_date)} تا {formatPersianDate(item.end_date)}
-            </p>
+            {isActive || item.is_active ? (
+              <span className="text-[10px] font-bold text-primary">فعلی</span>
+            ) : null}
           </div>
+          <p className="mt-1 text-[11px] text-white/45" dir="ltr">
+            {formatPersianDate(item.start_date)} — {formatPersianDate(item.end_date)}
+          </p>
         </div>
-        <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${config.bgColor} ${config.textColor} border ${config.textColor}/20 whitespace-nowrap`}>
-          {config.badge}
+        <span
+          className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold ${status.className}`}
+        >
+          <Icon size={12} aria-hidden />
+          {status.label}
         </span>
       </div>
 
-      {/* Details: Amount + Tokens */}
-      <div className="grid grid-cols-2 gap-4 py-4 border-y border-white/5">
-        <div className="flex flex-col">
-          <span className="text-xs text-on-surface-variant font-medium mb-1">مبلغ پرداخت‌شده</span>
-          <span className="font-bold text-white">
-            {formatPersianNumber(item.paid_amount)} تومان
-          </span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-xs text-on-surface-variant font-medium mb-1">توکن‌های باقی‌مانده</span>
-          <span className={`font-bold ${item.status === 'active' ? 'text-primary' : 'text-on-surface-variant'}`}>
-            {formatPersianNumber(item.tokens_remaining)} توکن
-          </span>
-        </div>
-      </div>
-
-      {/* Footer Info */}
-      <div className="mt-4">
-        {item.status === 'active' ? (
-          <p className="text-xs text-on-surface-variant italic">
-            💡 توکن‌های استفاده‌نشده به تخفیف دوره بعد تبدیل می‌شوند
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="rounded-xl bg-black/25 px-2.5 py-2">
+          <p className="text-[10px] text-white/40">پرداخت‌شده</p>
+          <p className="text-xs font-bold text-white tabular-nums mt-0.5">
+            {formatPersianNumber(paid)}
+            <span className="text-[10px] font-medium text-white/40"> ت</span>
           </p>
-        ) : item.discount_applied > 0 ? (
-          <div className="flex items-center gap-2 bg-primary/5 p-3 rounded-lg border border-primary/20">
-            <span className="text-xl">⚡</span>
-            <div>
-              <span className="text-xs text-primary font-bold">
-                {formatPersianNumber(item.discount_applied)} تومان تخفیف
-              </span>
-              <p className="text-xs text-on-surface-variant">
-                از توکن‌های باقی‌مانده برای دوره بعدی
-              </p>
-            </div>
-          </div>
-        ) : (
-          <p className="text-xs text-on-surface-variant">بدون تخفیف اضافی</p>
-        )}
+        </div>
+        <div className="rounded-xl bg-black/25 px-2.5 py-2">
+          <p className="text-[10px] text-white/40">توکن</p>
+          <p className="text-xs font-bold text-white tabular-nums mt-0.5 inline-flex items-center gap-1">
+            <Coins size={11} className="text-primary" aria-hidden />
+            {formatPersianNumber(item.tokens_remaining ?? 0)}
+            <span className="text-[10px] font-medium text-white/35">
+              /{formatPersianNumber(item.tokens_total ?? 0)}
+            </span>
+          </p>
+        </div>
+        <div className="rounded-xl bg-black/25 px-2.5 py-2">
+          <p className="text-[10px] text-white/40">مصرف</p>
+          <p className="text-xs font-bold text-white tabular-nums mt-0.5">
+            {formatPersianNumber(item.tokens_used ?? 0)}
+          </p>
+        </div>
+        <div className="rounded-xl bg-black/25 px-2.5 py-2">
+          <p className="text-[10px] text-white/40">تخفیف</p>
+          <p className="text-xs font-bold text-white tabular-nums mt-0.5">
+            {discount > 0 ? formatPersianNumber(discount) : "—"}
+          </p>
+        </div>
       </div>
-    </div>
+    </article>
   );
-};
-
-export default HistoryItem;
+}

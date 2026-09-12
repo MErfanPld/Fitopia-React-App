@@ -1,5 +1,3 @@
-import { FC } from 'react';
-
 interface FilterTab {
   id: string;
   label: string;
@@ -11,24 +9,29 @@ interface FilterBarProps {
   onTabChange: (tabId: string) => void;
 }
 
-const FilterBar: FC<FilterBarProps> = ({ tabs, activeTab, onTabChange }) => {
+export default function FilterBar({ tabs, activeTab, onTabChange }: FilterBarProps) {
   return (
-    <nav className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2">
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => onTabChange(tab.id)}
-          className={`px-6 py-2 rounded-full font-label-sm whitespace-nowrap spring-transition transition-colors ${
-            activeTab === tab.id
-              ? 'bg-primary text-on-primary'
-              : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
-          }`}
-        >
-          {tab.label}
-        </button>
-      ))}
+    <nav
+      className="flex gap-2 overflow-x-auto hide-scrollbar pb-0.5"
+      aria-label="فیلتر وضعیت اشتراک"
+    >
+      {tabs.map((tab) => {
+        const active = activeTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => onTabChange(tab.id)}
+            className={`shrink-0 whitespace-nowrap rounded-full px-3.5 min-h-9 text-xs font-semibold border transition-colors ${
+              active
+                ? "bg-primary text-black border-primary"
+                : "bg-white/[0.04] border-white/10 text-white/75"
+            }`}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
     </nav>
   );
-};
-
-export default FilterBar;
+}

@@ -1,40 +1,44 @@
-import { FC } from 'react';
-import { formatPersianNumber } from '../../utils/formatting';
-import { Star } from 'lucide-react';
+import { Tag, Sparkles } from "lucide-react";
+import { formatPersianNumber } from "../../utils/formatting";
 
 interface DiscountCardProps {
   discountAmount: number;
   onRefresh?: () => void;
 }
 
-const DiscountCard: FC<DiscountCardProps> = ({ discountAmount }) => {
+export default function DiscountCard({ discountAmount }: DiscountCardProps) {
+  if (!discountAmount || discountAmount <= 0) return null;
+
   return (
-    <section className="glass-panel rounded-2xl p-6 relative overflow-hidden border-primary/20 bg-gradient-to-br from-[#0E0E12] to-[#1a1a24]">
-      <div className="absolute top-0 left-0 w-32 h-32 bg-primary/10 blur-[60px] rounded-full" />
-      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-primary">
-            <Star className="w-5 h-5" fill="currentColor" />
-            <span className="font-bold text-lg">باشگاه وفاداری فیتوپیا</span>
-          </div>
-          <h2 className="text-2xl font-bold text-white">تخفیف انباشته شما</h2>
-          <p className="text-on-surface-variant text-sm max-w-sm">
-            مجموع سود شما از تبدیل توکن‌های استفاده نشده به اعتبار خرید دوره‌های بعدی.
+    <section
+      className="relative overflow-hidden rounded-2xl border border-primary/25 bg-[#121216] p-4 sm:p-5"
+      aria-label="تخفیف انباشته"
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-4 top-0 h-20 w-20 rounded-full bg-primary/15 blur-2xl"
+      />
+      <div className="relative z-10 flex items-center gap-3">
+        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+          <Tag size={18} aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1 text-right">
+          <p className="inline-flex items-center gap-1 text-[11px] font-bold text-primary">
+            <Sparkles size={11} aria-hidden />
+            باشگاه وفاداری
+          </p>
+          <p className="text-sm font-extrabold text-white mt-0.5">تخفیف انباشته شما</p>
+          <p className="text-[11px] text-white/45 mt-0.5 leading-relaxed">
+            قابل استفاده در خرید اشتراک بعدی
           </p>
         </div>
-        <div className="text-right">
-          <div className="text-4xl font-extrabold text-white mb-1">
-            {formatPersianNumber(discountAmount)}{' '}
-            <span className="text-lg font-medium text-on-surface-variant">تومان</span>
-          </div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/20 rounded-full text-primary text-xs font-bold">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            قابل استفاده در فاکتور بعدی
-          </div>
+        <div className="text-left shrink-0">
+          <p className="text-lg font-black text-primary tabular-nums leading-none">
+            {formatPersianNumber(discountAmount)}
+          </p>
+          <p className="text-[10px] text-white/40 mt-0.5">تومان</p>
         </div>
       </div>
     </section>
   );
-};
-
-export default DiscountCard;
+}

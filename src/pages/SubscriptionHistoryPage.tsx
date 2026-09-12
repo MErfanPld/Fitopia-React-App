@@ -1,146 +1,177 @@
-import { useState, useEffect } from 'react';
-import { Header } from '../components/Header';
-import { BottomNavigation } from '../components/BottomNavigation';
-import { ShaderBackground } from '../components/ShaderBackground';
-import { ParticleOverlay } from '../components/ParticleOverlay';
-import ActivePlanCard from '../components/subscription/ActivePlanCard';
-import HistoryItem from '../components/subscription/HistoryItem';
-import FilterBar from '../components/subscription/FilterBar';
-import DiscountCard from '../components/subscription/DiscountCard';
-import { useSubscriptionHistory } from '../hooks/useSubscriptionHistory';
-import { SubscriptionHistoryItem } from '../types/subscription';
-import { ArrowLeft } from 'lucide-react';
+/**
+ * Subscription history — active plan + past purchases
+ * Route: /subscriptions/history
+ * API via useSubscriptionHistory (real data only)
+ */
+
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  ArrowRight,
+  AlertCircle,
+  RefreshCw,
+  History,
+  CreditCard,
+} from "lucide-react";
+import { Header } from "../components/Header";
+import { BottomNavigation } from "../components/BottomNavigation";
+import ActivePlanCard from "../components/subscription/ActivePlanCard";
+import HistoryItem from "../components/subscription/HistoryItem";
+import FilterBar from "../components/subscription/FilterBar";
+import DiscountCard from "../components/subscription/DiscountCard";
+import { useSubscriptionHistory } from "../hooks/useSubscriptionHistory";
 
 const FILTER_TABS = [
-  { id: 'all', label: 'همه' },
-  { id: 'active', label: 'فعال' },
-  { id: 'expired', label: 'منقضی‌شده' },
-  { id: 'cancelled', label: 'لغوشده' },
+  { id: "all", label: "همه" },
+  { id: "active", label: "فعال" },
+  { id: "expired", label: "منقضی" },
+  { id: "cancelled", label: "لغوشده" },
 ];
 
+function HistorySkeleton() {
+  return (
+    <div className="space-y-3" aria-busy="true" aria-label="در حال بارگذاری">
+      <div className="skeleton h-36 w-full rounded-2xl" />
+      <div className="flex gap-2">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="skeleton h-9 w-16 rounded-full" />
+        ))}
+      </div>
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="skeleton h-28 w-full rounded-2xl" />
+      ))}
+    </div>
+  );
+}
+
 export function SubscriptionHistoryPage() {
+  const navigate = useNavigate();
   const { mySubscription, history, discountRemaining, loading, error, refetch } =
     useSubscriptionHistory();
-  const [activeFilter, setActiveFilter] = useState<string>('all');
-  const [filteredHistory, setFilteredHistory] = useState<SubscriptionHistoryItem[]>([]);
+  const [activeFilter, setActiveFilter] = useState("all");
 
-  // Update page title
   useEffect(() => {
-    document.title = 'FITOPIA | تاریخچه اشتراک‌ها';
+    document.title = "FITOPIA | تاریخچه اشتراک‌ها";
   }, []);
 
-  // Filter history based on active filter
-  useEffect(() => {
-    if (activeFilter === 'all') {
-      setFilteredHistory(history);
-    } else {
-      setFilteredHistory(
-        history.filter((item) => item.status === activeFilter)
-      );
-    }
+  const filteredHistory = useMemo(() => {
+    if (activeFilter === "all") return history;
+    return history.filter((item) => item.status === activeFilter);
   }, [history, activeFilter]);
 
-  const handleBackClick = () => {
-    window.history.back();
-  };
-
-  if (loading) {
-    return (
-      <>
-        <ShaderBackground />
-        <ParticleOverlay />
-        <Header />
-        <main className="px-margin-mobile md:px-margin-desktop mt-6 space-y-8 max-w-5xl mx-auto">
-          <div className="flex items-center justify-center h-96">
-            <div className="relative w-20 h-20 flex items-center justify-center">
-              <div className="absolute inset-0 bg-primary/25 rounded-full blur-2xl animate-pulse" />
-              <div className="w-16 h-16 rounded-full border-t-2 border-r-2 border-primary animate-spin" />
-            </div>
-          </div>
-        </main>
-        <BottomNavigation />
-      </>
-    );
-  }
-
   return (
-    <>
-      {/* 1. Dynamic background fluid simulation */}
-      <ShaderBackground />
-
-      {/* 2. Floating particles */}
-      <ParticleOverlay />
-
-      {/* 3. Top Header navigation bar */}
+    <div className="min-h-dvh bg-[#07070A] text-right home-with-rail">
       <Header />
 
-      <main className="px-margin-mobile md:px-margin-desktop mt-6 space-y-8 max-w-5xl mx-auto pb-32">
-        {/* Back Button & Title - Cleaned up Header */}
-        <header className="flex items-center gap-3 pt-2">
-          <button
-            onClick={handleBackClick}
-            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors active:scale-95 flex-shrink-0"
-            title="برگشت"
-          >
-            <ArrowLeft className="w-5 h-5 text-on-surface" />
-          </button>
-          <h1 className="text-xl font-bold text-white">
-            تاریخچه اشتراک‌ها
-          </h1>
-        </header>
-
-        {/* Error State */}
-        {error && (
-          <div className="glass-panel rounded-2xl p-8 text-center flex flex-col items-center gap-4">
-            <svg className="w-12 h-12 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-on-surface-variant">{error}</p>
+      <main className="relative z-10 home-shell home-pad pb-[calc(6.75rem+env(safe-area-inset-bottom))] md:pb-12">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 sm:gap-5 lg:max-w-4xl">
+          {/* Title */}
+          <div className="flex items-center gap-3 pt-1">
             <button
-              onClick={refetch}
-              className="px-6 py-2 bg-primary text-on-primary rounded-xl font-bold hover:opacity-90 transition-opacity"
+              type="button"
+              onClick={() => navigate(-1)}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.07] transition-colors"
+              aria-label="بازگشت"
             >
-              تلاش مجدد
+              <ArrowRight size={20} aria-hidden />
+            </button>
+            <div className="min-w-0 flex-1 text-right">
+              <h1 className="text-lg font-extrabold tracking-tight text-white sm:text-xl">
+                تاریخچه اشتراک‌ها
+              </h1>
+              <p className="text-[11px] text-white/45 mt-0.5">وضعیت فعلی و خریدهای قبلی</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate("/subscriptions")}
+              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-white/80 hover:bg-white/[0.07]"
+            >
+              <CreditCard size={14} className="text-primary" aria-hidden />
+              پلن‌ها
             </button>
           </div>
-        )}
 
-        {/* Active Plan Card */}
-        {mySubscription && !error && <ActivePlanCard subscription={mySubscription} />}
+          {loading ? <HistorySkeleton /> : null}
 
-        {/* Filter Bar */}
-        {!error && (
-          <FilterBar tabs={FILTER_TABS} activeTab={activeFilter} onTabChange={setActiveFilter} />
-        )}
+          {!loading && error ? (
+            <div className="rounded-2xl border border-red-500/20 bg-red-500/5 px-5 py-10 text-center space-y-3">
+              <AlertCircle className="mx-auto h-9 w-9 text-red-300/80" aria-hidden />
+              <p className="text-sm font-semibold text-white">خطا در بارگذاری</p>
+              <p className="text-xs text-white/50 max-w-xs mx-auto">{error}</p>
+              <button
+                type="button"
+                onClick={refetch}
+                className="btn btn-primary mx-auto mt-1 inline-flex min-h-11 items-center gap-2 px-5 text-sm"
+              >
+                <RefreshCw size={16} aria-hidden />
+                تلاش مجدد
+              </button>
+            </div>
+          ) : null}
 
-        {/* Subscription List */}
-        {!error && (
-          <section className="space-y-4">
-            {filteredHistory.length > 0 ? (
-              filteredHistory.map((item) => (
-                <HistoryItem key={item.id} item={item} isActive={item.is_active} />
-              ))
-            ) : (
-              <div className="glass-panel rounded-2xl p-12 text-center">
-                <svg className="w-12 h-12 text-on-surface-variant block mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-on-surface-variant">
-                  هیچ اشتراکی برای این فیلتر پیدا نشد
-                </p>
-              </div>
-            )}
-          </section>
-        )}
+          {!loading && !error ? (
+            <>
+              {mySubscription ? <ActivePlanCard subscription={mySubscription} /> : null}
 
-        {/* Discount Section */}
-        {!error && discountRemaining > 0 && (
-          <DiscountCard discountAmount={discountRemaining} />
-        )}
+              {discountRemaining > 0 ? (
+                <DiscountCard discountAmount={discountRemaining} />
+              ) : null}
+
+              <section className="space-y-3" aria-label="لیست تاریخچه">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="flex items-center gap-2 text-[0.95rem] font-bold text-white">
+                    <span className="inline-block h-4 w-1 rounded-full bg-primary-container" aria-hidden />
+                    <History size={15} className="text-primary" aria-hidden />
+                    سوابق
+                  </h2>
+                  <span className="text-[11px] text-white/40">
+                    {filteredHistory.length.toLocaleString("fa-IR")} مورد
+                  </span>
+                </div>
+
+                <FilterBar
+                  tabs={FILTER_TABS}
+                  activeTab={activeFilter}
+                  onTabChange={setActiveFilter}
+                />
+
+                {filteredHistory.length > 0 ? (
+                  <div className="space-y-3">
+                    {filteredHistory.map((item) => (
+                      <HistoryItem
+                        key={item.id}
+                        item={item}
+                        isActive={item.is_active}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-white/[0.08] bg-[#121216] px-5 py-12 text-center space-y-2">
+                    <History
+                      className="mx-auto h-10 w-10 text-white/25"
+                      strokeWidth={1.5}
+                      aria-hidden
+                    />
+                    <p className="text-base font-bold text-white">موردی یافت نشد</p>
+                    <p className="text-sm text-white/50">
+                      برای این فیلتر اشتراکی ثبت نشده است.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/subscriptions")}
+                      className="btn btn-primary mx-auto mt-3 min-h-11 px-5 text-sm"
+                    >
+                      مشاهده پلن‌ها
+                    </button>
+                  </div>
+                )}
+              </section>
+            </>
+          ) : null}
+        </div>
       </main>
 
-      {/* Bottom Navigation */}
       <BottomNavigation />
-    </>
+    </div>
   );
 }
