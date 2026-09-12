@@ -1,4 +1,5 @@
-import { SubscriptionPlan } from '../../types/subscription';
+import { Check, Sparkles, Coins, Building2, CalendarDays } from "lucide-react";
+import type { SubscriptionPlan } from "../../types/subscription";
 
 interface PlanCardProps {
   plan: SubscriptionPlan;
@@ -7,93 +8,100 @@ interface PlanCardProps {
   isBestValue?: boolean;
 }
 
-const PlanCard = ({ plan, onSelect, isPopular, isBestValue }: PlanCardProps) => {
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
+function formatPrice(price: number) {
+  return new Intl.NumberFormat("fa-IR").format(price);
+}
 
+export default function PlanCard({
+  plan,
+  onSelect,
+  isPopular,
+  isBestValue,
+}: PlanCardProps) {
   return (
-    <div
-      className={`glass-panel p-6 rounded-2xl flex flex-col gap-4 relative overflow-hidden
-        ${isPopular ? 'plan-popular' : ''}
-        ${isBestValue ? 'border-secondary/30 bg-secondary/5' : ''}
-      `}
+    <article
+      className={`relative flex flex-col overflow-hidden rounded-2xl border p-5 transition-colors ${
+        isPopular
+          ? "border-primary/45 bg-gradient-to-b from-primary/[0.12] to-[#121216] shadow-[0_0_28px_rgba(255,106,0,0.12)]"
+          : "border-white/[0.08] bg-[#121216]"
+      }`}
     >
-      {/* بج پرطرفدار */}
-{isPopular && (
-  <div className="absolute -left-8 top-4 -rotate-45 bg-primary px-8 py-0.5 text-[9px] font-semibold text-on-primary shadow uppercase tracking-wide">
-    پرطرفدار
-  </div>
-)}
-
-      <div className="flex justify-between items-start">
-        <div>
-          {/* نام پلن + بج بهترین ارزش */}
-          <div className="flex items-center gap-2">
-            <h3 className="font-headline-md text-on-surface">{plan.name}</h3>
-            {isBestValue && (
-              <span className="bg-secondary/20 text-secondary text-[10px] px-2 py-0.5 rounded-full border border-secondary/30">
-                بهترین ارزش
-              </span>
-            )}
-          </div>
-          <p className="text-primary font-bold mt-1">{formatPrice(plan.price)}</p>
+      {(isPopular || isBestValue) && (
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          {isPopular ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold text-black">
+              <Sparkles size={11} aria-hidden />
+              پرطرفدار
+            </span>
+          ) : null}
+          {isBestValue ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/35 bg-amber-400/10 px-2.5 py-0.5 text-[10px] font-bold text-amber-200">
+              بهترین ارزش
+            </span>
+          ) : null}
         </div>
+      )}
 
-        {/* توکن badge */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 text-right">
+          <h3 className="text-base font-extrabold text-white tracking-tight leading-snug">
+            {plan.name}
+          </h3>
+          <p className="mt-1.5 flex items-baseline justify-end gap-1">
+            <span className="text-[clamp(1.25rem,4vw,1.5rem)] font-black text-primary tabular-nums leading-none">
+              {formatPrice(plan.price)}
+            </span>
+            <span className="text-[11px] font-medium text-white/45">تومان</span>
+          </p>
+        </div>
         <div
-          className={`rounded-lg px-3 py-1 flex items-center gap-1
-            ${isPopular
-              ? 'bg-primary/20 border border-primary/30'
-              : 'bg-surface-container'
-            }`}
+          className={`shrink-0 rounded-xl px-2.5 py-1.5 text-center ${
+            isPopular
+              ? "bg-primary/20 border border-primary/30"
+              : "bg-white/[0.04] border border-white/10"
+          }`}
         >
-          <span className="text-primary font-bold">{plan.token_count}</span>
-          <span className={`text-xs ${isPopular ? 'text-primary' : 'text-on-surface-variant'}`}>
-            توکن
-          </span>
+          <p className={`text-sm font-black tabular-nums ${isPopular ? "text-primary" : "text-white"}`}>
+            {plan.token_count.toLocaleString("fa-IR")}
+          </p>
+          <p className="text-[10px] text-white/50">توکن</p>
         </div>
       </div>
 
-      {/* فیچرها */}
-      <ul className="space-y-2 py-2">
-        {plan.description && (
-          <li className="flex items-center gap-2 text-sm text-on-surface-variant/80">
-            {isPopular ? (
-              <svg className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
-              </svg>
-            )}
-            {plan.description}
+      <ul className="mt-4 space-y-2 flex-1">
+        <li className="flex items-center justify-end gap-2 text-[12px] text-white/70">
+          <span>{plan.duration_days.toLocaleString("fa-IR")} روز اعتبار</span>
+          <CalendarDays size={14} className="shrink-0 text-primary/80" aria-hidden />
+        </li>
+        <li className="flex items-center justify-end gap-2 text-[12px] text-white/70">
+          <span>{plan.token_count.toLocaleString("fa-IR")} توکن ورودی</span>
+          <Coins size={14} className="shrink-0 text-primary/80" aria-hidden />
+        </li>
+        {plan.gyms_count > 0 ? (
+          <li className="flex items-center justify-end gap-2 text-[12px] text-white/70">
+            <span>تا {plan.gyms_count.toLocaleString("fa-IR")} باشگاه</span>
+            <Building2 size={14} className="shrink-0 text-primary/80" aria-hidden />
           </li>
-        )}
-        <li className="flex items-center gap-2 text-sm text-on-surface-variant/80">
-          <svg className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
-          </svg>
-          دسترسی به {plan.gyms_count} باشگاه
-        </li>
-        <li className="flex items-center gap-2 text-sm text-on-surface-variant/80">
-          <svg className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
-          </svg>
-          اعتبار {plan.duration_days} روزه
-        </li>
+        ) : null}
+        {plan.description?.trim() && !plan.description.includes("\n") ? (
+          <li className="flex items-start justify-end gap-2 text-[12px] text-white/55 leading-relaxed">
+            <span className="text-right">{plan.description.trim()}</span>
+            <Check size={14} className="shrink-0 mt-0.5 text-primary/70" aria-hidden />
+          </li>
+        ) : null}
       </ul>
 
       <button
+        type="button"
         onClick={() => onSelect(plan)}
-        className={`amber-gradient py-3 rounded-xl font-bold text-on-primary active:scale-95 transition-transform
-          ${isPopular ? 'font-extrabold shadow-[0_0_20px_rgba(255,106,0,0.4)]' : ''}
-        `}
+        className={`mt-5 w-full min-h-12 rounded-xl text-sm font-bold transition-transform active:scale-[0.98] ${
+          isPopular
+            ? "btn btn-primary"
+            : "border border-white/12 bg-white/[0.06] text-white hover:bg-white/[0.1]"
+        }`}
       >
         انتخاب پلن
       </button>
-    </div>
+    </article>
   );
-};
-
-export default PlanCard;
+}

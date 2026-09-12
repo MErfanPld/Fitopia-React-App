@@ -1,18 +1,22 @@
-const PlanCardSkeleton = () => (
-  <div className="glass-panel p-6 rounded-2xl flex flex-col gap-4 animate-pulse">
-    <div className="flex justify-between items-start">
-      <div className="space-y-2">
-        <div className="h-5 w-28 bg-white/10 rounded" />
-        <div className="h-4 w-20 bg-white/10 rounded" />
+export default function PlanCardSkeleton() {
+  return (
+    <div
+      className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121216] p-5 space-y-4"
+      aria-hidden
+    >
+      <div className="flex justify-between gap-3">
+        <div className="space-y-2 flex-1">
+          <div className="skeleton h-4 w-24 rounded ms-auto" />
+          <div className="skeleton h-7 w-32 rounded ms-auto" />
+        </div>
+        <div className="skeleton h-12 w-14 rounded-xl" />
       </div>
-      <div className="h-8 w-16 bg-white/10 rounded-lg" />
+      <div className="space-y-2">
+        <div className="skeleton h-3 w-full rounded" />
+        <div className="skeleton h-3 w-4/5 rounded ms-auto" />
+        <div className="skeleton h-3 w-3/5 rounded ms-auto" />
+      </div>
+      <div className="skeleton h-12 w-full rounded-xl" />
     </div>
-    <div className="space-y-2 py-2">
-      <div className="h-4 w-full bg-white/10 rounded" />
-      <div className="h-4 w-3/4 bg-white/10 rounded" />
-    </div>
-    <div className="h-11 w-full bg-white/10 rounded-xl" />
-  </div>
-);
-
-export default PlanCardSkeleton;
+  );
+}

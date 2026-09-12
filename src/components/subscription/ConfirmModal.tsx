@@ -1,86 +1,126 @@
-import { SubscriptionPlan } from '../../types/subscription';
-import { useNavigate } from 'react-router-dom';
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { X, Coins, CalendarDays, Building2, CreditCard } from "lucide-react";
+import type { SubscriptionPlan } from "../../types/subscription";
 
 interface ConfirmModalProps {
   plan: SubscriptionPlan | null;
   onClose: () => void;
 }
 
-const ConfirmModal = ({ plan, onClose }: ConfirmModalProps) => {
+function formatPrice(price: number) {
+  return new Intl.NumberFormat("fa-IR").format(price) + " تومان";
+}
+
+export default function ConfirmModal({ plan, onClose }: ConfirmModalProps) {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!plan) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [plan, onClose]);
 
   if (!plan) return null;
 
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
-
   const handlePayment = () => {
-    // Navigate to payment page with plan ID
-    navigate('/subscriptions/payment', {
-      state: { planId: plan.id, plan }
+    navigate("/subscriptions/payment", {
+      state: { planId: plan.id, plan },
     });
     onClose();
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-plan-title"
     >
-      <div
-        className="w-full max-w-lg bg-surface-container-low border border-white/10 rounded-t-3xl p-6 pb-10 flex flex-col gap-5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="w-10 h-1 bg-white/20 rounded-full mx-auto" />
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        aria-label="بستن"
+        onClick={onClose}
+      />
 
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-            <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M20 2H4c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3.5 9c0 1.93-1.57 3.5-3.5 3.5S9.5 12.93 9.5 11 11.07 7.5 13 7.5s3.5 1.57 3.5 3.5zm3.5 7H4v-2c0-2.66 5.33-4 8-4s8 1.34 8 4v2z" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="font-headline-md text-on-surface">{plan.name}</h3>
-            <p className="text-sm text-on-surface-variant">تأیید خرید اشتراک</p>
-          </div>
-        </div>
+      <div className="relative z-10 w-full max-w-md rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#121216] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl">
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20 sm:hidden" aria-hidden />
 
-        <div className="bg-surface-container rounded-xl p-4 space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-on-surface-variant">قیمت</span>
-            <span className="text-sm font-bold text-primary">{formatPrice(plan.price)}</span>
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="text-right min-w-0">
+            <p className="text-[11px] text-white/45 mb-0.5">تأیید خرید</p>
+            <h3 id="confirm-plan-title" className="text-lg font-extrabold text-white truncate">
+              {plan.name}
+            </h3>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-on-surface-variant">توکن</span>
-            <span className="text-sm font-bold text-on-surface">{plan.token_count} توکن</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-on-surface-variant">تعداد باشگاه</span>
-            <span className="text-sm font-bold text-on-surface">{plan.gyms_count} باشگاه</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-on-surface-variant">مدت اعتبار</span>
-            <span className="text-sm font-bold text-on-surface">{plan.duration_days} روز</span>
-          </div>
-        </div>
-
-        <div className="flex gap-3">
           <button
+            type="button"
             onClick={onClose}
-            className="flex-1 py-3 rounded-xl border border-white/10 text-on-surface-variant font-bold active:scale-95 transition-transform"
+            className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white/70"
+            aria-label="بستن"
+          >
+            <X size={18} aria-hidden />
+          </button>
+        </div>
+
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 space-y-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-bold text-primary tabular-nums">{formatPrice(plan.price)}</span>
+            <span className="text-white/50">قیمت</span>
+          </div>
+          <div className="h-px bg-white/[0.06]" aria-hidden />
+          <div className="flex items-center justify-between text-sm">
+            <span className="inline-flex items-center gap-1.5 font-semibold text-white">
+              <Coins size={14} className="text-primary" aria-hidden />
+              {plan.token_count.toLocaleString("fa-IR")} توکن
+            </span>
+            <span className="text-white/50">اعتبار ورودی</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="inline-flex items-center gap-1.5 font-semibold text-white">
+              <CalendarDays size={14} className="text-primary" aria-hidden />
+              {plan.duration_days.toLocaleString("fa-IR")} روز
+            </span>
+            <span className="text-white/50">مدت اشتراک</span>
+          </div>
+          {plan.gyms_count > 0 ? (
+            <div className="flex items-center justify-between text-sm">
+              <span className="inline-flex items-center gap-1.5 font-semibold text-white">
+                <Building2 size={14} className="text-primary" aria-hidden />
+                {plan.gyms_count.toLocaleString("fa-IR")} باشگاه
+              </span>
+              <span className="text-white/50">دسترسی</span>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-12 rounded-xl border border-white/12 bg-white/[0.04] text-sm font-semibold text-white/80"
           >
             انصراف
           </button>
           <button
+            type="button"
             onClick={handlePayment}
-            className="flex-1 py-3 rounded-xl amber-gradient font-bold text-on-primary shadow-[0_0_20px_rgba(255,106,0,0.3)] active:scale-95 transition-transform"
+            className="btn btn-primary min-h-12 text-sm inline-flex items-center justify-center gap-2"
           >
-            ادامه پرداخت
+            <CreditCard size={16} aria-hidden />
+            پرداخت
           </button>
         </div>
       </div>
     </div>
   );
-};
-
-export default ConfirmModal;
+}
