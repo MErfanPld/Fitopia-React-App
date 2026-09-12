@@ -1,137 +1,228 @@
-.gym-popup .leaflet-popup-content-wrapper {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+/* Fitopia map gym popup — dark premium card */
+
+.fitopia-gym-popup .leaflet-popup-content-wrapper {
+  background: #121216 !important;
+  color: #fff !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55) !important;
+  padding: 0 !important;
   overflow: hidden;
 }
 
-.gym-popup .leaflet-popup-content {
-  margin: 0;
-  width: auto !important;
+.fitopia-gym-popup .leaflet-popup-content {
+  margin: 0 !important;
+  width: 280px !important;
+  min-width: 260px;
 }
 
-.popup-content {
-  padding: 16px;
-  text-align: right;
+.fitopia-gym-popup .leaflet-popup-tip {
+  background: #121216 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.fitopia-gym-popup a.leaflet-popup-close-button {
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-size: 18px !important;
+  width: 28px !important;
+  height: 28px !important;
+  top: 6px !important;
+  right: 6px !important;
+  left: auto !important;
+  z-index: 5;
+  background: rgba(0, 0, 0, 0.35) !important;
+  border-radius: 999px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  line-height: 1 !important;
+  padding: 0 !important;
+}
+
+.fitopia-gym-popup a.leaflet-popup-close-button:hover {
+  color: #fff !important;
+  background: rgba(0, 0, 0, 0.55) !important;
+}
+
+.fgp {
   direction: rtl;
-  max-width: 300px;
+  text-align: right;
+  font-family: Vazirmatn, system-ui, sans-serif;
 }
 
-.gym-name {
-  margin: 0 0 8px 0;
-  color: #667eea;
-  font-size: 16px;
-  font-weight: 700;
-  word-break: break-word;
+.fgp__cover {
+  position: relative;
+  height: 110px;
+  background: #1a1a20;
+  overflow: hidden;
 }
 
-.popular-badge {
-  display: inline-block;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
+.fgp__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.fgp__img--ph {
+  background: linear-gradient(135deg, #1a1a20 0%, #2a2a32 100%);
+}
+
+.fgp__cover-fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(18, 18, 22, 0.85) 0%,
+    transparent 55%
+  );
+  pointer-events: none;
+}
+
+.fgp__badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #ff6a00;
+  color: #0a0a0e;
+}
+
+.fgp__score {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   font-size: 11px;
-  font-weight: 600;
-  margin-bottom: 12px;
-  white-space: nowrap;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #ffb020;
+  backdrop-filter: blur(4px);
 }
 
-.popup-section {
-  margin: 8px 0;
-  padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
+.fgp__body {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.popup-section:last-of-type {
-  border-bottom: none;
+.fgp__name {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.35;
+  padding-left: 28px;
 }
 
-.popup-section p {
+.fgp__row {
   margin: 0;
-  font-size: 13px;
-  color: #333;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-}
-
-.popup-section .icon {
-  font-size: 14px;
-  margin-top: -1px;
-  flex-shrink: 0;
-}
-
-.address {
+  justify-content: flex-end;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
   line-height: 1.4;
 }
 
-.score {
-  color: #667eea;
-  font-weight: 600;
+.fgp__ico {
+  flex-shrink: 0;
+  color: #ff6a00;
+  margin-top: 1px;
 }
 
-.action-buttons {
+.fgp__actions {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
-  justify-content: flex-end;
+  margin-top: 10px;
 }
 
-.btn {
+.fgp__cta {
   flex: 1;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  color: white;
-}
-
-.btn-call {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.btn-call:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.btn-whatsapp {
-  background: #25d366;
-}
-
-.btn-whatsapp:hover {
-  background: #20ba58;
-  transform: translateY(-2px);
-}
-
-.social-links {
-  display: flex;
-  gap: 10px;
-  margin-top: 12px;
-  justify-content: flex-end;
-  padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
-}
-
-.social-link {
-  font-size: 16px;
-  text-decoration: none;
-  transition: transform 0.2s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #f5f5f5;
+  gap: 4px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 12px;
+  background: #ff6a00;
+  color: #0a0a0e;
+  font-size: 13px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
 }
 
-.social-link:hover {
-  transform: scale(1.2);
-  background: #667eea;
-  color: white;
+.fgp__cta:active {
+  transform: scale(0.98);
+}
+
+.fgp__call {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 40px;
+  min-width: 72px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.fgp__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fgp__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fgp__link:hover {
+  color: #ff8a4c;
+  border-color: rgba(255, 106, 0, 0.35);
+}
+
+@media (max-width: 380px) {
+  .fitopia-gym-popup .leaflet-popup-content {
+    width: 250px !important;
+    min-width: 230px;
+  }
+  .fgp__cover {
+    height: 96px;
+  }
 }
