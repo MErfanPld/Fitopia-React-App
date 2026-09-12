@@ -1,15 +1,31 @@
-import { useEffect, useState } from "react";
+/**
+ * User profile — view & edit
+ * Route: /profile
+ * API: GET/PUT /accounts/profile/ (FormData for avatar)
+ */
+
+import { useEffect, useState, type ChangeEvent } from "react";
 import { useForm } from "react-hook-form";
-import { useAuth } from "../context/AuthContext";
-import { BottomNavigation } from "../components/BottomNavigation";
-import { Header } from "../components/Header";
-import { ShaderBackground } from "../components/ShaderBackground";
-import { ParticleOverlay } from "../components/ParticleOverlay";
-import { SubmitButton } from "../components/SubmitButton";
+import { useNavigate } from "react-router-dom";
 import DatePicker from "react-multi-date-picker";
 import DateObject from "react-date-object";
 import persian from "react-date-object/calendars/persian";
 import persian_fa from "react-date-object/locales/persian_fa";
+import {
+  User,
+  Camera,
+  LogOut,
+  CreditCard,
+  History,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  Calendar,
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { BottomNavigation } from "../components/BottomNavigation";
+import { Header } from "../components/Header";
+import { SubmitButton } from "../components/SubmitButton";
 import api from "../services/api";
 
 type ProfileForm = {
@@ -19,9 +35,17 @@ type ProfileForm = {
   birth_date: string;
 };
 
+const GENDER_OPTIONS = [
+  { value: "", label: "انتخاب کنید" },
+  { value: "male", label: "مرد" },
+  { value: "female", label: "زن" },
+  { value: "other", label: "سایر" },
+];
+
 export function ProfilePage() {
-  const { token, userData, setDisplayNameState } = useAuth();
-  const { register, handleSubmit, reset, setValue } = useForm<ProfileForm>({
+  const navigate = useNavigate();
+  const { token, setDisplayNameState, logout, displayName } = useAuth();
+  const { register, handleSubmit, reset, setValue, watch } = useForm<ProfileForm>({
     defaultValues: {
       username: "",
       full_name: "",
@@ -30,17 +54,24 @@ export function ProfilePage() {
     },
   });
 
-  const [loading, setLoading] = useState<boolean>(false);
-  const [fetching, setFetching] = useState<boolean>(true);
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [messageType, setMessageType] = useState<"success" | "error" | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [birthDateValue, setBirthDateValue] = useState<any>(null);
+  const [birthDateValue, setBirthDateValue] = useState<DateObject | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  // Load profile on mount
+  const fullNameWatch = watch("full_name");
+
+  useEffect(() => {
+    document.title = "FITOPIA | پروفایل";
+  }, []);
+
   useEffect(() => {
     let mounted = true;
+
     const load = async () => {
       setFetching(true);
       setServerMessage(null);
@@ -50,7 +81,14 @@ export function ProfilePage() {
           return;
         }
 
-        const json = await api.get("/accounts/profile/");
+        const json = await api.get<{
+          username?: string;
+          full_name?: string;
+          gender?: string;
+          birth_date?: string;
+          avatar?: string;
+        }>("/accounts/profile/");
+
         if (!mounted) return;
 
         reset({
@@ -60,23 +98,20 @@ export function ProfilePage() {
           birth_date: json.birth_date ?? "",
         });
 
-        if (json.avatar) {
-          setAvatarPreview(json.avatar);
-        }
+        if (json.avatar) setAvatarPreview(json.avatar);
 
-        // set jalali datepicker value
         if (json.birth_date) {
           try {
             const dob = new DateObject({ date: json.birth_date, calendar: persian });
             setBirthDateValue(dob);
             setValue("birth_date", dob.format("YYYY-MM-DD"));
-          } catch (e) {
+          } catch {
             setValue("birth_date", json.birth_date ?? "");
           }
         }
-      } catch (err: any) {
-        console.error("Profile fetch error", err);
-        setServerMessage(err.message || "خطا در ارتباط با سرور");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "خطا در ارتباط با سرور";
+        setServerMessage(msg);
         setMessageType("error");
       } finally {
         if (mounted) setFetching(false);
@@ -89,7 +124,7 @@ export function ProfilePage() {
     };
   }, [token, reset, setValue]);
 
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] || null;
     setAvatarFile(f);
     if (f) {
@@ -109,31 +144,26 @@ export function ProfilePage() {
       form.append("full_name", data.full_name);
       form.append("gender", data.gender);
       form.append("birth_date", data.birth_date);
+      if (avatarFile) form.append("avatar", avatarFile);
 
-      if (avatarFile) {
-        form.append("avatar", avatarFile);
-      }
-
-      const response = await fetch("https://fitopiaapi.pythonanywhere.com/api/accounts/profile/", {
-        method: "PUT",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      const response = await fetch(
+        "https://fitopiaapi.pythonanywhere.com/api/accounts/profile/",
+        {
+          method: "PUT",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: form,
         },
-        body: form,
-      });
+      );
 
       if (response.ok) {
         const updated = await response.json();
         setServerMessage("پروفایل با موفقیت بروزرسانی شد.");
         setMessageType("success");
 
-        if (updated.full_name) {
-          setDisplayNameState(updated.full_name);
-        }
-        if (updated.avatar) {
-          setAvatarPreview(updated.avatar);
-        }
-
+        if (updated.full_name) setDisplayNameState(updated.full_name);
+        if (updated.avatar) setAvatarPreview(updated.avatar);
         setAvatarFile(null);
 
         reset({
@@ -144,11 +174,12 @@ export function ProfilePage() {
         });
       } else {
         const errJson = await response.json().catch(() => ({}));
-        setServerMessage(errJson.detail || "خطا در بروزرسانی پروفایل");
+        setServerMessage(
+          (errJson as { detail?: string }).detail || "خطا در بروزرسانی پروفایل",
+        );
         setMessageType("error");
       }
-    } catch (err: any) {
-      console.error("Profile update error", err);
+    } catch {
       setServerMessage("خطا در ارتباط با سرور هنگام بروزرسانی");
       setMessageType("error");
     } finally {
@@ -156,185 +187,233 @@ export function ProfilePage() {
     }
   };
 
-  if (!token) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-on-surface-variant">لطفاً ابتدا وارد شوید</p>
-        </div>
-      </div>
-    );
-  }
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await logout();
+      navigate("/welcome", { replace: true });
+    } catch {
+      navigate("/welcome", { replace: true });
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
+  const initials = (fullNameWatch || displayName || "ک")
+    .trim()
+    .charAt(0)
+    .toUpperCase();
 
   return (
-    <div className="min-h-screen pb-24 bg-background text-on-background">
-      <ShaderBackground />
-      <ParticleOverlay />
+    <div className="min-h-dvh bg-[#07070A] text-right home-with-rail">
       <Header />
 
-      <main className="relative z-10 pt-24 px-margin-mobile max-w-lg mx-auto">
-        {/* Avatar Section */}
-        <section className="flex flex-col items-center mb-8">
-          <label htmlFor="avatarUpload" className="relative group">
-            <div className="w-32 h-32 rounded-full border-2 border-primary/30 p-1 mb-4 overflow-hidden cursor-pointer bg-surface flex items-center justify-center relative">
-              {avatarPreview ? (
-                <img
-                  src={avatarPreview}
-                  alt={userData?.full_name || "avatar"}
-                  className="w-full h-full object-cover rounded-full"
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center text-on-surface-variant">
-                  <svg className="w-8 h-8 mb-2" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                  </svg>
-                  <span className="text-xs">ارسال عکس</span>
-                </div>
-              )}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h2.86l2.3-3.54z" />
-                </svg>
-              </div>
-            </div>
-            <input
-              id="avatarUpload"
-              type="file"
-              accept="image/*"
-              onChange={onFileChange}
-              className="hidden"
-            />
-            <button
-              type="button"
-              className="absolute bottom-0 right-0 w-10 h-10 amber-gradient rounded-full flex items-center justify-center border-2 border-background shadow-lg transition-transform hover:scale-110"
-            >
-              <svg className="w-5 h-5 text-on-primary" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" />
-              </svg>
-            </button>
-          </label>
+      <main className="relative z-10 home-shell home-pad pb-[calc(6.75rem+env(safe-area-inset-bottom))] md:pb-12">
+        <div className="mx-auto flex w-full max-w-lg flex-col gap-4 sm:gap-5">
+          <section className="pt-1 space-y-1">
+            <h1 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl">
+              پروفایل
+            </h1>
+            <p className="text-xs text-white/45 sm:text-sm">
+              اطلاعات حساب و تنظیمات شخصی
+            </p>
+          </section>
 
-          <p className="font-headline-md text-headline-md text-on-surface text-center">
-            {userData?.full_name ?? "کاربر فیتوپیا"}
-          </p>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-2 text-center" dir="ltr">
-            {userData?.phone_number ?? ""}
-          </p>
-        </section>
-
-        {/* Form Section */}
-        <section className="glass-panel p-6 rounded-2xl mb-6">
           {fetching ? (
-            <div className="py-8 text-center text-on-surface-variant">
-              <div className="inline-block">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
+            <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری">
+              <div className="flex justify-center">
+                <div className="skeleton h-24 w-24 rounded-full" />
               </div>
+              <div className="skeleton h-12 w-full rounded-xl" />
+              <div className="skeleton h-12 w-full rounded-xl" />
+              <div className="skeleton h-12 w-full rounded-xl" />
+              <div className="skeleton h-12 w-full rounded-xl" />
+              <div className="skeleton h-12 w-full rounded-xl" />
             </div>
           ) : (
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div>
-                <label className="font-label-sm text-label-sm text-on-surface-variant">نام کاربری</label>
-                <input
-                  {...register("username")}
-                  placeholder="نام کاربری خود را وارد کنید"
-                  className="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface placeholder-on-surface-variant/40 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="font-label-sm text-label-sm text-on-surface-variant">نام کامل</label>
-                <input
-                  {...register("full_name")}
-                  placeholder="نام کامل خود را وارد کنید"
-                  className="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface placeholder-on-surface-variant/40 focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="font-label-sm text-label-sm text-on-surface-variant">جنسیت</label>
-                  <select
-                    {...register("gender")}
-                    className="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface focus:outline-none"
+            <>
+              <section className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  <div className="h-24 w-24 overflow-hidden rounded-full border-2 border-primary/35 bg-[#121216] shadow-[0_0_24px_rgba(255,106,0,0.15)]">
+                    {avatarPreview ? (
+                      <img
+                        src={avatarPreview}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-[#121216]">
+                        <span className="text-2xl font-black text-primary">{initials}</span>
+                      </div>
+                    )}
+                  </div>
+                  <label
+                    htmlFor="avatar-input"
+                    className="absolute bottom-0 left-0 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/15 bg-[#18181d] text-primary shadow-lg hover:bg-[#222]"
+                    aria-label="تغییر تصویر پروفایل"
                   >
-                    <option value="">انتخاب</option>
-                    <option value="male">مرد</option>
-                    <option value="female">زن</option>
-                    <option value="other">سایر</option>
-                  </select>
+                    <Camera size={16} aria-hidden />
+                    <input
+                      id="avatar-input"
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={onFileChange}
+                    />
+                  </label>
                 </div>
+                <p className="text-sm font-bold text-white">
+                  {fullNameWatch || displayName || "کاربر فیتوپیا"}
+                </p>
+              </section>
 
-                <div>
-                  <label className="font-label-sm text-label-sm text-on-surface-variant">تاریخ تولد</label>
-                  <DatePicker
-                    value={birthDateValue}
-                    onChange={(d: any) => {
-                      const formatted = d?.format ? d.format("YYYY-MM-DD") : "";
-                      setBirthDateValue(d);
-                      setValue("birth_date", formatted);
-                    }}
-                    calendar={persian}
-                    locale={persian_fa}
-                    format="YYYY-MM-DD"
-                    inputClass="w-full mt-2 bg-surface-container p-3 rounded-lg text-on-surface focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {serverMessage && (
+              {serverMessage ? (
                 <div
-                  className={`text-sm p-3 rounded-lg ${
+                  role="alert"
+                  className={`flex items-start gap-2 rounded-2xl border px-4 py-3 text-sm ${
                     messageType === "success"
-                      ? "bg-green-500/10 text-green-400"
-                      : "bg-red-500/10 text-red-400"
+                      ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-200"
+                      : "border-red-500/25 bg-red-500/10 text-red-200"
                   }`}
                 >
-                  {serverMessage}
+                  {messageType === "success" ? (
+                    <CheckCircle2 size={18} className="shrink-0 mt-0.5" aria-hidden />
+                  ) : (
+                    <AlertCircle size={18} className="shrink-0 mt-0.5" aria-hidden />
+                  )}
+                  <p className="leading-relaxed">{serverMessage}</p>
                 </div>
-              )}
+              ) : null}
 
-              <div className="mt-6">
-                <SubmitButton loading={loading}>ذخیره تغییرات</SubmitButton>
-              </div>
-            </form>
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="space-y-3 rounded-2xl border border-white/[0.08] bg-[#121216] p-4 sm:p-5"
+                noValidate
+              >
+                <div className="field">
+                  <label htmlFor="username" className="field-label">
+                    نام کاربری
+                  </label>
+                  <div className="field-control">
+                    <User size={18} className="text-white/35 shrink-0" aria-hidden />
+                    <input
+                      id="username"
+                      type="text"
+                      autoComplete="username"
+                      placeholder="نام کاربری"
+                      className="flex-1 bg-transparent outline-none text-white min-w-0"
+                      {...register("username")}
+                    />
+                  </div>
+                </div>
+
+                <div className="field">
+                  <label htmlFor="full_name" className="field-label">
+                    نام کامل
+                  </label>
+                  <div className="field-control">
+                    <User size={18} className="text-white/35 shrink-0" aria-hidden />
+                    <input
+                      id="full_name"
+                      type="text"
+                      autoComplete="name"
+                      placeholder="نام و نام خانوادگی"
+                      className="flex-1 bg-transparent outline-none text-white min-w-0"
+                      {...register("full_name")}
+                    />
+                  </div>
+                </div>
+
+                <div className="field">
+                  <label htmlFor="gender" className="field-label">
+                    جنسیت
+                  </label>
+                  <div className="field-control">
+                    <select
+                      id="gender"
+                      className="flex-1 bg-transparent outline-none text-white min-w-0 appearance-none"
+                      {...register("gender")}
+                    >
+                      {GENDER_OPTIONS.map((o) => (
+                        <option key={o.value || "empty"} value={o.value} className="bg-[#121216]">
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="field">
+                  <label htmlFor="birth_date" className="field-label">
+                    تاریخ تولد
+                  </label>
+                  <div className="field-control !py-0">
+                    <Calendar size={18} className="text-white/35 shrink-0" aria-hidden />
+                    <DatePicker
+                      value={birthDateValue}
+                      onChange={(date: DateObject | DateObject[] | null) => {
+                        const d = Array.isArray(date) ? date[0] : date;
+                        setBirthDateValue(d || null);
+                        if (d) {
+                          setValue("birth_date", d.format("YYYY-MM-DD"));
+                        } else {
+                          setValue("birth_date", "");
+                        }
+                      }}
+                      calendar={persian}
+                      locale={persian_fa}
+                      calendarPosition="bottom-right"
+                      inputClass="flex-1 w-full bg-transparent border-0 outline-none text-white text-sm py-3 min-w-0"
+                      containerClassName="w-full flex-1"
+                      placeholder="انتخاب تاریخ"
+                    />
+                  </div>
+                  <input type="hidden" {...register("birth_date")} />
+                </div>
+
+                <SubmitButton loading={loading} label="save" className="mt-2">
+                  ذخیره تغییرات
+                </SubmitButton>
+              </form>
+
+              <section className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => navigate("/subscriptions")}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] text-sm font-semibold text-white/85 hover:bg-white/[0.07]"
+                >
+                  <CreditCard size={16} className="text-primary" aria-hidden />
+                  اشتراک‌ها
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/subscriptions/history")}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] text-sm font-semibold text-white/85 hover:bg-white/[0.07]"
+                >
+                  <History size={16} className="text-primary" aria-hidden />
+                  تاریخچه
+                </button>
+              </section>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-red-500/25 bg-red-500/10 text-sm font-bold text-red-300 hover:bg-red-500/15 disabled:opacity-60"
+              >
+                {loggingOut ? (
+                  <Loader2 size={18} className="animate-spin" aria-hidden />
+                ) : (
+                  <LogOut size={18} aria-hidden />
+                )}
+                خروج از حساب
+              </button>
+            </>
           )}
-        </section>
-
-        {/* Settings Section */}
-        <section className="mb-12">
-          <div className="glass-panel rounded-2xl overflow-hidden divide-y divide-white/5">
-            <button
-              type="button"
-              className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors"
-              onClick={() => alert("تغییر رمز عبور - به زودی")}
-            >
-              <div className="flex items-center gap-3">
-                <svg className="w-5 h-5 text-on-surface-variant" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 2.1l6.33 3.16v4.74c0 4.59-2.85 8.86-6.33 10.28-3.48-1.42-6.33-5.69-6.33-10.28V6.26L12 3.1zm3-1.1H9v2h6V2z" />
-                </svg>
-                <span className="font-body-md text-body-md text-on-surface">تغییر رمز عبور</span>
-              </div>
-              <svg className="w-5 h-5 text-on-surface-variant/30" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors"
-              onClick={() => alert("اعلان‌ها - به زودی")}
-            >
-              <div className="flex items-center gap-3">
-                <svg className="w-5 h-5 text-on-surface-variant" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
-                </svg>
-                <span className="font-body-md text-body-md text-on-surface">اعلان‌ها</span>
-              </div>
-              <svg className="w-5 h-5 text-on-surface-variant/30" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
-              </svg>
-            </button>
-          </div>
-        </section>
+        </div>
       </main>
 
       <BottomNavigation />
