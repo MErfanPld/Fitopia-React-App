@@ -1,16 +1,44 @@
-// src/components/GymMap/GymMap.tsx
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+/**
+ * Nearby gyms on OpenStreetMap (Leaflet).
+ * Flow: GPS → /api/gym/nearby/?lat&lon → markers on OSM tiles.
+ * Iran OSM data includes Persian street/place names on standard tiles.
+ */
+
+import { useMemo, useState } from "react";
+import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
 import L from "leaflet";
+import { useNavigate } from "react-router-dom";
+import {
+  MapPin,
+  RefreshCcw,
+  Navigation,
+  List,
+  Crosshair,
+  AlertCircle,
+} from "lucide-react";
 import { useUserLocation } from "../../hooks/useUserLocation";
 import { useNearbyGyms } from "../../hooks/useNearbyGyms";
 import GymMarker from "./GymMarker";
 import GymInfoPopup from "./GymInfoPopup";
 import GymListView from "./GymListView";
-import "./styles.css";
 import MapResizeFix from "./MapResizeFix";
-import { MapPin, RefreshCcw, TriangleAlert } from "lucide-react";
+import RecenterMap from "./RecenterMap";
+import "./styles.css";
 
-const GymMap = () => {
+const userIcon = L.divIcon({
+  className: "user-location-marker",
+  html: `
+    <div class="user-dot-wrap">
+      <div class="user-dot-pulse"></div>
+      <div class="user-dot"></div>
+    </div>
+  `,
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
+});
+
+export default function GymMap() {
+  const navigate = useNavigate();
   const {
     location,
     loading: locLoading,
@@ -26,185 +54,192 @@ const GymMap = () => {
     refetch,
   } = useNearbyGyms(location.lat, location.lon);
 
+  const [showList, setShowList] = useState(false);
+  const [recenterNonce, setRecenterNonce] = useState(0);
+
+  const center = useMemo(
+    (): [number, number] => [location.lat, location.lon],
+    [location.lat, location.lon],
+  );
+
   const handleRetry = () => {
     retryLocation();
     refetch();
   };
 
-  // Loading state - Full screen
-  if (locLoading) {
-    return (
-      <div className="fixed inset-0 bg-[#07070A] flex flex-col items-center justify-center z-50">
-        <div className="relative w-20 h-20">
-          <div className="absolute inset-0 bg-primary/25 rounded-full blur-2xl animate-pulse" />
-          <div className="w-16 h-16 rounded-full border-t-2 border-r-2 border-primary animate-spin" />
-        </div>
-        <p className="text-on-surface mt-6 text-lg font-bold">
-          درحال دریافت موقعیت شما...
-        </p>
-        <p className="text-on-surface-variant text-sm mt-2">
-          لطفاً دسترسی به موقعیت را در مرورگر مجاز کنید
-        </p>
-      </div>
-    );
-  }
-
-  // Error state - Full screen
-  if (locError) {
-    return (
-      <div className="fixed inset-0 bg-[#07070A] flex flex-col items-center justify-center z-50 p-4">
-        <div className="text-center max-w-md">
-          <div className="text-6xl mb-6">
-            <TriangleAlert />
-          </div>
-          <p className="text-error text-lg font-bold mb-2">{locError}</p>
-          <p className="text-on-surface-variant text-sm mb-6">
-            {isFallback
-              ? "موقعیت پیش‌فرض (تهران) استفاده شده است."
-              : "لطفاً مجدداً تلاش کنید یا موقعیت را به صورت دستی وارد کنید."}
-          </p>
-          <button
-            onClick={handleRetry}
-            className="px-8 py-3 bg-primary text-on-primary rounded-xl font-bold hover:shadow-lg hover:shadow-primary/30 transition-all active:scale-95"
-          >
-            <RefreshCcw className="text-xl" />
-            <span className="ml-2">
-              <RefreshCcw /> تلاش مجدد
-            </span>
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const defaultCenter: [number, number] = [location.lat, location.lon];
-
-  const userIcon = L.divIcon({
-    className: `user-marker ${isFallback ? "fallback" : ""}`,
-    html: `
-      <div class="user-location-icon">
-        <div class="pulse"></div>
-        <div class="inner"></div>
-        ${isFallback ? '<div class="fallback-badge">پیش‌فرض</div>' : ""}
-      </div>
-    `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-    popupAnchor: [0, -20],
-  });
+  const handleLocate = () => {
+    retryLocation();
+    setRecenterNonce((n) => n + 1);
+  };
 
   return (
-    <>
-      {/* Full Screen Map */}
+    <div className="relative h-[100dvh] w-full overflow-hidden bg-[#07070A]">
+      {locLoading ? (
+        <div className="absolute inset-0 z-[600] flex flex-col items-center justify-center gap-3 bg-[#07070A]/88 backdrop-blur-sm">
+          <div className="fitopia-loader-ring" aria-label="در حال دریافت موقعیت" />
+          <p className="text-sm font-bold text-white">در حال دریافت موقعیت شما…</p>
+          <p className="text-xs text-white/45 px-6 text-center max-w-xs">
+            نقشه روی موقعیت واقعی شما در OpenStreetMap تنظیم می‌شود.
+          </p>
+        </div>
+      ) : null}
+
       <MapContainer
-        center={defaultCenter}
-        zoom={13}
+        center={center}
+        zoom={14}
         className="gym-map"
-        style={{
-          height: "100vh",
-          width: "100vw",
-          position: "fixed",
-          top: 0,
-          left: 0,
-          zIndex: 0,
-        }}
+        zoomControl={false}
+        style={{ height: "100%", width: "100%", background: "#0a0a0e" }}
       >
         <MapResizeFix />
+        <RecenterMap
+          lat={location.lat}
+          lon={location.lon}
+          zoom={14}
+          nonce={recenterNonce}
+        />
 
         <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution="&copy; OpenStreetMap contributors"
+          maxZoom={19}
           className="gym-map-tiles"
         />
 
-        {/* User location marker */}
-        <Marker position={defaultCenter} icon={userIcon}>
+        <Circle
+          center={center}
+          radius={isFallback ? 0 : 120}
+          pathOptions={{
+            color: "#FF6A00",
+            fillColor: "#FF6A00",
+            fillOpacity: 0.08,
+            weight: 1,
+            opacity: 0.35,
+          }}
+        />
+
+        <Marker position={center} icon={userIcon}>
           <Popup className="user-popup">
-            <div className="popup-content">
-              <p>
-                <MapPin />{" "}
-                {isFallback ? "موقعیت پیش‌فرض (تهران)" : "موقعیت شما"}
+            <div className="popup-content text-center" dir="rtl">
+              <p className="font-bold text-sm mb-1">
+                {isFallback ? "موقعیت تقریبی (تهران)" : "موقعیت فعلی شما"}
               </p>
-              {isFallback && (
-                <button onClick={handleRetry} className="retry-small-btn">
+              <p className="text-xs opacity-70" dir="ltr">
+                {location.lat.toFixed(5)}, {location.lon.toFixed(5)}
+              </p>
+              {isFallback ? (
+                <button type="button" onClick={handleLocate} className="retry-small-btn mt-2">
                   دریافت موقعیت دقیق
                 </button>
-              )}
+              ) : null}
             </div>
           </Popup>
         </Marker>
 
-        {/* Gym markers */}
-        {gyms.map((gym) => (
-          <GymMarker key={gym.id} gym={gym}>
-            <GymInfoPopup gym={gym} />
-          </GymMarker>
-        ))}
+        {gyms
+          .filter(
+            (g) =>
+              Number.isFinite(g.latitude) &&
+              Number.isFinite(g.longitude) &&
+              !(g.latitude === 0 && g.longitude === 0),
+          )
+          .map((gym) => (
+            <GymMarker key={gym.id} gym={gym}>
+              <GymInfoPopup gym={gym} />
+            </GymMarker>
+          ))}
       </MapContainer>
 
-      {/* Floating Controls - Top Left */}
-      <div className="fixed top-16 right-4 z-10 flex flex-col gap-2">
-        {/* Location Info Card */}
-        <div className="bg-surface-container/80 backdrop-blur-md border border-white/10 rounded-2xl p-1.5 min-w-[200px] shadow-xl">
-          <p className="text-xs text-on-surface-variant mb-1">موقعیت شما</p>
-
-          <p className="text-xs font-bold text-on-surface flex items-center gap-1">
-            <MapPin /> {isFallback ? `پیش‌فرض (تهران)` : `موقعیت فعلی`}
-          </p>
-          <p className="text-xs text-on-surface-variant mt-1">
-            {location.lat.toFixed(4)}, {location.lon.toFixed(4)}
-          </p>
-          {isFallback && (
-            <button
-              onClick={handleRetry}
-              className="mt-2 text-primary text-xs font-bold hover:underline"
-            >
-              دریافت موقعیت واقعی
-            </button>
-          )}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] pt-[max(0.5rem,env(safe-area-inset-top))] px-3">
+        <div className="pointer-events-auto mx-auto flex max-w-md items-start gap-2">
+          <div className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-[#0c0c10]/92 backdrop-blur-md px-3 py-2.5 shadow-lg">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] text-white/45">نقشه OpenStreetMap</p>
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
+                <MapPin size={12} aria-hidden />
+                {isFallback ? "تقریبی" : "موقعیت شما"}
+              </span>
+            </div>
+            <p className="mt-0.5 text-xs font-bold text-white">
+              {gymsLoading
+                ? "در حال یافتن باشگاه‌های نزدیک…"
+                : `${gyms.length.toLocaleString("fa-IR")} باشگاه نزدیک`}
+            </p>
+            {locError || gymsError ? (
+              <p className="mt-1 flex items-start gap-1 text-[11px] text-amber-200/90">
+                <AlertCircle size={12} className="shrink-0 mt-0.5" aria-hidden />
+                <span>{locError || gymsError}</span>
+              </p>
+            ) : null}
+          </div>
         </div>
+      </div>
 
-        {/* Gym Count Badge */}
-        <div className="bg-surface-container/80 backdrop-blur-md border border-white/10 rounded-2xl p-1.5 shadow-xl">
-          <p className="text-xs text-on-surface-variant">باشگاه‌های نزدیک</p>
-          <p className="text-sm font-black text-primary">
-            {gymsLoading ? "..." : gyms.length}
-          </p>
-          {gymsError && (
-            <button
-              onClick={handleRetry}
-              className="mt-1 text-error text-xs font-bold hover:underline flex items-center gap-1"
-            >
-              <TriangleAlert /> خطا - تلاش مجدد
-            </button>
-          )}
-        </div>
-
-        {/* Refresh Button */}
+      <div className="absolute bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-3 z-[500] flex flex-col gap-2">
         <button
-          onClick={handleRetry}
-          className="bg-surface-container/80 backdrop-blur-md border border-white/10 rounded-2xl p-1.5 shadow-xl hover:bg-surface-container transition-all active:scale-95 w-10 h-10 flex items-center justify-center"
-          aria-label="بروزرسانی"
+          type="button"
+          onClick={handleLocate}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-[#121216]/95 text-primary shadow-lg backdrop-blur-md"
+          aria-label="مرکز روی موقعیت من"
+          title="موقعیت من"
         >
-          <span className="text-xl">
-            <RefreshCcw />
-          </span>
+          <Crosshair size={18} aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={handleRetry}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-[#121216]/95 text-white/80 shadow-lg backdrop-blur-md"
+          aria-label="بروزرسانی"
+          title="بروزرسانی"
+        >
+          <RefreshCcw size={17} aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowList((v) => !v)}
+          className={`flex h-11 w-11 items-center justify-center rounded-full border shadow-lg backdrop-blur-md ${
+            showList
+              ? "border-primary/40 bg-primary text-black"
+              : "border-white/12 bg-[#121216]/95 text-white/80"
+          }`}
+          aria-label="لیست باشگاه‌ها"
+          aria-pressed={showList}
+        >
+          <List size={18} aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate("/gym/all")}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-[#121216]/95 text-white/80 shadow-lg backdrop-blur-md"
+          aria-label="همه باشگاه‌ها"
+          title="لیست کامل"
+        >
+          <Navigation size={17} aria-hidden />
         </button>
       </div>
 
-      {/* Gym List - Bottom Sheet */}
-      <div className="fixed bottom-20 left-0 right-0 z-10 px-4 pointer-events-none">
-        <div className="pointer-events-auto max-h-[40vh] overflow-y-auto">
-          <GymListView
-            gyms={gyms}
-            loading={gymsLoading}
-            error={gymsError}
-            onRetry={handleRetry}
-          />
+      {showList ? (
+        <div className="absolute inset-x-0 bottom-0 z-[510] max-h-[45dvh] overflow-hidden rounded-t-2xl border-t border-white/10 bg-[#0c0c10]/98 pb-[env(safe-area-inset-bottom)] shadow-2xl">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/8">
+            <button
+              type="button"
+              onClick={() => setShowList(false)}
+              className="text-xs font-semibold text-white/50"
+            >
+              بستن
+            </button>
+            <p className="text-sm font-bold text-white">باشگاه‌های نزدیک</p>
+          </div>
+          <div className="max-h-[38dvh] overflow-y-auto">
+            <GymListView
+              gyms={gyms}
+              loading={gymsLoading}
+              error={gymsError}
+              onRetry={refetch}
+            />
+          </div>
         </div>
-      </div>
-    </>
+      ) : null}
+    </div>
   );
-};
-
-export default GymMap;
+}
