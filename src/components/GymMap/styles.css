@@ -1,21 +1,21 @@
-/* Gym map shell + dark theme + pins */
+/* Map fills parent; panel overlays bottom — both always visible */
 
 .gym-map-shell {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
   width: 100%;
-  min-height: 0;
+  height: 100%;
+  min-height: 240px;
   background: #07070a;
   overflow: hidden;
 }
 
+/* Map is ALWAYS full area of shell */
 .gym-map-canvas {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   width: 100%;
+  height: 100%;
 }
 
 .gym-map {
@@ -24,12 +24,19 @@
   width: 100% !important;
 }
 
+.gym-map .leaflet-container {
+  height: 100% !important;
+  width: 100% !important;
+  background: #0a0a0e !important;
+}
+
 .gym-map .leaflet-control-attribution {
   font-size: 9px;
   background: rgba(12, 12, 16, 0.8) !important;
   color: rgba(255, 255, 255, 0.45) !important;
   border-radius: 6px 0 0 0;
-  max-width: 55vw;
+  max-width: 50vw;
+  margin: 0 !important;
 }
 
 .gym-map .leaflet-control-attribution a {
@@ -55,30 +62,35 @@
   inset-inline: 0;
   top: 0;
   z-index: 500;
-  padding: max(0.4rem, env(safe-area-inset-top, 0px)) 0.75rem 0;
+  padding: 0.5rem 0.75rem 0;
 }
 
 .gym-map-status {
   pointer-events: auto;
-  max-width: 22rem;
+  max-width: 20rem;
   margin-inline: auto;
   border-radius: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(12, 12, 16, 0.92);
   backdrop-filter: blur(10px);
-  padding: 0.65rem 0.85rem;
+  padding: 0.55rem 0.8rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 .gym-map-fabs {
   position: absolute;
   left: 0.75rem;
-  bottom: 0.75rem;
+  bottom: 13rem;
   z-index: 500;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  transition: bottom 0.25s ease;
 }
+
+.panel-collapsed .gym-map-fabs { bottom: 4.5rem; }
+.panel-half .gym-map-fabs { bottom: calc(min(38vh, 20rem) + 0.75rem); }
+.panel-full .gym-map-fabs { bottom: calc(min(62vh, 32rem) + 0.75rem); }
 
 .gym-map-fab {
   display: flex;
@@ -168,31 +180,35 @@
   100% { transform: scale(1.8); opacity: 0; }
 }
 
+/* Panel OVERLAYS map — does not steal height from map */
 .nearby-panel {
-  position: relative;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 520;
-  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: #0c0c10;
+  background: rgba(12, 12, 16, 0.97);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1.1rem 1.1rem 0 0;
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+  border-radius: 1.15rem 1.15rem 0 0;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.5);
   transition: height 0.25s ease;
   min-height: 0;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  max-height: 75%;
+  backdrop-filter: blur(12px);
 }
 
 .nearby-panel--collapsed {
-  height: 3.5rem;
+  height: 3.25rem;
 }
 
 .nearby-panel--half {
-  height: min(42vh, 22rem);
+  height: min(38vh, 20rem);
 }
 
 .nearby-panel--full {
-  height: min(68vh, 36rem);
+  height: min(62vh, 32rem);
 }
 
 .nearby-panel__handle-row {
@@ -203,7 +219,7 @@
   display: flex;
   width: 100%;
   justify-content: center;
-  padding: 0.4rem 0 0.15rem;
+  padding: 0.4rem 0 0.1rem;
   border: 0;
   background: transparent;
   cursor: pointer;
@@ -213,14 +229,14 @@
   width: 2.5rem;
   height: 0.25rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .nearby-panel__head {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0 0.75rem 0.5rem;
+  padding: 0 0.75rem 0.45rem;
 }
 
 .nearby-panel__chev,
@@ -259,7 +275,7 @@
 
 @media (max-width: 379px) {
   .nearby-panel--half {
-    height: min(48vh, 20rem);
+    height: min(42vh, 18rem);
   }
   .gym-map-status {
     max-width: 100%;
@@ -268,10 +284,10 @@
 
 @media (min-width: 768px) {
   .nearby-panel--half {
-    height: min(40vh, 24rem);
+    height: min(36vh, 22rem);
   }
   .nearby-panel--full {
-    height: min(60vh, 40rem);
+    height: min(55vh, 34rem);
   }
   .gym-map-fabs {
     left: 1rem;
@@ -279,12 +295,6 @@
 }
 
 @media (min-width: 1024px) {
-  .nearby-panel--half {
-    height: min(38vh, 26rem);
-  }
-  .gym-map-top {
-    padding-inline: 1rem;
-  }
   .gym-map-status {
     margin-inline: 0;
     margin-inline-end: auto;
