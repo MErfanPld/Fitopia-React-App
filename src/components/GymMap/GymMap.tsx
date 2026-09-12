@@ -1,6 +1,6 @@
 /**
- * Nearby gyms map — dark tiles + pin markers + nearby panel
- * GPS → /api/gym/nearby → markers
+ * Nearby gyms map — dark tiles + pin markers + nearby panel overlay
+ * Map fills viewport; panel sits ON TOP of map (both always visible)
  */
 
 import { useCallback, useMemo, useState } from "react";
@@ -28,12 +28,7 @@ import "./styles.css";
 
 const userIcon = L.divIcon({
   className: "user-location-marker",
-  html: `
-    <div class="user-dot-wrap">
-      <div class="user-dot-pulse"></div>
-      <div class="user-dot"></div>
-    </div>
-  `,
+  html: `<div class="user-dot-wrap"><div class="user-dot-pulse"></div><div class="user-dot"></div></div>`,
   iconSize: [24, 24],
   iconAnchor: [12, 12],
 });
@@ -47,12 +42,10 @@ export default function GymMap() {
     isFallback,
   } = useUserLocation();
 
-  const {
-    gyms,
-    loading: gymsLoading,
-    error: gymsError,
-    refetch,
-  } = useNearbyGyms(location.lat, location.lon);
+  const { gyms, loading: gymsLoading, error: gymsError, refetch } = useNearbyGyms(
+    location.lat,
+    location.lon,
+  );
 
   const [panel, setPanel] = useState<"collapsed" | "half" | "full">("half");
   const [recenterNonce, setRecenterNonce] = useState(0);
@@ -79,18 +72,23 @@ export default function GymMap() {
     setRecenterNonce((n) => n + 1);
   };
 
-  const onSelectGym = useCallback((gym: Gym) => {
-    setSelectedId(gym.id);
-    setFocusNonce((n) => n + 1);
-    if (panel === "collapsed") setPanel("half");
-  }, [panel]);
+  const onSelectGym = useCallback(
+    (gym: Gym) => {
+      setSelectedId(gym.id);
+      setFocusNonce((n) => n + 1);
+      if (panel === "collapsed") setPanel("half");
+    },
+    [panel],
+  );
 
   const cyclePanel = () => {
-    setPanel((p) => (p === "collapsed" ? "half" : p === "half" ? "full" : "collapsed"));
+    setPanel((p) =>
+      p === "collapsed" ? "half" : p === "half" ? "full" : "collapsed",
+    );
   };
 
   return (
-    <div className="gym-map-shell">
+    <div className={`gym-map-shell panel-${panel}`}>
       {locLoading ? (
         <div className="gym-map-loading">
           <div className="fitopia-loader-ring" aria-label="در حال دریافت موقعیت" />
@@ -106,7 +104,7 @@ export default function GymMap() {
           zoomControl={false}
           style={{ height: "100%", width: "100%", background: "#0a0a0e" }}
         >
-          <MapResizeFix />
+          <MapResizeFix panelKey={panel} />
           <RecenterMap
             lat={location.lat}
             lon={location.lon}
@@ -116,11 +114,10 @@ export default function GymMap() {
           <FocusGym gym={selectedGym} nonce={focusNonce} />
 
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CARTO'
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             subdomains="abcd"
             maxZoom={19}
-            className="gym-map-tiles"
           />
 
           <Circle
@@ -136,24 +133,18 @@ export default function GymMap() {
           />
 
           <Marker position={center} icon={userIcon}>
-            <Popup className="user-popup">
-              <div className="popup-content text-center" dir="rtl">
-                <p className="font-bold text-sm mb-1">
-                  {isFallback ? "موقعیت تقریبی (تهران)" : "موقعیت شما"}
-                </p>
-                <p className="text-xs opacity-70" dir="ltr">
+            <Popup>
+              <div dir="rtl" style={{ textAlign: "center", fontSize: 13 }}>
+                <strong>{isFallback ? "موقعیت تقریبی (تهران)" : "موقعیت شما"}</strong>
+                <div dir="ltr" style={{ opacity: 0.7, fontSize: 11, marginTop: 4 }}>
                   {location.lat.toFixed(5)}, {location.lon.toFixed(5)}
-                </p>
+                </div>
               </div>
             </Popup>
           </Marker>
 
           {gyms.map((gym) => (
-            <GymMarker
-              key={gym.id}
-              gym={gym}
-              highlighted={selectedId === gym.id}
-            >
+            <GymMarker key={gym.id} gym={gym} highlighted={selectedId === gym.id}>
               <GymInfoPopup gym={gym} />
             </GymMarker>
           ))}
