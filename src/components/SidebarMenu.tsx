@@ -1,7 +1,7 @@
 /**
- * Mobile navigation drawer (RTL: slides from right).
- * Desktop uses BottomNavigation → DesktopNavRail.
- * Sole owner of body scroll-lock via .drawer-open.
+ * Mobile drawer — opens from the right (RTL).
+ * Desktop: hidden (rail is in BottomNavigation).
+ * Owns body scroll-lock via .drawer-open.
  */
 
 import { FC, useEffect, useRef } from "react";
@@ -17,7 +17,6 @@ import {
   History,
   LogOut,
   X,
-  ChevronLeft,
 } from "lucide-react";
 
 interface SidebarMenuProps {
@@ -25,16 +24,13 @@ interface SidebarMenuProps {
   onClose: () => void;
 }
 
-const primary = [
+const NAV = [
   { id: "home", label: "خانه", icon: House, path: "/home" },
   { id: "explore", label: "باشگاه‌ها", icon: Compass, path: "/gym/all" },
   { id: "map", label: "نقشه", icon: MapPinned, path: "/gym-map" },
   { id: "sub", label: "اشتراک", icon: CreditCard, path: "/subscriptions" },
   { id: "tokens", label: "توکن‌ها", icon: Ticket, path: "/gym-access/tokens" },
   { id: "profile", label: "پروفایل", icon: UserRound, path: "/profile" },
-] as const;
-
-const secondary = [
   {
     id: "history",
     label: "تاریخچه اشتراک",
@@ -43,13 +39,13 @@ const secondary = [
   },
 ] as const;
 
-function isRouteActive(pathname: string, path: string) {
+function isActive(pathname: string, path: string) {
   if (path === "/home") return pathname === "/home" || pathname.startsWith("/home/");
-  if (path === "/gym/all")
-    return (
-      pathname === "/gym/all" ||
-      (pathname.startsWith("/gym/") && !pathname.startsWith("/gym-map"))
-    );
+  if (path === "/gym/all") return pathname === "/gym/all";
+  if (path === "/gym-map") return pathname.startsWith("/gym-map");
+  if (path === "/subscriptions")
+    return pathname === "/subscriptions" || pathname.startsWith("/subscriptions/payment");
+  if (path === "/subscriptions/history") return pathname.startsWith("/subscriptions/history");
   return pathname === path || pathname.startsWith(path + "/");
 }
 
@@ -91,127 +87,101 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
     navigate("/welcome", { replace: true });
   };
 
-  const initials = (displayName || "ک").trim().charAt(0);
+  const name = displayName?.trim() || "کاربر فیتوپیا";
+  const initial = name.charAt(0);
 
   return (
-    <>
-      <div
-        className={`fixed inset-0 z-[60] md:hidden transition-opacity duration-250 ${
+    <div className="md:hidden" aria-hidden={!isOpen}>
+      <button
+        type="button"
+        tabIndex={isOpen ? 0 : -1}
+        aria-label="بستن منو"
+        onClick={onClose}
+        className={`fixed inset-0 z-[60] border-0 p-0 transition-opacity duration-200 ${
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
-        style={{ background: "rgba(0,0,0,0.58)", backdropFilter: "blur(3px)" }}
-        onClick={onClose}
-        aria-hidden={!isOpen}
+        style={{ background: "rgba(0,0,0,0.55)" }}
       />
 
       <aside
-        className={`fixed top-0 end-0 z-[70] flex h-dvh w-[min(18.5rem,86vw)] flex-col bg-[#0c0c10] border-s border-white/[0.07] shadow-[-12px_0_40px_rgba(0,0,0,0.45)] transition-transform duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] md:hidden ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
         role="dialog"
         aria-modal="true"
         aria-label="منوی ناوبری"
-        aria-hidden={!isOpen}
+        className={`fixed top-0 right-0 z-[70] flex h-[100dvh] max-h-[100dvh] flex-col bg-[#0c0c10] border-l border-white/10 shadow-2xl transition-transform duration-300 ease-out ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+        style={{
+          width: "min(300px, 88vw)",
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        }}
       >
-        <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-4 pt-[max(0.85rem,env(safe-area-inset-top))] pb-3">
+        <div
+          className="flex shrink-0 items-center gap-3 border-b border-white/10 px-3"
+          style={{
+            paddingTop: "max(12px, env(safe-area-inset-top, 0px))",
+            paddingBottom: 12,
+          }}
+        >
+          <div className="min-w-0 flex-1 text-right">
+            <p className="text-sm font-black tracking-wide text-white">FITOPIA</p>
+            <p className="text-[11px] text-white/40 truncate">{name}</p>
+          </div>
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 border border-primary/30 text-sm font-black text-primary"
+            aria-hidden
+          >
+            {initial}
+          </div>
           <button
             ref={closeRef}
             type="button"
             onClick={onClose}
-            className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] text-white/75 hover:bg-white/[0.07] transition-colors"
-            aria-label="بستن منو"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 text-white/80 hover:bg-white/10"
+            aria-label="بستن"
           >
             <X size={18} aria-hidden />
           </button>
-          <div className="text-right min-w-0">
-            <p className="text-[13px] font-black tracking-[0.12em] text-white">FITOPIA</p>
-            <p className="text-[10px] text-white/35 mt-0.5">منوی اصلی</p>
-          </div>
-        </div>
-
-        <div className="mx-3 mt-3 flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-3 py-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/15 text-sm font-black text-primary">
-            {initials}
-          </div>
-          <div className="min-w-0 flex-1 text-right">
-            <p className="truncate text-sm font-bold text-white">
-              {displayName || "کاربر فیتوپیا"}
-            </p>
-            <p className="text-[11px] text-white/40 mt-0.5">حساب کاربری</p>
-          </div>
-          <ChevronLeft size={16} className="shrink-0 text-white/25" aria-hidden />
         </div>
 
         <nav
-          className="mt-3 flex-1 overflow-y-auto overscroll-contain px-3 pb-3"
-          aria-label="لینک‌های اصلی"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-3"
+          aria-label="منو"
         >
-          <p className="mb-1.5 px-2 text-[10px] font-bold tracking-wide text-white/30">
-            ناوبری
-          </p>
-          <ul className="space-y-1">
-            {primary.map(({ id, label, icon: Icon, path }) => {
-              const on = isRouteActive(location.pathname, path);
+          <ul className="m-0 list-none space-y-1 p-0">
+            {NAV.map(({ id, label, icon: Icon, path }) => {
+              const on = isActive(location.pathname, path);
               return (
                 <li key={id}>
                   <Link
                     to={path}
                     onClick={onClose}
                     aria-current={on ? "page" : undefined}
-                    className={`group relative flex min-h-12 items-center justify-between gap-3 rounded-xl px-3 no-underline transition-colors ${
+                    className={`flex w-full flex-row-reverse items-center gap-3 rounded-xl px-3 py-3 no-underline transition-colors ${
                       on
-                        ? "bg-primary/12 text-primary"
-                        : "text-white/75 hover:bg-white/[0.04] hover:text-white"
+                        ? "bg-primary/15 text-primary"
+                        : "text-white/80 hover:bg-white/5 hover:text-white"
                     }`}
+                    style={{ minHeight: 48 }}
                   >
-                    {on ? (
-                      <span
-                        className="absolute end-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-s-full bg-primary"
-                        aria-hidden
-                      />
-                    ) : null}
-                    <span className="flex min-w-0 flex-1 items-center justify-end gap-2.5">
-                      <span className={`text-[13px] font-semibold truncate ${on ? "font-bold" : ""}`}>
-                        {label}
-                      </span>
-                      <span
-                        className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                          on
-                            ? "bg-primary/20 text-primary"
-                            : "bg-white/[0.04] text-white/55 group-hover:text-white/80"
-                        }`}
-                      >
-                        <Icon size={18} strokeWidth={on ? 2.1 : 1.75} aria-hidden />
-                      </span>
+                    <span
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                        on ? "bg-primary/20 text-primary" : "bg-white/5 text-white/60"
+                      }`}
+                    >
+                      <Icon size={18} strokeWidth={on ? 2.15 : 1.8} aria-hidden />
                     </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-
-          <div className="my-3 mx-1 border-t border-white/[0.06]" />
-
-          <p className="mb-1.5 px-2 text-[10px] font-bold tracking-wide text-white/30">
-            بیشتر
-          </p>
-          <ul className="space-y-1">
-            {secondary.map(({ id, label, icon: Icon, path }) => {
-              const on = isRouteActive(location.pathname, path);
-              return (
-                <li key={id}>
-                  <Link
-                    to={path}
-                    onClick={onClose}
-                    aria-current={on ? "page" : undefined}
-                    className={`flex min-h-11 items-center justify-end gap-2.5 rounded-xl px-3 no-underline transition-colors ${
-                      on
-                        ? "bg-primary/10 text-primary font-bold"
-                        : "text-white/65 hover:bg-white/[0.04] hover:text-white/90 font-semibold"
-                    }`}
-                  >
-                    <span className="text-[13px]">{label}</span>
-                    <Icon size={17} strokeWidth={1.75} className="opacity-80" aria-hidden />
+                    <span
+                      className={`min-w-0 flex-1 text-right text-[13px] ${
+                        on ? "font-bold" : "font-semibold"
+                      }`}
+                    >
+                      {label}
+                    </span>
+                    {on ? (
+                      <span className="h-5 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
+                    ) : (
+                      <span className="w-1 shrink-0" aria-hidden />
+                    )}
                   </Link>
                 </li>
               );
@@ -219,18 +189,19 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
           </ul>
         </nav>
 
-        <div className="shrink-0 border-t border-white/[0.06] p-3 pb-[max(0.85rem,env(safe-area-inset-bottom))]">
+        <div className="shrink-0 border-t border-white/10 p-3">
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full min-h-12 items-center justify-end gap-2.5 rounded-xl border border-red-500/20 bg-red-500/[0.08] px-3 text-[13px] font-bold text-red-300 hover:bg-red-500/15 transition-colors"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-3 text-[13px] font-bold text-red-300 hover:bg-red-500/15"
+            style={{ minHeight: 48 }}
           >
-            خروج از حساب
             <LogOut size={17} aria-hidden />
+            خروج از حساب
           </button>
         </div>
       </aside>
-    </>
+    </div>
   );
 };
 
