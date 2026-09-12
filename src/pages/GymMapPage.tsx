@@ -14,10 +14,12 @@ export function GymMapPage() {
   }, []);
 
   return (
-    <div className="relative min-h-dvh bg-[#07070A] home-with-rail">
+    <div className="relative flex min-h-dvh flex-col bg-[#07070A] home-with-rail">
       <Header />
-      <main className="relative z-0 h-[100dvh] w-full pt-14 md:pt-16">
-        <GymMap />
+      <main className="relative z-0 flex min-h-0 flex-1 flex-col pt-14 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pt-16 md:pb-4">
+        <div className="min-h-0 flex-1">
+          <GymMap />
+        </div>
       </main>
       <BottomNavigation />
     </div>
