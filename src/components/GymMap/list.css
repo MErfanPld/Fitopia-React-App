@@ -1,191 +1,295 @@
-.gym-list {
-  margin-top: 30px;
+/* Nearby gyms panel — dark Fitopia */
+
+.nearby-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
 }
 
-.list-title {
-  margin: 0 0 16px 0;
-  font-size: 18px;
-  color: #333;
-  font-weight: 700;
-  text-align: right;
-  direction: rtl;
-}
-
-.gym-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-}
-
-.gym-card {
-  background: white;
-  border-radius: 12px;
+.nearby-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #121216;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  cursor: pointer;
-  border: 1px solid #f0f0f0;
-  text-align: right;
-  direction: rtl;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.gym-card:hover {
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
-  transform: translateY(-4px);
-  border-color: #667eea;
+.nearby-card--active {
+  border-color: rgba(255, 106, 0, 0.45);
+  box-shadow: 0 0 0 1px rgba(255, 106, 0, 0.2);
 }
 
-.gym-card-image {
-  position: relative;
+.nearby-card__hit {
+  display: flex;
+  gap: 0.75rem;
   width: 100%;
-  height: 180px;
-  overflow: hidden;
-  background: #f0f0f0;
+  padding: 0.65rem;
+  text-align: right;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  min-height: 44px;
 }
 
-.gym-card-image img {
+.nearby-card__media {
+  position: relative;
+  width: 4.5rem;
+  height: 4.5rem;
+  flex-shrink: 0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #1a1a20;
+}
+
+.nearby-card__img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  display: block;
 }
 
-.gym-card:hover .gym-card-image img {
-  transform: scale(1.05);
+.nearby-card__img--ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.gym-card-image .popular-badge {
+.nearby-card__badge {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  z-index: 10;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  top: 4px;
+  right: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #ff6a00;
+  color: #000;
 }
 
-.gym-card-content {
-  padding: 16px;
-}
-
-.gym-card-content .gym-name {
-  margin: 0 0 8px 0;
-  font-size: 16px;
-  font-weight: 700;
-  color: #333;
-}
-
-.gym-card-content p {
-  margin: 6px 0;
-  font-size: 13px;
-  color: #666;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.gym-card-content p span:first-child {
-  font-size: 14px;
-  flex-shrink: 0;
-}
-
-.gym-score {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid #f0f0f0;
-}
-
-.gym-score span {
-  font-size: 13px;
-  color: #667eea;
-  font-weight: 600;
-}
-
-.facilities-count {
-  color: #999 !important;
-}
-
-.gym-card-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.action-btn {
+.nearby-card__body {
+  min-width: 0;
   flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  text-decoration: none;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  justify-content: center;
+}
+
+.nearby-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.nearby-card__name {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.nearby-card__score {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #ffb020;
+}
+
+.nearby-card__meta {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.35;
+}
+
+.nearby-card__row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.nearby-card__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  max-width: 100%;
+  font-size: 0.625rem;
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  padding: 0.15rem 0.45rem;
+}
+
+.nearby-card__actions {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0 0.65rem 0.65rem;
+  justify-content: stretch;
+}
+
+.nearby-card__cta {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-height: 2.5rem;
+  border-radius: 0.75rem;
+  border: 0;
+  background: #ff6a00;
+  color: #0a0a0e;
+  font-size: 0.75rem;
+  font-weight: 800;
   cursor: pointer;
-  transition: all 0.3s ease;
-  color: white;
 }
 
-.call-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.nearby-card__call {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  min-width: 4.5rem;
+  padding: 0 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
 }
 
-.call-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.whatsapp-btn {
-  background: #25d366;
-}
-
-.whatsapp-btn:hover {
-  background: #20ba58;
-  transform: translateY(-2px);
-}
-
-/* Loading state */
-.gym-list-loading {
-  padding: 40px 20px;
+.nearby-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  color: #667eea;
-  font-size: 16px;
+  gap: 0.4rem;
+  padding: 1.75rem 1.25rem;
 }
 
-/* Error state */
-.gym-list-error {
-  padding: 30px 20px;
-  background: #fff5f5;
-  border: 2px solid #fc8181;
-  border-radius: 12px;
-  text-align: center;
-  color: #c53030;
-  margin-bottom: 20px;
+.nearby-state--error {
+  color: #fecaca;
 }
 
-/* Empty state */
-.gym-list-empty {
-  padding: 40px 20px;
-  text-align: center;
-  color: #999;
-  font-size: 16px;
-  background: #f9f9f9;
-  border-radius: 12px;
+.nearby-state__title {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: #fff;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .gym-cards {
-    grid-template-columns: 1fr;
+.nearby-state__desc {
+  margin: 0;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+  max-width: 16rem;
+  line-height: 1.5;
+}
+
+.nearby-retry {
+  margin-top: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  border-radius: 0.75rem;
+  border: 0;
+  background: #ff6a00;
+  color: #0a0a0e;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.nearby-skel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.5rem 0.75rem 1rem;
+}
+
+.nearby-skel__card {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.65rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #121216;
+}
+
+.nearby-skel__img {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(90deg, #1a1a20 25%, #22222a 50%, #1a1a20 75%);
+  background-size: 200% 100%;
+  animation: nearby-shimmer 1.2s ease infinite;
+}
+
+.nearby-skel__lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.nearby-skel__line {
+  height: 0.55rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #1a1a20 25%, #22222a 50%, #1a1a20 75%);
+  background-size: 200% 100%;
+  animation: nearby-shimmer 1.2s ease infinite;
+  width: 70%;
+  margin-inline-start: auto;
+}
+
+.nearby-skel__line--lg { width: 85%; height: 0.7rem; }
+.nearby-skel__line--sm { width: 45%; }
+
+@keyframes nearby-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@media (min-width: 640px) {
+  .nearby-card__media {
+    width: 5.25rem;
+    height: 5.25rem;
   }
+  .nearby-card__name {
+    font-size: 0.875rem;
+  }
+  .nearby-list {
+    padding-inline: 1rem;
+  }
+}
 
-  .gym-card-image {
-    height: 150px;
+@media (min-width: 1024px) {
+  .nearby-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem 1.25rem;
   }
 }
