@@ -129,7 +129,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!token) return;
-    const id = window.setInterval(() => {
+
+    const checkExpiry = () => {
       const current = getAccessTokenFromStorage();
       if (!current || isAccessTokenExpired(current)) {
         const refresh = getRefreshTokenFromStorage();
@@ -145,8 +146,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT));
         }
       }
-    }, 30_000);
-    return () => window.clearInterval(id);
+    };
+
+    // Poll every 15s + on tab focus / visibility (covers manual URL while expired)
+    const id = window.setInterval(checkExpiry, 15_000);
+    const onFocus = () => checkExpiry();
+    const onVis = () => {
+      if (document.visibilityState === "visible") checkExpiry();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVis);
+    checkExpiry();
+
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, [token]);
 
   const login = (
