@@ -1,6 +1,6 @@
 /**
  * Fitopia Home — fitness discovery marketplace
- * Hierarchy: Header → Search → Hero → Actions → Categories → Nearby → Popular → Membership
+ * Hierarchy: Header → Search → Actions → Hero → Categories → Nearby → Popular → Membership
  * Real API data only; no fake metrics or recommendations.
  */
 
@@ -13,7 +13,6 @@ import { CategorySlider } from "../components/CategorySlider";
 import { NearbyGymsMap } from "../components/NearbyGymsMap";
 import { PopularGyms } from "../components/PopularGyms";
 import { MembershipHero } from "../components/home/MembershipHero";
-import { QuickStats } from "../components/home/QuickStats";
 import { PWAInstallButton } from "../components/PWAInstallButton";
 import { BottomNavigation } from "../components/BottomNavigation";
 
@@ -34,13 +33,14 @@ export function HomePage() {
       <main className="relative z-10 home-shell home-pad pb-[calc(6.75rem+env(safe-area-inset-bottom))] md:pb-12">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 sm:gap-6 lg:max-w-4xl xl:max-w-5xl">
           <HomeSearch />
-          <PromoSlider />
+          {/* Actions ABOVE slider */}
           <QuickActions />
+          <PromoSlider />
           <CategorySlider />
           <NearbyGymsMap />
           <PopularGyms />
+          {/* Subscription + remaining days / tokens in ONE box */}
           <MembershipHero />
-          <QuickStats />
           <PWAInstallButton />
         </div>
       </main>
