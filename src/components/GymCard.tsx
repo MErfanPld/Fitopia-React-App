@@ -1,13 +1,13 @@
 /**
- * Marketplace gym card — image-first, scannable, real API data only.
- * Shows: cover, rating, popular badge, name, address, working hours.
+ * Compact marketplace gym card — smaller footprint, open/gender badges.
  */
 
-import { MapPin, Star, Clock } from "lucide-react";
+import { MapPin, Star, Clock, Venus, Mars, Users } from "lucide-react";
 
 const API_BASE = "https://fitopiaapi.pythonanywhere.com";
 
-/** Fields used on marketplace cards (list + home). Extra keys ignored if missing. */
+export type GymGender = "women" | "men" | "both" | "unknown";
+
 export type GymCardData = {
   id: number;
   name: string;
@@ -17,11 +17,16 @@ export type GymCardData = {
   is_popular?: boolean;
   working_hours?: string | null;
   phone?: string | null;
+  description?: string | null;
+  gender?: GymGender | string | null;
+  is_open?: boolean | null;
+  distance_km?: number | null;
 };
 
 interface GymCardProps {
   gym: GymCardData;
   onClick?: () => void;
+  compact?: boolean;
 }
 
 function resolveCover(src?: string | null): string | null {
@@ -30,7 +35,61 @@ function resolveCover(src?: string | null): string | null {
   return `${API_BASE}${src.startsWith("/") ? "" : "/"}${src}`;
 }
 
-export function GymCard({ gym, onClick }: GymCardProps) {
+/** Infer gender from API field or Persian keywords in name/description. */
+export function inferGymGender(gym: GymCardData): GymGender {
+  const raw = (gym.gender || "").toString().toLowerCase();
+  if (raw === "women" || raw === "female" || raw === "زن" || raw === "زنانه") return "women";
+  if (raw === "men" || raw === "male" || raw === "مرد" || raw === "مردانه") return "men";
+  if (raw === "both" || raw === "mixed" || raw === "مختلط") return "both";
+
+  const hay = `${gym.name || ""} ${gym.description || ""}`.toLowerCase();
+  const women = /زنانه|بانوان|خواهران|ladies|women|female/.test(hay);
+  const men = /مردانه|آقایان|برادران|\bmen\b|male only/.test(hay);
+  if (women && !men) return "women";
+  if (men && !women) return "men";
+  if (women && men) return "both";
+  return "unknown";
+}
+
+/**
+ * Rough open-now from Persian/English working_hours strings.
+ * Falls back to true when unparseable (don't hide gyms).
+ */
+export function inferIsOpen(hours?: string | null, explicit?: boolean | null): boolean {
+  if (typeof explicit === "boolean") return explicit;
+  if (!hours || !hours.trim()) return true;
+
+  const text = hours.trim();
+  if (/24\s*ساعت|شبانه\s*روزی|۲۴\s*ساعت/i.test(text)) return true;
+
+  const now = new Date();
+  const h = now.getHours() + now.getMinutes() / 60;
+
+  const nums = [...text.matchAll(/(\d{1,2})(?::(\d{2}))?/g)].map((m) => {
+    const hour = parseInt(m[1], 10);
+    const min = m[2] ? parseInt(m[2], 10) : 0;
+    return hour + min / 60;
+  });
+
+  if (nums.length < 2) return true;
+
+  let open = nums[0];
+  let close = nums[1];
+
+  if (close <= open) {
+    return h >= open || h < close;
+  }
+  return h >= open && h < close;
+}
+
+function genderLabel(g: GymGender): { label: string; Icon: typeof Venus } | null {
+  if (g === "women") return { label: "زنانه", Icon: Venus };
+  if (g === "men") return { label: "مردانه", Icon: Mars };
+  if (g === "both") return { label: "مختلط", Icon: Users };
+  return null;
+}
+
+export function GymCard({ gym, onClick, compact = true }: GymCardProps) {
   const cover = resolveCover(gym.cover_image);
 
   const rating =
@@ -46,14 +105,21 @@ export function GymCard({ gym, onClick }: GymCardProps) {
   const address =
     gym.address && gym.address.trim().length > 0 ? gym.address.trim() : null;
 
+  const gender = inferGymGender(gym);
+  const genderMeta = genderLabel(gender);
+  const isOpen = inferIsOpen(gym.working_hours, gym.is_open);
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group w-full text-right overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121216] active:scale-[0.98] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      className="group w-full text-right overflow-hidden rounded-xl border border-white/[0.08] bg-[#121216] active:scale-[0.98] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     >
-      {/* Cover */}
-      <div className="relative aspect-[4/3] bg-white/[0.04] overflow-hidden">
+      <div
+        className={`relative bg-white/[0.04] overflow-hidden ${
+          compact ? "aspect-[16/10]" : "aspect-[4/3]"
+        }`}
+      >
         {cover ? (
           <img
             src={cover}
@@ -67,44 +133,67 @@ export function GymCard({ gym, onClick }: GymCardProps) {
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-[#1a1410] to-[#0e0e12]" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
 
-        {/* Top badges */}
-        <div className="absolute top-2 inset-x-2 flex items-start justify-between gap-2">
-          {gym.is_popular ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-black">
-              <Star size={10} className="fill-current" aria-hidden />
-              محبوب
+        <div className="absolute top-1.5 inset-x-1.5 flex items-start justify-between gap-1">
+          <div className="flex flex-wrap gap-1">
+            {gym.is_popular ? (
+              <span className="inline-flex items-center gap-0.5 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold text-black">
+                <Star size={9} className="fill-current" aria-hidden />
+                محبوب
+              </span>
+            ) : null}
+            <span
+              className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
+                isOpen
+                  ? "bg-emerald-500/90 text-white"
+                  : "bg-white/20 text-white/90 backdrop-blur-sm"
+              }`}
+            >
+              {isOpen ? "باز" : "بسته"}
             </span>
-          ) : (
-            <span />
-          )}
+          </div>
           {rating ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-black/55 backdrop-blur-sm px-2 py-0.5 text-[10px] font-semibold text-amber-200">
-              <Star size={11} className="fill-amber-300 text-amber-300" aria-hidden />
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-black/55 backdrop-blur-sm px-1.5 py-0.5 text-[9px] font-semibold text-amber-200">
+              <Star size={9} className="fill-amber-300 text-amber-300" aria-hidden />
               {rating}
             </span>
           ) : null}
         </div>
       </div>
 
-      {/* Info under image */}
-      <div className="p-3 space-y-1.5 text-right">
-        <p className="text-sm font-bold text-white line-clamp-1 leading-snug tracking-tight">
+      <div className="px-2.5 py-2 space-y-1 text-right">
+        <p className="text-[13px] font-bold text-white line-clamp-1 leading-snug tracking-tight">
           {gym.name}
         </p>
 
+        <div className="flex flex-wrap items-center justify-end gap-1">
+          {genderMeta ? (
+            <span className="inline-flex items-center gap-0.5 rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[9px] font-medium text-white/70">
+              <genderMeta.Icon size={10} aria-hidden />
+              {genderMeta.label}
+            </span>
+          ) : null}
+          {typeof gym.distance_km === "number" ? (
+            <span className="text-[9px] text-primary/90 font-semibold tabular-nums">
+              {gym.distance_km < 1
+                ? `${Math.round(gym.distance_km * 1000)} م`
+                : `${gym.distance_km.toFixed(1)} کم`}
+            </span>
+          ) : null}
+        </div>
+
         {address ? (
-          <p className="flex items-start justify-end gap-1 text-[11px] text-white/55 leading-snug">
-            <span className="line-clamp-2 min-w-0">{address}</span>
-            <MapPin size={12} className="shrink-0 mt-0.5 opacity-80 text-primary/80" aria-hidden />
+          <p className="flex items-start justify-end gap-1 text-[10px] text-white/50 leading-snug">
+            <span className="line-clamp-1 min-w-0">{address}</span>
+            <MapPin size={11} className="shrink-0 mt-0.5 text-primary/80" aria-hidden />
           </p>
         ) : null}
 
         {hours ? (
-          <p className="flex items-start justify-end gap-1 text-[11px] text-white/45 leading-snug">
+          <p className="flex items-start justify-end gap-1 text-[10px] text-white/40 leading-snug">
             <span className="line-clamp-1 min-w-0">{hours}</span>
-            <Clock size={12} className="shrink-0 mt-0.5 opacity-80" aria-hidden />
+            <Clock size={11} className="shrink-0 mt-0.5 opacity-80" aria-hidden />
           </p>
         ) : null}
       </div>
