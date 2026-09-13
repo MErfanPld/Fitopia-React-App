@@ -38,10 +38,21 @@ export interface Facility {
 
 export interface Review {
   id: number;
-  user_name: string;
-  text: string;
-  rating: number;
+  name?: string;
+  user_name?: string;
+  text?: string;
+  comment?: string;
+  rating?: number;
+  created_at?: string;
   date?: string;
+  gym?: number;
+}
+
+export interface GymVideo {
+  id: number;
+  video_url: string;
+  title?: string;
+  gym?: number;
 }
 
 export interface Coach {
@@ -85,7 +96,7 @@ export interface Gym {
   prices: Price[];
   facilities: Facility[];
   images: (Image | string)[];
-  videos: string[];
+  videos: (GymVideo | string)[];
   banners: Banner[];
   coaches: Coach[];
   reviews: Review[];
