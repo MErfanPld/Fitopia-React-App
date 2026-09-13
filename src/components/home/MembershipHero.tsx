@@ -1,9 +1,10 @@
 /**
- * Membership / primary status hero — real subscription data only.
+ * Membership + stats in ONE unified card (remaining days, tokens, plan).
  */
 
 import { useNavigate } from "react-router-dom";
 import { useUserSubscription } from "../../hooks/useUserSubscription";
+import { useTokens } from "../../hooks/useTokens";
 
 function daysLabel(days: number | string | undefined): number | null {
   if (days === undefined || days === null || days === "") return null;
@@ -13,12 +14,13 @@ function daysLabel(days: number | string | undefined): number | null {
 
 export function MembershipHero() {
   const navigate = useNavigate();
-  const { subscription, loading, hasSubscription } = useUserSubscription();
+  const { subscription, loading: subLoading, hasSubscription } = useUserSubscription();
+  const { activeCount, loading: tokLoading } = useTokens();
 
-  if (loading) {
+  if (subLoading || tokLoading) {
     return (
       <section aria-busy="true" className="w-full">
-        <div className="skeleton h-[9.5rem] w-full rounded-2xl" />
+        <div className="skeleton h-[11rem] w-full rounded-2xl" />
       </section>
     );
   }
@@ -49,6 +51,11 @@ export function MembershipHero() {
   const days = daysLabel(subscription.days_remaining);
   const planName = subscription.plan_name || "اشتراک فیتوپیا";
   const statusActive = subscription.is_active && subscription.status === "active";
+  const tokensRem =
+    subscription.tokens_remaining !== undefined && subscription.tokens_remaining !== null
+      ? Number(subscription.tokens_remaining)
+      : null;
+
   const progress =
     days !== null && subscription.start_date && subscription.end_date
       ? (() => {
@@ -56,14 +63,24 @@ export function MembershipHero() {
           const end = new Date(subscription.end_date).getTime();
           const now = Date.now();
           if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
-          const pct = Math.min(100, Math.max(0, ((end - now) / (end - start)) * 100));
-          return pct;
+          return Math.min(100, Math.max(0, ((end - now) / (end - start)) * 100));
         })()
       : null;
 
+  const stats: { label: string; value: string | number }[] = [];
+  if (days !== null) {
+    stats.push({ label: "روز باقی‌مانده", value: Math.max(0, days) });
+  }
+  if (tokensRem !== null && Number.isFinite(tokensRem)) {
+    stats.push({ label: "توکن پلن", value: Math.max(0, tokensRem) });
+  }
+  if (typeof activeCount === "number") {
+    stats.push({ label: "توکن فعال", value: activeCount });
+  }
+
   return (
     <section
-      className="relative w-full overflow-hidden rounded-2xl border border-primary-container/25 bg-[#121216] p-5 text-right"
+      className="relative w-full overflow-hidden rounded-2xl border border-primary-container/25 bg-[#121216] p-4 sm:p-5 text-right"
       aria-label="وضعیت اشتراک"
     >
       <div
@@ -93,7 +110,7 @@ export function MembershipHero() {
       </h2>
 
       {progress !== null && (
-        <div className="relative z-10 mt-4">
+        <div className="relative z-10 mt-3">
           <div
             className="h-1.5 w-full overflow-hidden rounded-full bg-white/10"
             role="progressbar"
@@ -107,6 +124,33 @@ export function MembershipHero() {
               style={{ width: `${progress}%` }}
             />
           </div>
+        </div>
+      )}
+
+      {/* All metrics inside the same box */}
+      {stats.length > 0 && (
+        <div
+          className={`relative z-10 mt-4 grid gap-2 ${
+            stats.length === 1
+              ? "grid-cols-1"
+              : stats.length === 2
+                ? "grid-cols-2"
+                : "grid-cols-3"
+          }`}
+        >
+          {stats.map((item) => (
+            <div
+              key={item.label}
+              className="rounded-xl border border-white/[0.08] bg-black/25 px-2.5 py-3 text-center"
+            >
+              <p className="text-[clamp(1.15rem,4.5vw,1.4rem)] font-extrabold tabular-nums text-white leading-none">
+                {item.value}
+              </p>
+              <p className="mt-1.5 text-[10px] font-medium text-white/50 leading-tight">
+                {item.label}
+              </p>
+            </div>
+          ))}
         </div>
       )}
 
