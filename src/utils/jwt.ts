@@ -17,12 +17,13 @@ export function decodeJwtPayload(token: string): Record<string, unknown> | null 
   }
 }
 
-/** true if token is missing, invalid, or past exp (with 30s skew) */
+/** true if token is missing, invalid/undecodable, or past exp (with 30s skew) */
 export function isAccessTokenExpired(token: string | null | undefined): boolean {
   if (!token) return true;
   const payload = decodeJwtPayload(token);
+  // Strict: unreadable JWT or missing exp → treat as expired (force re-login)
   if (!payload || typeof payload.exp !== "number") {
-    return false;
+    return true;
   }
   const now = Math.floor(Date.now() / 1000);
   return payload.exp <= now + 30;
