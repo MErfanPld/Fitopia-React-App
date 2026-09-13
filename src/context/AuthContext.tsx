@@ -1,18 +1,37 @@
 /**
- * @file AuthContext.tsx
- * @description Global Context to manage authentication state, session preservation, and seamless loading protection to prevent flickering.
+ * AuthContext — session restore, JWT expiry, force logout → welcome
  */
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  type ReactNode,
+} from "react";
+import {
+  AUTH_EXPIRED_EVENT,
+  clearAuthStorage,
+  getAccessTokenFromStorage,
+  getRefreshTokenFromStorage,
+  isAccessTokenExpired,
+  tryRefreshAccessToken,
+} from "../utils/jwt";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   token: string | null;
   refreshToken: string | null;
-  userData: any;
+  userData: unknown;
   displayName: string;
   isLoading: boolean;
-  login: (token: string, refreshToken: string, userData: any, displayName: string) => void;
+  login: (
+    token: string,
+    refreshToken: string,
+    userData: unknown,
+    displayName: string,
+  ) => void;
   logout: () => Promise<void>;
   setDisplayNameState: (name: string) => void;
 }
@@ -22,159 +41,172 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<unknown>(null);
   const [displayName, setDisplayName] = useState<string>("کاربر عزیز");
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Initialize and restore session on application mount
-  useEffect(() => {
-    try {
-      const storedToken = localStorage.getItem("access") || localStorage.getItem("fitopia_auth_token");
-      const storedRefresh = localStorage.getItem("refresh") || localStorage.getItem("fitopia_refresh_token");
-      const storedName = localStorage.getItem("fitopia_user_name");
-      const storedUserData = localStorage.getItem("fitopia_user_data");
-
-      console.log("Restoring Auth State:");
-      console.log("Stored token ('access'):", storedToken);
-      console.log("Stored refresh ('refresh'):", storedRefresh);
-
-      if (storedToken) {
-        setToken(storedToken);
-        setRefreshToken(storedRefresh);
-        
-        if (storedUserData) {
-          try {
-            setUserData(JSON.parse(storedUserData));
-          } catch (e) {
-            console.error("Error parsing user data details", e);
-          }
-        }
-
-        if (storedName) {
-          // Fallback if the name is like a physical phone number
-          const cleanNum = storedName.trim().replace(/[\s\-()]/g, "");
-          if (/^\+?\d+$/.test(cleanNum)) {
-            setDisplayName("کاربر فیتوپیا");
-          } else {
-            setDisplayName(storedName);
-          }
-        } else {
-          setDisplayName("کاربر عزیز");
-        }
-      }
-    } catch (error) {
-      console.error("Session restoration error:", error);
-    } finally {
-      // Simulate/ensure a micromoment of verification before lifting loader to prevent flickering
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  const login = (
-    authToken: string,
-    refreshTok: string,
-    data: any,
-    nameCandidate: string
-  ) => {
-    console.log("Executing login user updates in AuthProvider:");
-    console.log("Incoming data:", data);
-    console.log("Incoming authToken:", authToken);
-    console.log("Incoming refreshTok:", refreshTok);
-
-    setToken(authToken);
-    setRefreshToken(refreshTok);
-    setUserData(data);
-
-    // Filter potential phone-number looking names
-    let finalName = nameCandidate;
-    const cleanNum = nameCandidate.trim().replace(/[\s\-()]/g, "");
-    if (/^\+?\d+$/.test(cleanNum)) {
-      finalName = "کاربر فیتوپیا";
-    }
-    setDisplayName(finalName);
-
-    localStorage.setItem("access", authToken);
-    localStorage.setItem("fitopia_auth_token", authToken);
-    localStorage.setItem("refresh", refreshTok);
-    localStorage.setItem("fitopia_refresh_token", refreshTok);
-    localStorage.setItem("fitopia_user_name", finalName);
-    localStorage.setItem("fitopia_user_data", JSON.stringify(data));
-
-    console.log("Verification checks after local storage updates:");
-    console.log("Stored access token (localStorage):", localStorage.getItem("access"));
-    console.log("Stored refresh token (localStorage):", localStorage.getItem("refresh"));
-  };
-
-const logout = async () => {
-  const currentRefresh =
-    refreshToken ||
-    localStorage.getItem("refresh") ||
-    localStorage.getItem("fitopia_refresh_token") ||
-    "";
-
-  const currentAccess =
-    token ||
-    localStorage.getItem("access") ||
-    localStorage.getItem("fitopia_auth_token") ||
-    "";
-
-  const clearAuthCache = () => {
+  const hardLogoutLocal = useCallback(() => {
     setToken(null);
     setRefreshToken(null);
     setUserData(null);
     setDisplayName("کاربر عزیز");
+    clearAuthStorage();
+  }, []);
 
-    localStorage.removeItem("access");
-    localStorage.removeItem("fitopia_auth_token");
-    localStorage.removeItem("refresh");
-    localStorage.removeItem("fitopia_refresh_token");
-    localStorage.removeItem("fitopia_user_name");
-    localStorage.removeItem("fitopia_user_data");
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        let storedToken = getAccessTokenFromStorage();
+        const storedRefresh = getRefreshTokenFromStorage();
+        const storedName = localStorage.getItem("fitopia_user_name");
+        const storedUserData = localStorage.getItem("fitopia_user_data");
+
+        if (storedToken && isAccessTokenExpired(storedToken)) {
+          if (storedRefresh) {
+            const fresh = await tryRefreshAccessToken(storedRefresh);
+            storedToken = fresh;
+          } else {
+            storedToken = null;
+          }
+          if (!storedToken) {
+            clearAuthStorage();
+          }
+        }
+
+        if (cancelled) return;
+
+        if (storedToken) {
+          setToken(storedToken);
+          setRefreshToken(getRefreshTokenFromStorage());
+
+          if (storedUserData) {
+            try {
+              setUserData(JSON.parse(storedUserData));
+            } catch {
+              /* ignore */
+            }
+          }
+
+          if (storedName) {
+            const cleanNum = storedName.trim().replace(/[\s\-()]/g, "");
+            setDisplayName(
+              /^\+?\d+$/.test(cleanNum) ? "کاربر فیتوپیا" : storedName,
+            );
+          }
+        } else {
+          hardLogoutLocal();
+        }
+      } catch {
+        hardLogoutLocal();
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hardLogoutLocal]);
+
+  useEffect(() => {
+    const onExpired = () => {
+      hardLogoutLocal();
+      const path = window.location.pathname;
+      if (
+        path !== "/welcome" &&
+        path !== "/login" &&
+        path !== "/register" &&
+        path !== "/offline"
+      ) {
+        window.location.replace("/welcome");
+      }
+    };
+    window.addEventListener(AUTH_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
+  }, [hardLogoutLocal]);
+
+  useEffect(() => {
+    if (!token) return;
+    const id = window.setInterval(() => {
+      const current = getAccessTokenFromStorage();
+      if (!current || isAccessTokenExpired(current)) {
+        const refresh = getRefreshTokenFromStorage();
+        if (refresh) {
+          tryRefreshAccessToken(refresh).then((fresh) => {
+            if (fresh) {
+              setToken(fresh);
+            } else {
+              window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT));
+            }
+          });
+        } else {
+          window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT));
+        }
+      }
+    }, 30_000);
+    return () => window.clearInterval(id);
+  }, [token]);
+
+  const login = (
+    accessTok: string,
+    refreshTok: string,
+    data: unknown,
+    name: string,
+  ) => {
+    const finalName = name?.trim() || "کاربر عزیز";
+    setToken(accessTok);
+    setRefreshToken(refreshTok);
+    setUserData(data);
+    setDisplayName(finalName);
+
+    localStorage.setItem("access", accessTok);
+    localStorage.setItem("fitopia_auth_token", accessTok);
+    localStorage.setItem("refresh", refreshTok);
+    localStorage.setItem("fitopia_refresh_token", refreshTok);
+    localStorage.setItem("fitopia_user_name", finalName);
+    localStorage.setItem("fitopia_user_data", JSON.stringify(data));
   };
 
-  try {
-    const response = await fetch(
-      "https://fitopiaapi.pythonanywhere.com/api/accounts/logout/",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(currentAccess
-            ? { Authorization: `Bearer ${currentAccess}` }
-            : {}),
+  const logout = async () => {
+    const currentRefresh =
+      refreshToken || getRefreshTokenFromStorage() || "";
+    const currentAccess = token || getAccessTokenFromStorage() || "";
+
+    try {
+      await fetch(
+        "https://fitopiaapi.pythonanywhere.com/api/accounts/logout/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(currentAccess
+              ? { Authorization: `Bearer ${currentAccess}` }
+              : {}),
+          },
+          body: JSON.stringify({ refresh: currentRefresh }),
         },
-        body: JSON.stringify({
-          refresh: currentRefresh,
-        }),
-      }
-    );
-
-    // ✅ مهم: حتی اگر API fail شد هم باید logout انجام شود
-    clearAuthCache();
-
-    if (!response.ok) {
-      console.warn("Logout API failed but user was logged out locally");
+      );
+    } catch {
+      /* still clear local */
+    } finally {
+      hardLogoutLocal();
     }
-  } catch (err) {
-    console.error("Logout API error:", err);
-
-    // ✅ مهم: حتی در error هم پاک کن
-    clearAuthCache();
-  }
-};
+  };
 
   const setDisplayNameState = (name: string) => {
     setDisplayName(name);
     localStorage.setItem("fitopia_user_name", name);
   };
 
+  const isAuthenticated =
+    !!token && !isAccessTokenExpired(token || getAccessTokenFromStorage());
+
   return (
     <AuthContext.Provider
       value={{
-        isAuthenticated: !!token,
+        isAuthenticated,
         token,
         refreshToken,
         userData,
