@@ -1,8 +1,8 @@
 /**
- * Compact marketplace gym card — smaller footprint, open/gender badges.
+ * Compact marketplace gym card — gender always visible (زنانه / مردانه / جفتش).
  */
 
-import { MapPin, Star, Clock, Venus, Mars, Users } from "lucide-react";
+import { MapPin, Star, Clock, Users } from "lucide-react";
 
 const API_BASE = "https://fitopiaapi.pythonanywhere.com";
 
@@ -37,10 +37,34 @@ function resolveCover(src?: string | null): string | null {
 
 /** Infer gender from API field or Persian keywords in name/description. */
 export function inferGymGender(gym: GymCardData): GymGender {
-  const raw = (gym.gender || "").toString().toLowerCase();
-  if (raw === "women" || raw === "female" || raw === "زن" || raw === "زنانه") return "women";
-  if (raw === "men" || raw === "male" || raw === "مرد" || raw === "مردانه") return "men";
-  if (raw === "both" || raw === "mixed" || raw === "مختلط") return "both";
+  const raw = (gym.gender || "").toString().toLowerCase().trim();
+  if (
+    raw === "women" ||
+    raw === "female" ||
+    raw === "زن" ||
+    raw === "زنانه" ||
+    raw === "بانوان"
+  ) {
+    return "women";
+  }
+  if (
+    raw === "men" ||
+    raw === "male" ||
+    raw === "مرد" ||
+    raw === "مردانه" ||
+    raw === "آقایان"
+  ) {
+    return "men";
+  }
+  if (
+    raw === "both" ||
+    raw === "mixed" ||
+    raw === "مختلط" ||
+    raw === "جفت" ||
+    raw === "جفتش"
+  ) {
+    return "both";
+  }
 
   const hay = `${gym.name || ""} ${gym.description || ""}`.toLowerCase();
   const women = /زنانه|بانوان|خواهران|ladies|women|female/.test(hay);
@@ -48,14 +72,14 @@ export function inferGymGender(gym: GymCardData): GymGender {
   if (women && !men) return "women";
   if (men && !women) return "men";
   if (women && men) return "both";
-  return "unknown";
+  // Default: assume mixed / جفتش when API has no signal
+  return "both";
 }
 
-/**
- * Rough open-now from Persian/English working_hours strings.
- * Falls back to true when unparseable (don't hide gyms).
- */
-export function inferIsOpen(hours?: string | null, explicit?: boolean | null): boolean {
+export function inferIsOpen(
+  hours?: string | null,
+  explicit?: boolean | null,
+): boolean {
   if (typeof explicit === "boolean") return explicit;
   if (!hours || !hours.trim()) return true;
 
@@ -73,8 +97,8 @@ export function inferIsOpen(hours?: string | null, explicit?: boolean | null): b
 
   if (nums.length < 2) return true;
 
-  let open = nums[0];
-  let close = nums[1];
+  const open = nums[0];
+  const close = nums[1];
 
   if (close <= open) {
     return h >= open || h < close;
@@ -82,11 +106,10 @@ export function inferIsOpen(hours?: string | null, explicit?: boolean | null): b
   return h >= open && h < close;
 }
 
-function genderLabel(g: GymGender): { label: string; Icon: typeof Venus } | null {
-  if (g === "women") return { label: "زنانه", Icon: Venus };
-  if (g === "men") return { label: "مردانه", Icon: Mars };
-  if (g === "both") return { label: "مختلط", Icon: Users };
-  return null;
+function genderText(g: GymGender): string {
+  if (g === "women") return "زنانه";
+  if (g === "men") return "مردانه";
+  return "جفتش";
 }
 
 export function GymCard({ gym, onClick, compact = true }: GymCardProps) {
@@ -106,7 +129,7 @@ export function GymCard({ gym, onClick, compact = true }: GymCardProps) {
     gym.address && gym.address.trim().length > 0 ? gym.address.trim() : null;
 
   const gender = inferGymGender(gym);
-  const genderMeta = genderLabel(gender);
+  const genderLabel = genderText(gender);
   const isOpen = inferIsOpen(gym.working_hours, gym.is_open);
 
   return (
@@ -167,13 +190,20 @@ export function GymCard({ gym, onClick, compact = true }: GymCardProps) {
           {gym.name}
         </p>
 
-        <div className="flex flex-wrap items-center justify-end gap-1">
-          {genderMeta ? (
-            <span className="inline-flex items-center gap-0.5 rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[9px] font-medium text-white/70">
-              <genderMeta.Icon size={10} aria-hidden />
-              {genderMeta.label}
-            </span>
-          ) : null}
+        {/* Gender — always visible */}
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
+          <span
+            className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
+              gender === "women"
+                ? "bg-pink-500/15 text-pink-300"
+                : gender === "men"
+                  ? "bg-sky-500/15 text-sky-300"
+                  : "bg-white/[0.08] text-white/75"
+            }`}
+          >
+            <Users size={11} aria-hidden />
+            {genderLabel}
+          </span>
           {typeof gym.distance_km === "number" ? (
             <span className="text-[9px] text-primary/90 font-semibold tabular-nums">
               {gym.distance_km < 1
