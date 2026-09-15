@@ -1,6 +1,6 @@
 /**
  * Gym detail — tour hero, sport/coach sheets, share sheet, Persian phone, no prices.
- * See artifacts/GymDetailPage.tsx for full source if this stub is present.
+ * Sport sheet opens for ALL sports (locked or unlocked).
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -59,7 +59,7 @@ function toPersianDigits(input?: string | number | null): string {
 function genderLabelFa(g: GymGender): string {
   if (g === "women") return "زنانه";
   if (g === "men") return "مردانه";
-  return "مختلط";
+  return "آقایان و بانوان";
 }
 
 type CoachView = { id: number; name: string; specialty?: string; image?: string | null; bio?: string };
@@ -233,21 +233,29 @@ export function GymDetailPage() {
   const nextSlide = () => { if (slides.length > 1) setSlideIndex((p) => (p + 1) % slides.length); };
   const prevSlide = () => { if (slides.length > 1) setSlideIndex((p) => (p - 1 + slides.length) % slides.length); };
 
+  /** Always open sheet — access only affects lock badge, not sheet visibility. */
   const openSport = async (sport: Sport) => {
-    if (!hasSportAccess(sport.id)) {
-      setToast({
-        message: !isAuthenticated ? "برای دسترسی باید وارد شوید" : "این رشته در اشتراک شما فعال نیست.",
-        type: !isAuthenticated ? "info" : "warning",
-      });
-      return;
-    }
     setSelectedSport({ id: sport.id, name: sport.name });
     setSportOpen(true);
     setSportLoading(true);
     setSportError(null);
     try {
-      const list = await fetchCoaches(sport.id);
-      setSportCoaches((list || []).map((c, i) => normalizeCoach(c as unknown as Record<string, unknown>, i)));
+      let list: CoachView[] = [];
+      try {
+        const raw = await fetchCoaches(sport.id);
+        list = (raw || []).map((c, i) => normalizeCoach(c as unknown as Record<string, unknown>, i));
+      } catch {
+        /* fall through to gym.coaches filter */
+      }
+      if (list.length === 0 && gym?.coaches?.length) {
+        list = (gym.coaches as unknown as Record<string, unknown>[])
+          .filter((c) => {
+            const sports = Array.isArray(c.sports) ? (c.sports as unknown[]) : [];
+            return sports.some((s) => Number(s) === sport.id);
+          })
+          .map((c, i) => normalizeCoach(c, i));
+      }
+      setSportCoaches(list);
     } catch (err: unknown) {
       setSportError(err instanceof Error ? err.message : "خطا در دریافت مربیان");
       setSportCoaches(null);
@@ -610,6 +618,11 @@ export function GymDetailPage() {
             {gym.working_hours && (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/75">
                 <Clock size={12} className="text-primary" aria-hidden /> {gym.working_hours}
+              </span>
+            )}
+            {selectedSport && !hasSportAccess(selectedSport.id) && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-200 px-2.5 py-1 text-[11px] font-semibold">
+                <Lock size={11} aria-hidden /> نیاز به اشتراک
               </span>
             )}
           </div>
