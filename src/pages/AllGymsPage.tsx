@@ -1,6 +1,6 @@
 /**
  * All Gyms — marketplace discovery
- * Filters: nearest, popular, gender, open-now + compact cards
+ * Filters only: همه | محبوب‌ترین | نزدیک‌ترین
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -15,7 +15,7 @@ import {
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Header } from "../components/Header";
 import { BottomNavigation } from "../components/BottomNavigation";
-import { GymCard, inferGymGender, inferIsOpen, type GymGender } from "../components/GymCard";
+import { GymCard } from "../components/GymCard";
 import { useUserLocation } from "../hooks/useUserLocation";
 import api from "../services/api";
 
@@ -42,22 +42,13 @@ export interface Gym {
   is_open?: boolean;
 }
 
-type SortOption = "nearest" | "popular" | "name" | "newest";
-type ChipFilter = "all" | "popular_only" | "open_now";
-type GenderFilter = "all" | GymGender;
+/** Single filter row — only these three */
+type ListFilter = "all" | "popular" | "nearest";
 
-const SORT_OPTIONS: { id: SortOption; label: string }[] = [
-  { id: "nearest", label: "نزدیک‌ترین" },
-  { id: "popular", label: "محبوب‌ترین" },
-  { id: "name", label: "الفبایی" },
-  { id: "newest", label: "جدیدترین" },
-];
-
-const GENDER_OPTIONS: { id: GenderFilter; label: string }[] = [
+const FILTERS: { id: ListFilter; label: string }[] = [
   { id: "all", label: "همه" },
-  { id: "women", label: "زنانه" },
-  { id: "men", label: "مردانه" },
-  { id: "both", label: "مختلط" },
+  { id: "popular", label: "محبوب‌ترین" },
+  { id: "nearest", label: "نزدیک‌ترین" },
 ];
 
 function haversineKm(
@@ -106,7 +97,12 @@ function GymCardSkeleton({ index = 0 }: { index?: number }) {
 
 function GymsLoadingState() {
   return (
-    <div className="space-y-4" aria-busy="true" aria-live="polite" aria-label="در حال بارگذاری باشگاه‌ها">
+    <div
+      className="space-y-4"
+      aria-busy="true"
+      aria-live="polite"
+      aria-label="در حال بارگذاری باشگاه‌ها"
+    >
       <div className="flex flex-col items-center justify-center gap-3 py-2">
         <div className="fitopia-loader-ring" />
         <p className="text-sm font-semibold text-white/85">در حال بارگذاری باشگاه‌ها</p>
@@ -128,9 +124,7 @@ export function AllGymsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get("q") || "");
-  const [sortBy, setSortBy] = useState<SortOption>("nearest");
-  const [chip, setChip] = useState<ChipFilter>("all");
-  const [gender, setGender] = useState<GenderFilter>("all");
+  const [filter, setFilter] = useState<ListFilter>("all");
 
   const debouncedSearch = useDebouncedValue(searchTerm, 280);
 
@@ -177,21 +171,6 @@ export function AllGymsPage() {
       return { ...g, distance_km };
     });
 
-    if (chip === "popular_only") {
-      list = list.filter((g) => g.is_popular);
-    }
-    if (chip === "open_now") {
-      list = list.filter((g) => inferIsOpen(g.working_hours, g.is_open));
-    }
-
-    if (gender !== "all") {
-      list = list.filter((g) => {
-        const gnd = inferGymGender(g);
-        if (gender === "both") return gnd === "both" || gnd === "unknown";
-        return gnd === gender;
-      });
-    }
-
     const q = debouncedSearch.trim().toLowerCase();
     if (q) {
       list = list.filter((g) => {
@@ -200,34 +179,28 @@ export function AllGymsPage() {
       });
     }
 
-    if (sortBy === "nearest") {
+    if (filter === "popular") {
+      list = list.filter((g) => g.is_popular);
+      list.sort((a, b) => (b.popularity_score || 0) - (a.popularity_score || 0));
+    } else if (filter === "nearest") {
       list.sort((a, b) => {
         const da = a.distance_km ?? Number.POSITIVE_INFINITY;
         const db = b.distance_km ?? Number.POSITIVE_INFINITY;
         return da - db;
       });
-    } else if (sortBy === "popular") {
+    } else {
+      // همه — محبوب‌ترها کمی بالاتر
       list.sort((a, b) => (b.popularity_score || 0) - (a.popularity_score || 0));
-    } else if (sortBy === "name") {
-      list.sort((a, b) => a.name.localeCompare(b.name, "fa"));
-    } else if (sortBy === "newest") {
-      list.sort((a, b) => b.id - a.id);
     }
 
     return list;
-  }, [gyms, chip, gender, debouncedSearch, sortBy, location.lat, location.lon]);
+  }, [gyms, debouncedSearch, filter, location.lat, location.lon]);
 
-  const hasActiveFilters =
-    Boolean(searchTerm.trim()) ||
-    chip !== "all" ||
-    gender !== "all" ||
-    sortBy !== "nearest";
+  const hasActiveFilters = Boolean(searchTerm.trim()) || filter !== "all";
 
   const clearFilters = () => {
     setSearchTerm("");
-    setChip("all");
-    setGender("all");
-    setSortBy("nearest");
+    setFilter("all");
   };
 
   return (
@@ -284,14 +257,17 @@ export function AllGymsPage() {
             ) : null}
           </div>
 
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-0.5">
-            {SORT_OPTIONS.map((opt) => (
+          {/* Only 3 filters */}
+          <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-0.5" role="tablist" aria-label="فیلتر باشگاه‌ها">
+            {FILTERS.map((opt) => (
               <button
                 key={opt.id}
                 type="button"
-                onClick={() => setSortBy(opt.id)}
-                className={`shrink-0 whitespace-nowrap rounded-full px-3.5 min-h-9 text-xs font-semibold border transition-colors ${
-                  sortBy === opt.id
+                role="tab"
+                aria-selected={filter === opt.id}
+                onClick={() => setFilter(opt.id)}
+                className={`shrink-0 whitespace-nowrap rounded-full px-4 min-h-9 text-xs font-semibold border transition-colors ${
+                  filter === opt.id
                     ? "bg-primary text-black border-primary"
                     : "bg-white/[0.04] border-white/10 text-white/75"
                 }`}
@@ -301,22 +277,22 @@ export function AllGymsPage() {
             ))}
           </div>
 
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-0.5">
-            <button type="button" onClick={() => setChip("all")} className={`shrink-0 whitespace-nowrap rounded-full px-3.5 min-h-9 text-xs font-semibold border transition-colors ${chip === "all" ? "bg-[#FF6A00]/15 border-[#FF6A00]/45 text-[#FF8A4C]" : "bg-white/[0.04] border-white/10 text-white/75"}`}>همه</button>
-            <button type="button" onClick={() => setChip("open_now")} className={`shrink-0 whitespace-nowrap rounded-full px-3.5 min-h-9 text-xs font-semibold border transition-colors ${chip === "open_now" ? "bg-emerald-500/20 border-emerald-400/40 text-emerald-300" : "bg-white/[0.04] border-white/10 text-white/75"}`}>الان باز</button>
-            <button type="button" onClick={() => setChip("popular_only")} className={`shrink-0 whitespace-nowrap rounded-full px-3.5 min-h-9 text-xs font-semibold border transition-colors ${chip === "popular_only" ? "bg-[#FF6A00]/15 border-[#FF6A00]/45 text-[#FF8A4C]" : "bg-white/[0.04] border-white/10 text-white/75"}`}>محبوب</button>
-          </div>
-
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-0.5" aria-label="جنسیت باشگاه">
-            {GENDER_OPTIONS.map((opt) => (
-              <button key={opt.id} type="button" onClick={() => setGender(opt.id)} className={`shrink-0 whitespace-nowrap rounded-full px-3.5 min-h-9 text-xs font-semibold border transition-colors ${gender === opt.id ? "bg-white/15 border-white/30 text-white" : "bg-white/[0.04] border-white/10 text-white/75"}`}>{opt.label}</button>
-            ))}
-          </div>
-
           {!loading && !error && (
             <div className="flex items-center justify-between gap-3 text-[12px]">
-              <p className="text-white/50">{filteredGyms.length > 0 ? `${filteredGyms.length} باشگاه` : "نتیجه‌ای نیست"}</p>
-              {hasActiveFilters && (<button type="button" onClick={clearFilters} className="text-primary/90 font-medium hover:text-primary">پاک کردن فیلترها</button>)}
+              <p className="text-white/50">
+                {filteredGyms.length > 0
+                  ? `${filteredGyms.length} باشگاه`
+                  : "نتیجه‌ای نیست"}
+              </p>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="text-primary/90 font-medium hover:text-primary"
+                >
+                  پاک کردن فیلترها
+                </button>
+              )}
             </div>
           )}
 
@@ -325,7 +301,14 @@ export function AllGymsPage() {
               <AlertCircle className="mx-auto h-9 w-9 text-red-300/80" aria-hidden />
               <p className="text-sm font-semibold text-white">خطا در بارگذاری</p>
               <p className="text-xs text-white/50 max-w-xs mx-auto">{error}</p>
-              <button type="button" onClick={loadGyms} className="btn btn-primary mx-auto mt-1 inline-flex min-h-11 items-center gap-2 px-5 text-sm"><RefreshCw size={16} aria-hidden />تلاش مجدد</button>
+              <button
+                type="button"
+                onClick={loadGyms}
+                className="btn btn-primary mx-auto mt-1 inline-flex min-h-11 items-center gap-2 px-5 text-sm"
+              >
+                <RefreshCw size={16} aria-hidden />
+                تلاش مجدد
+              </button>
             </div>
           )}
 
@@ -333,17 +316,36 @@ export function AllGymsPage() {
 
           {!loading && !error && filteredGyms.length === 0 && (
             <div className="rounded-2xl border border-white/[0.08] bg-[#121216] px-5 py-12 text-center space-y-3">
-              <Building2 className="mx-auto h-10 w-10 text-white/30" strokeWidth={1.5} aria-hidden />
+              <Building2
+                className="mx-auto h-10 w-10 text-white/30"
+                strokeWidth={1.5}
+                aria-hidden
+              />
               <p className="text-base font-bold text-white">باشگاهی پیدا نشد</p>
-              <p className="text-sm text-white/50 leading-relaxed max-w-xs mx-auto">عبارت جستجو یا فیلترها را تغییر دهید و دوباره امتحان کنید.</p>
-              {hasActiveFilters && (<button type="button" onClick={clearFilters} className="btn btn-primary mx-auto mt-2 min-h-11 px-5 text-sm">پاک کردن فیلترها</button>)}
+              <p className="text-sm text-white/50 leading-relaxed max-w-xs mx-auto">
+                عبارت جستجو یا فیلتر را تغییر دهید و دوباره امتحان کنید.
+              </p>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="btn btn-primary mx-auto mt-2 min-h-11 px-5 text-sm"
+                >
+                  پاک کردن فیلترها
+                </button>
+              )}
             </div>
           )}
 
           {!loading && !error && filteredGyms.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3">
               {filteredGyms.map((gym) => (
-                <GymCard key={gym.id} gym={gym} compact onClick={() => navigate(`/gym/${gym.id}`)} />
+                <GymCard
+                  key={gym.id}
+                  gym={gym}
+                  compact
+                  onClick={() => navigate(`/gym/${gym.id}`)}
+                />
               ))}
             </div>
           )}
