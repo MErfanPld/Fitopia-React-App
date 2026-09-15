@@ -1,5 +1,5 @@
 /**
- * Compact marketplace gym card — gender always visible (زنانه / مردانه / مختلط).
+ * Compact marketplace gym card — gender always visible (زنانه / مردانه / آقایان و بانوان).
  */
 
 import { MapPin, Star, Clock, Users } from "lucide-react";
@@ -61,7 +61,9 @@ export function inferGymGender(gym: GymCardData): GymGender {
     raw === "mixed" ||
     raw === "مختلط" ||
     raw === "جفت" ||
-    raw === "جفتش"
+    raw === "جفتش" ||
+    raw === "همگانی" ||
+    raw.includes("آقایان") && raw.includes("بانوان")
   ) {
     return "both";
   }
@@ -72,7 +74,7 @@ export function inferGymGender(gym: GymCardData): GymGender {
   if (women && !men) return "women";
   if (men && !women) return "men";
   if (women && men) return "both";
-  // Default: assume mixed / مختلط when API has no signal
+  // Default: mixed when API has no signal
   return "both";
 }
 
@@ -109,7 +111,7 @@ export function inferIsOpen(
 function genderText(g: GymGender): string {
   if (g === "women") return "زنانه";
   if (g === "men") return "مردانه";
-  return "مختلط";
+  return "آقایان و بانوان";
 }
 
 export function GymCard({ gym, onClick, compact = true }: GymCardProps) {
