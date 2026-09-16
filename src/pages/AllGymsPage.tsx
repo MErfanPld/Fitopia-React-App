@@ -129,8 +129,11 @@ export function AllGymsPage() {
   const debouncedSearch = useDebouncedValue(searchTerm, 280);
 
   useEffect(() => {
-    document.title = "FITOPIA | باشگاه‌ها";
-  }, []);
+    document.title =
+      searchParams.get("access") === "mine"
+        ? "FITOPIA | باشگاه‌های قابل دسترس"
+        : "FITOPIA | باشگاه‌ها";
+  }, [searchParams]);
 
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
@@ -140,11 +143,15 @@ export function AllGymsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
+  const accessMine = searchParams.get("access") === "mine";
+
   const loadGyms = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await api.get<Gym[]>("/gym/");
+      // Real API: ?access=mine → only subscription-accessible gyms
+      const path = accessMine ? "/gym/?access=mine" : "/gym/";
+      const data = await api.get<Gym[]>(path);
       setGyms(Array.isArray(data) ? data : []);
     } catch (err: unknown) {
       const msg =
@@ -153,7 +160,7 @@ export function AllGymsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [accessMine]);
 
   useEffect(() => {
     loadGyms();
