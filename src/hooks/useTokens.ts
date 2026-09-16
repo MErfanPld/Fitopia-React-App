@@ -9,7 +9,8 @@ interface UseTokensResult {
   loading: boolean;
   error: string | null;
   refetch: () => void;
-  purchaseToken: (gymId?: number) => Promise<Token | null>;
+  /** gymId omitted/null → universal ticket for all plan gyms */
+  purchaseToken: (gymId?: number | null) => Promise<Token | null>;
 }
 
 export function useTokens(): UseTokensResult {
@@ -21,16 +22,15 @@ export function useTokens(): UseTokensResult {
   const fetchTokens = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const data = await tokenService.getMyTokens();
       setTokens(data);
-      
-      // محاسبه توکن‌های فعال
-      const active = data.filter(t => t.status === 'active' && t.is_valid === true);
+
+      const active = data.filter((t) => t.status === "active" && t.is_valid === true);
       setActiveCount(active.length);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا در دریافت توکن‌ها');
+      setError(err instanceof Error ? err.message : "خطا در دریافت بلیت‌ها");
       setTokens([]);
       setActiveCount(0);
     } finally {
@@ -38,17 +38,19 @@ export function useTokens(): UseTokensResult {
     }
   }, []);
 
-  const purchaseToken = useCallback(async (gymId?: number): Promise<Token | null> => {
-    try {
-      const newToken = await tokenService.purchaseToken(gymId);
-      // پس از خرید، لیست رو به‌روز کن
-      await fetchTokens();
-      return newToken;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا در خرید توکن');
-      return null;
-    }
-  }, [fetchTokens]);
+  const purchaseToken = useCallback(
+    async (gymId?: number | null): Promise<Token | null> => {
+      try {
+        const newToken = await tokenService.purchaseToken(gymId);
+        await fetchTokens();
+        return newToken;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "خطا در دریافت بلیت");
+        return null;
+      }
+    },
+    [fetchTokens],
+  );
 
   useEffect(() => {
     fetchTokens();
