@@ -1,5 +1,5 @@
 /**
- * Membership + stats in ONE unified card (remaining days, tokens, plan).
+ * Membership + stats in ONE unified card (remaining days, tickets, plan).
  */
 
 import { useNavigate } from "react-router-dom";
@@ -63,7 +63,7 @@ export function MembershipHero() {
           const end = new Date(subscription.end_date).getTime();
           const now = Date.now();
           if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
-          return Math.min(100, Math.max(0, ((end - now) / (end - start)) * 100));
+          return Math.min(100, Math.max(0, ((end - now) / (end - start)) * 100);
         })()
       : null;
 
@@ -72,10 +72,10 @@ export function MembershipHero() {
     stats.push({ label: "روز باقی‌مانده", value: Math.max(0, days) });
   }
   if (tokensRem !== null && Number.isFinite(tokensRem)) {
-    stats.push({ label: "توکن پلن", value: Math.max(0, tokensRem) });
+    stats.push({ label: "بلیت اشتراک", value: Math.max(0, tokensRem) });
   }
   if (typeof activeCount === "number") {
-    stats.push({ label: "توکن فعال", value: activeCount });
+    stats.push({ label: "بلیت فعال", value: activeCount });
   }
 
   return (
@@ -127,7 +127,6 @@ export function MembershipHero() {
         </div>
       )}
 
-      {/* All metrics inside the same box */}
       {stats.length > 0 && (
         <div
           className={`relative z-10 mt-4 grid gap-2 ${
@@ -167,7 +166,7 @@ export function MembershipHero() {
           onClick={() => navigate("/gym-access/tokens")}
           className="btn btn-secondary min-h-11 px-4 text-sm"
         >
-          اعتبار دسترسی
+          بلیت‌ها
         </button>
       </div>
     </section>
