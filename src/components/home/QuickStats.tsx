@@ -34,10 +34,10 @@ export function QuickStats() {
     items.push({ label: "روز باقی‌مانده", value: Math.max(0, days) });
   }
   if (tokensRem !== null && Number.isFinite(tokensRem)) {
-    items.push({ label: "توکن پلن", value: Math.max(0, tokensRem) });
+    items.push({ label: "بلیت پلن", value: Math.max(0, tokensRem) });
   }
   if (typeof activeCount === "number") {
-    items.push({ label: "توکن فعال", value: activeCount });
+    items.push({ label: "بلیت فعال", value: activeCount });
   }
 
   if (items.length === 0) return null;
