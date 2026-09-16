@@ -10,7 +10,7 @@ import {
   AlertCircle,
   RefreshCw,
   ChevronDown,
-  History,
+  Ticket,
   CreditCard,
   Sparkles,
 } from "lucide-react";
@@ -25,16 +25,16 @@ import type { SubscriptionPlan } from "../types/subscription";
 
 const FAQ_ITEMS = [
   {
-    q: "توکن‌ها چگونه کار می‌کنند؟",
-    a: "هر ورود به باشگاه معادل تعداد مشخصی توکن است. باشگاه‌های اکونومی معمولاً ۱ توکن و باشگاه‌های لوکس تا ۳ توکن مصرف می‌کنند.",
+    q: "بلیت‌ها چگونه کار می‌کنند؟",
+    a: "هر ورود به باشگاه معادل یک بلیت ورود است. یک بلیت برای همه باشگاه‌های قابل دسترس اشتراک شما معتبر است.",
   },
   {
-    q: "آیا توکن‌ها منقضی می‌شوند؟",
-    a: "بله، توکن‌های هر پلن معمولاً هم‌زمان با اعتبار اشتراک منقضی می‌شوند. جزئیات هر پلن را روی کارت ببین.",
+    q: "آیا بلیت‌ها منقضی می‌شوند؟",
+    a: "بله، بلیت‌های هر پلن معمولاً هم‌زمان با اعتبار اشتراک منقضی می‌شوند. جزئیات هر پلن را روی کارت ببین.",
   },
   {
     q: "چطور وارد باشگاه شویم؟",
-    a: "در اپلیکیشن QR کد پذیرش باشگاه را اسکن کن؛ سیستم توکن لازم را از حسابت کسر می‌کند.",
+    a: "از صفحه بلیت‌ها یک بلیت ورود صادر کن و QR یا کد آن را در پذیرش باشگاه نشان بده.",
   },
 ];
 
@@ -62,7 +62,6 @@ export default function Subscriptions() {
 
       <main className="relative z-10 home-shell home-pad pb-[calc(6.75rem+env(safe-area-inset-bottom))] md:pb-12">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 sm:gap-6 lg:max-w-4xl xl:max-w-5xl">
-          {/* Title */}
           <section className="space-y-1 pt-1">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 text-right">
@@ -75,17 +74,16 @@ export default function Subscriptions() {
               </div>
               <button
                 type="button"
-                onClick={() => navigate("/subscriptions/history")}
+                onClick={() => navigate("/gym-access/tokens")}
                 className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-white/80 hover:bg-white/[0.07] transition-colors"
-                aria-label="تاریخچه اشتراک"
+                aria-label="بلیت‌های ورود"
               >
-                <History size={15} className="text-primary" aria-hidden />
-                تاریخچه
+                <Ticket size={15} className="text-primary" aria-hidden />
+                بلیت‌ها
               </button>
             </div>
           </section>
 
-          {/* Active subscription summary */}
           {!subLoading && hasSubscription && subscription ? (
             <section
               className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/[0.12] to-[#121216] p-4 sm:p-5"
@@ -113,7 +111,7 @@ export default function Subscriptions() {
               </h2>
               <div className="relative z-10 mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 <div className="rounded-xl bg-black/25 px-3 py-2">
-                  <p className="text-[10px] text-white/45">توکن باقی‌مانده</p>
+                  <p className="text-[10px] text-white/45">بلیت باقی‌مانده</p>
                   <p className="text-sm font-black text-white tabular-nums">
                     {(subscription.tokens_remaining ?? 0).toLocaleString("fa-IR")}
                     <span className="text-[10px] font-medium text-white/40">
@@ -140,7 +138,6 @@ export default function Subscriptions() {
             </section>
           ) : null}
 
-          {/* Plans */}
           <section aria-label="پلن‌های اشتراک">
             <div className="mb-3 flex items-center justify-between gap-2">
               <h2 className="flex items-center gap-2 text-[0.95rem] font-bold text-white">
@@ -192,7 +189,7 @@ export default function Subscriptions() {
             ) : null}
 
             {!loading && !error && plans.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {plans.map((plan, index) => (
                   <PlanCard
                     key={plan.id}
@@ -206,7 +203,6 @@ export default function Subscriptions() {
             ) : null}
           </section>
 
-          {/* FAQ */}
           <section className="space-y-3" aria-label="سوالات متداول">
             <h2 className="flex items-center gap-2 text-[0.95rem] font-bold text-white">
               <span className="inline-block h-4 w-1 rounded-full bg-primary-container" aria-hidden />
