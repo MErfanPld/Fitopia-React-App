@@ -30,7 +30,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "آیا بلیت‌ها منقضی می‌شوند؟",
-    a: "بله، بلیت‌های هر پلن معمولاً هم‌زمان با اعتبار اشتراک منقضی می‌شوند. جزئیات هر پلن را روی کارت ببین.",
+    a: "بله، بلیت‌های هر اشتراک معمولاً هم‌زمان با اعتبار اشتراک منقضی می‌شوند. جزئیات هر اشتراک را روی کارت ببین.",
   },
   {
     q: "چطور وارد باشگاه شویم؟",
@@ -69,7 +69,7 @@ export default function Subscriptions() {
                   اشتراک‌ها
                 </h1>
                 <p className="mt-0.5 text-xs text-white/45 sm:text-sm leading-relaxed">
-                  پلن مناسب خودت را انتخاب کن و به باشگاه‌ها دسترسی بگیر
+                  اشتراک مناسب خودت را انتخاب کن و به باشگاه‌ها دسترسی بگیر
                 </p>
               </div>
               <button
@@ -138,16 +138,16 @@ export default function Subscriptions() {
             </section>
           ) : null}
 
-          <section aria-label="پلن‌های اشتراک">
+          <section aria-label="اشتراک‌ها">
             <div className="mb-3 flex items-center justify-between gap-2">
               <h2 className="flex items-center gap-2 text-[0.95rem] font-bold text-white">
                 <span className="inline-block h-4 w-1 rounded-full bg-primary-container" aria-hidden />
                 <CreditCard size={15} className="text-primary" aria-hidden />
-                پلن‌ها
+                اشتراک‌ها
               </h2>
               {!loading && !error && plans.length > 0 ? (
                 <span className="text-[11px] text-white/40">
-                  {plans.length.toLocaleString("fa-IR")} پلن فعال
+                  {plans.length.toLocaleString("fa-IR")} اشتراک فعال
                 </span>
               ) : null}
             </div>
@@ -155,7 +155,7 @@ export default function Subscriptions() {
             {error ? (
               <div className="rounded-2xl border border-red-500/20 bg-red-500/5 px-5 py-10 text-center space-y-3">
                 <AlertCircle className="mx-auto h-9 w-9 text-red-300/80" aria-hidden />
-                <p className="text-sm font-semibold text-white">خطا در بارگذاری پلن‌ها</p>
+                <p className="text-sm font-semibold text-white">خطا در بارگذاری اشتراک‌ها</p>
                 <p className="text-xs text-white/50 max-w-xs mx-auto">{error}</p>
                 <button
                   type="button"
@@ -172,7 +172,7 @@ export default function Subscriptions() {
               <div
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
                 aria-busy="true"
-                aria-label="در حال بارگذاری پلن‌ها"
+                aria-label="در حال بارگذاری اشتراک‌ها"
               >
                 {Array.from({ length: 3 }).map((_, i) => (
                   <PlanCardSkeleton key={i} />
@@ -183,13 +183,13 @@ export default function Subscriptions() {
             {!loading && !error && plans.length === 0 ? (
               <div className="rounded-2xl border border-white/[0.08] bg-[#121216] px-5 py-12 text-center space-y-2">
                 <CreditCard className="mx-auto h-10 w-10 text-white/25" strokeWidth={1.5} aria-hidden />
-                <p className="text-base font-bold text-white">پلنی موجود نیست</p>
-                <p className="text-sm text-white/50">به‌زودی پلن‌های جدید اضافه می‌شوند.</p>
+                <p className="text-base font-bold text-white">اشتراکی موجود نیست</p>
+                <p className="text-sm text-white/50">به‌زودی اشتراک‌های جدید اضافه می‌شوند.</p>
               </div>
             ) : null}
 
             {!loading && !error && plans.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {plans.map((plan, index) => (
                   <PlanCard
                     key={plan.id}
