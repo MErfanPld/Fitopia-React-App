@@ -57,9 +57,11 @@ export interface GymVideo {
 
 export interface Coach {
   id: number;
-  name: string;
+  name?: string;
+  full_name?: string;
   specialty?: string;
   image?: string;
+  bio?: string;
 }
 
 export interface Banner {
@@ -92,6 +94,10 @@ export interface Gym {
   popularity_score: number;
   average_rating: number;
   is_popular: boolean;
+  /** API: women | men | both */
+  gender?: string | null;
+  /** API: whether gym is currently open */
+  is_open?: boolean | null;
   sports: Sport[];
   prices: Price[];
   facilities: Facility[];
