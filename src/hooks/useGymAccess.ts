@@ -1,9 +1,38 @@
-import { useState, useEffect, useCallback } from 'react';
-import apiClient from '../services/apiClient';
-import type { Coach, Sport } from './useGymAPI';
+import { useState, useEffect, useCallback } from "react";
+import apiClient from "../services/apiClient";
+import type { Coach, Sport } from "./useGymAPI";
 
 export interface SportAccess extends Sport {
   has_access?: boolean;
+}
+
+export interface SportScheduleItem {
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  gender_restriction?: string;
+}
+
+export interface SportScheduleResponse {
+  gym?: { id: number; name: string };
+  sport?: { id: number; name: string };
+  gender_restriction?: string;
+  schedules: SportScheduleItem[];
+}
+
+const DAY_FA = ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه"];
+
+export function dayOfWeekFa(day: number): string {
+  if (day >= 0 && day < DAY_FA.length) return DAY_FA[day];
+  return String(day);
+}
+
+export function formatTimeFa(t?: string): string {
+  if (!t) return "—";
+  // "08:00:00" → "۰۸:۰۰"
+  const parts = t.split(":");
+  if (parts.length >= 2) return `${parts[0]}:${parts[1]}`;
+  return t;
 }
 
 export function useGymAccess(gymId?: number) {
@@ -16,36 +45,34 @@ export function useGymAccess(gymId?: number) {
     setLoading(true);
     setError(null);
     try {
-      // Preferred endpoint: returns sports with has_access for the current user
       const res = await apiClient.get(`/gym/${gymId}/sports-access/`);
-      if (res && res.data && Array.isArray(res.data.sports)) {
-        setSports(res.data.sports);
-      } else if (res && res.data && res.data.sports === undefined && res.data.sports === null) {
-        setSports([]);
+      const list = res?.data?.sports;
+      if (Array.isArray(list)) {
+        setSports(
+          list.map((s: SportAccess) => ({
+            ...s,
+            has_access: !!s.has_access,
+          })),
+        );
       } else {
-        // Fallback if server returned gym object (older API)
-        if (res && res.data && Array.isArray(res.data.sports)) {
-          const mapped = res.data.sports.map((s: any) => ({ ...s, has_access: !!s.has_access }));
-          setSports(mapped);
-        } else {
-          setSports([]);
-        }
+        setSports([]);
       }
-    } catch (err: any) {
-      console.warn('useGymAccess: primary endpoint failed, trying fallback:', err);
-      // Fallback: call /gym/{id}/ and mark has_access=false for all sports
+    } catch (err: unknown) {
+      console.warn("useGymAccess: sports-access failed, fallback to gym detail", err);
       try {
         const fallback = await apiClient.get(`/gym/${gymId}/`);
         const gym = fallback.data;
         if (gym && Array.isArray(gym.sports)) {
-          const mapped = gym.sports.map((s: any) => ({ ...s, has_access: false }));
-          setSports(mapped);
+          setSports(gym.sports.map((s: SportAccess) => ({ ...s, has_access: false })));
         } else {
           setSports([]);
         }
-      } catch (fallbackErr: any) {
-        console.error('useGymAccess fallback failed:', fallbackErr);
-        setError(fallbackErr?.message || 'خطا در بارگذاری اطلاعات رشته‌ها');
+      } catch (fallbackErr: unknown) {
+        const msg =
+          fallbackErr instanceof Error
+            ? fallbackErr.message
+            : "خطا در بارگذاری اطلاعات رشته‌ها";
+        setError(msg);
         setSports(null);
       }
     } finally {
@@ -63,17 +90,34 @@ export function useGymAccess(gymId?: number) {
     return !!(s && s.has_access);
   };
 
+  /** GET /api/gym/{id}/sport/{sportId}/coaches/ */
   const fetchCoaches = async (sportId: number): Promise<Coach[]> => {
-    // Server must validate access for this user; if forbidden, it should return 403
     const res = await apiClient.get(`/gym/${gymId}/sport/${sportId}/coaches/`);
-    if (res && res.data) {
-      // Accept either { coaches: [...] } or raw array
-      if (Array.isArray(res.data)) return res.data as Coach[];
-      if (Array.isArray(res.data.coaches)) return res.data.coaches as Coach[];
-      return [];
-    }
+    if (!res?.data) return [];
+    if (Array.isArray(res.data)) return res.data as Coach[];
+    if (Array.isArray(res.data.coaches)) return res.data.coaches as Coach[];
     return [];
   };
 
-  return { sports, loading, error, hasSportAccess, fetchAccess, fetchCoaches };
+  /** GET /api/gym/{id}/sport/{sportId}/schedule/ */
+  const fetchSchedule = async (sportId: number): Promise<SportScheduleResponse> => {
+    const res = await apiClient.get(`/gym/${gymId}/sport/${sportId}/schedule/`);
+    const data = res?.data ?? {};
+    return {
+      gym: data.gym,
+      sport: data.sport,
+      gender_restriction: data.gender_restriction,
+      schedules: Array.isArray(data.schedules) ? data.schedules : [],
+    };
+  };
+
+  return {
+    sports,
+    loading,
+    error,
+    hasSportAccess,
+    fetchAccess,
+    fetchCoaches,
+    fetchSchedule,
+  };
 }

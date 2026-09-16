@@ -70,20 +70,27 @@ export const tokenService = {
     }
   },
 
-  // دریافت یک توکن جدید (شارژ)
-  async purchaseToken(gymId?: number): Promise<Token> {
+  /**
+   * درخواست بلیت ورود — POST /api/tokens/request/
+   * - بدون gym_id یا gym_id: null → بلیت سراسری (همه باشگاه‌های پلن)
+   * - با gym_id → بلیت مخصوص یک باشگاه
+   */
+  async purchaseToken(gymId?: number | null): Promise<Token> {
     const token = getAuthToken();
-    
+
+    const body: Record<string, unknown> =
+      gymId === undefined || gymId === null ? {} : { gym_id: gymId };
+
     const response = await fetch(
-      'https://fitopiaapi.pythonanywhere.com/api/tokens/purchase/',
+      "https://fitopiaapi.pythonanywhere.com/api/tokens/request/",
       {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ gym_id: gymId || null }),
-      }
+        body: JSON.stringify(body),
+      },
     );
 
     if (!response.ok) {
