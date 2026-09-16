@@ -63,7 +63,7 @@ export function MembershipHero() {
           const end = new Date(subscription.end_date).getTime();
           const now = Date.now();
           if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
-          return Math.min(100, Math.max(0, ((end - now) / (end - start)) * 100);
+          return Math.min(100, Math.max(0, ((end - now) / (end - start)) * 100));
         })()
       : null;
 
