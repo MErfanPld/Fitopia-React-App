@@ -29,11 +29,11 @@ const NAV = [
   { id: "explore", label: "باشگاه‌ها", icon: Compass, path: "/gym/all" },
   { id: "map", label: "نقشه", icon: MapPinned, path: "/gym-map" },
   { id: "sub", label: "اشتراک", icon: CreditCard, path: "/subscriptions" },
-  { id: "tokens", label: "توکن‌ها", icon: Ticket, path: "/gym-access/tokens" },
+  { id: "tokens", label: "بلیت‌ها", icon: Ticket, path: "/gym-access/tokens" },
   { id: "profile", label: "پروفایل", icon: UserRound, path: "/profile" },
   {
     id: "history",
-    label: "تاریخچه اشتراک",
+    label: "سوابق اشتراک",
     icon: History,
     path: "/subscriptions/history",
   },
@@ -81,107 +81,65 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
     };
   }, [isOpen, onClose]);
 
-  const handleLogout = async () => {
-    await logout();
+  const handleLogout = () => {
     onClose();
+    logout();
     navigate("/welcome", { replace: true });
   };
 
-  const name = displayName?.trim() || "کاربر فیتوپیا";
-  const initial = name.charAt(0);
-
   return (
-    <div className="md:hidden" aria-hidden={!isOpen}>
-      <button
-        type="button"
-        tabIndex={isOpen ? 0 : -1}
-        aria-label="بستن منو"
-        onClick={onClose}
-        className={`fixed inset-0 z-[60] border-0 p-0 transition-opacity duration-200 ${
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+    <>
+      <div
+        className={`fixed inset-0 z-[60] bg-black/50 backdrop-blur-[2px] transition-opacity md:hidden ${
+          isOpen ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
-        style={{ background: "rgba(0,0,0,0.55)" }}
+        onClick={onClose}
+        aria-hidden={!isOpen}
       />
 
       <aside
-        role="dialog"
-        aria-modal="true"
-        aria-label="منوی ناوبری"
-        className={`fixed top-0 right-0 z-[70] flex h-[100dvh] max-h-[100dvh] flex-col bg-[#0c0c10] border-l border-white/10 shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed inset-y-0 right-0 z-[70] flex w-[min(88vw,300px)] flex-col border-l border-white/[0.08] bg-[#0D0D11] transition-transform duration-300 ease-out md:hidden ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
-        style={{
-          width: "min(300px, 88vw)",
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="منو"
+        aria-hidden={!isOpen}
       >
-        <div
-          className="flex shrink-0 items-center gap-3 border-b border-white/10 px-3"
-          style={{
-            paddingTop: "max(12px, env(safe-area-inset-top, 0px))",
-            paddingBottom: 12,
-          }}
-        >
-          <div className="min-w-0 flex-1 text-right">
-            <p className="text-sm font-black tracking-wide text-white">FITOPIA</p>
-            <p className="text-[11px] text-white/40 truncate">{name}</p>
-          </div>
-          <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 border border-primary/30 text-sm font-black text-primary"
-            aria-hidden
-          >
-            {initial}
-          </div>
+        <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-4">
           <button
             ref={closeRef}
             type="button"
             onClick={onClose}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 text-white/80 hover:bg-white/10"
-            aria-label="بستن"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-white/70"
+            aria-label="بستن منو"
           >
             <X size={18} aria-hidden />
           </button>
+          <div className="min-w-0 text-right">
+            <p className="truncate text-sm font-bold text-white">{displayName || "کاربر فیتوپیا"}</p>
+            <p className="text-[11px] text-white/40">منوی اصلی</p>
+          </div>
         </div>
 
-        <nav
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-3"
-          aria-label="منو"
-        >
-          <ul className="m-0 list-none space-y-1 p-0">
-            {NAV.map(({ id, label, icon: Icon, path }) => {
-              const on = isActive(location.pathname, path);
+        <nav className="flex-1 overflow-y-auto px-3 py-3" aria-label="ناوبری">
+          <ul className="space-y-1">
+            {NAV.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(location.pathname, item.path);
               return (
-                <li key={id}>
+                <li key={item.id}>
                   <Link
-                    to={path}
+                    to={item.path}
                     onClick={onClose}
-                    aria-current={on ? "page" : undefined}
-                    className={`flex w-full flex-row-reverse items-center gap-3 rounded-xl px-3 py-3 no-underline transition-colors ${
-                      on
+                    className={`flex min-h-12 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors ${
+                      active
                         ? "bg-primary/15 text-primary"
-                        : "text-white/80 hover:bg-white/5 hover:text-white"
+                        : "text-white/75 hover:bg-white/[0.05] hover:text-white"
                     }`}
-                    style={{ minHeight: 48 }}
                   >
-                    <span
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                        on ? "bg-primary/20 text-primary" : "bg-white/5 text-white/60"
-                      }`}
-                    >
-                      <Icon size={18} strokeWidth={on ? 2.15 : 1.8} aria-hidden />
-                    </span>
-                    <span
-                      className={`min-w-0 flex-1 text-right text-[13px] ${
-                        on ? "font-bold" : "font-semibold"
-                      }`}
-                    >
-                      {label}
-                    </span>
-                    {on ? (
-                      <span className="h-5 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
-                    ) : (
-                      <span className="w-1 shrink-0" aria-hidden />
-                    )}
+                    <Icon size={18} strokeWidth={1.9} aria-hidden />
+                    {item.label}
                   </Link>
                 </li>
               );
@@ -189,20 +147,20 @@ const SidebarMenu: FC<SidebarMenuProps> = ({ isOpen, onClose }) => {
           </ul>
         </nav>
 
-        <div className="shrink-0 border-t border-white/10 p-3">
+        <div className="border-t border-white/[0.06] p-3">
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-3 text-[13px] font-bold text-red-300 hover:bg-red-500/15"
-            style={{ minHeight: 48 }}
+            className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-red-300/90 hover:bg-red-500/10"
           >
-            <LogOut size={17} aria-hidden />
+            <LogOut size={18} aria-hidden />
             خروج از حساب
           </button>
         </div>
       </aside>
-    </div>
+    </>
   );
 };
 
 export default SidebarMenu;
+export { SidebarMenu };
