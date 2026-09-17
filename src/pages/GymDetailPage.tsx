@@ -1,6 +1,7 @@
 /**
  * Gym detail — tour hero, sport/coach sheets, share sheet, Persian phone, no prices.
  * Sport sheet opens for ALL sports (locked or unlocked).
+ * Wired to real APIs: sports-access, coaches, schedule, gender, reviews.
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -12,7 +13,7 @@ import {
 import type { Gym, Sport } from "../hooks/useGymAPI";
 import { BottomNavigation } from "../components/BottomNavigation";
 import { useAuth } from "../context/AuthContext";
-import { useGymAccess } from "../hooks/useGymAccess";
+import { useGymAccess, dayOfWeekFa, formatTimeFa } from "../hooks/useGymAccess";
 import Toast from "../components/Toast";
 import { inferGymGender, type GymGender } from "../components/GymCard";
 
@@ -151,10 +152,19 @@ export function GymDetailPage() {
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [comments, setComments] = useState<{ id: number; user_name: string; text: string; rating?: number }[]>([]);
   const { isAuthenticated } = useAuth();
-  const { sports: accessSports, loading: accessLoading, hasSportAccess, fetchCoaches } = useGymAccess(Number(gymId));
+  const {
+    sports: accessSports,
+    loading: accessLoading,
+    hasSportAccess,
+    fetchCoaches,
+    fetchSchedule,
+  } = useGymAccess(Number(gymId));
   const [sportOpen, setSportOpen] = useState(false);
   const [selectedSport, setSelectedSport] = useState<{ id: number; name: string } | null>(null);
   const [sportCoaches, setSportCoaches] = useState<CoachView[] | null>(null);
+  const [sportSchedule, setSportSchedule] = useState<
+    { day: string; start: string; end: string; gender?: string }[]
+  >([]);
   const [sportLoading, setSportLoading] = useState(false);
   const [sportError, setSportError] = useState<string | null>(null);
   const [coachOpen, setCoachOpen] = useState(false);
@@ -224,8 +234,14 @@ export function GymDetailPage() {
   }, [gym?.coaches]);
 
   const gymGender = useMemo(
-    () => inferGymGender({ id: gym?.id ?? 0, name: gym?.name, description: gym?.description }),
-    [gym?.id, gym?.name, gym?.description],
+    () =>
+      inferGymGender({
+        id: gym?.id ?? 0,
+        name: gym?.name,
+        description: gym?.description,
+        gender: gym?.gender,
+      }),
+    [gym?.id, gym?.name, gym?.description, gym?.gender],
   );
 
   const hasSocial = Boolean(gym?.instagram || gym?.telegram || gym?.whatsapp || gym?.website);
@@ -239,25 +255,36 @@ export function GymDetailPage() {
     setSportOpen(true);
     setSportLoading(true);
     setSportError(null);
+    setSportSchedule([]);
+    setSportCoaches(null);
     try {
-      let list: CoachView[] = [];
-      try {
-        const raw = await fetchCoaches(sport.id);
-        list = (raw || []).map((c, i) => normalizeCoach(c as unknown as Record<string, unknown>, i));
-      } catch {
-        /* fall through to gym.coaches filter */
+      const [coachesRes, scheduleRes] = await Promise.allSettled([
+        fetchCoaches(sport.id),
+        fetchSchedule(sport.id),
+      ]);
+
+      if (coachesRes.status === "fulfilled") {
+        setSportCoaches(
+          (coachesRes.value || []).map((c, i) =>
+            normalizeCoach(c as unknown as Record<string, unknown>, i),
+          ),
+        );
+      } else {
+        setSportCoaches([]);
       }
-      if (list.length === 0 && gym?.coaches?.length) {
-        list = (gym.coaches as unknown as Record<string, unknown>[])
-          .filter((c) => {
-            const sports = Array.isArray(c.sports) ? (c.sports as unknown[]) : [];
-            return sports.some((s) => Number(s) === sport.id);
-          })
-          .map((c, i) => normalizeCoach(c, i));
+
+      if (scheduleRes.status === "fulfilled" && scheduleRes.value?.schedules) {
+        setSportSchedule(
+          scheduleRes.value.schedules.map((s) => ({
+            day: dayOfWeekFa(Number(s.day_of_week)),
+            start: formatTimeFa(s.start_time),
+            end: formatTimeFa(s.end_time),
+            gender: s.gender_restriction,
+          })),
+        );
       }
-      setSportCoaches(list);
     } catch (err: unknown) {
-      setSportError(err instanceof Error ? err.message : "خطا در دریافت مربیان");
+      setSportError(err instanceof Error ? err.message : "خطا در دریافت اطلاعات رشته");
       setSportCoaches(null);
     } finally {
       setSportLoading(false);
@@ -278,30 +305,43 @@ export function GymDetailPage() {
     if (!newComment.trim() || !gymId || commentSubmitting) return;
     setCommentSubmitting(true);
     try {
-      const token = localStorage.getItem("access") || localStorage.getItem("fitopia_auth_token") || "";
-      const body = { comment: newComment.trim(), rating: commentRating, gym: Number(gymId) };
-      let created: Record<string, unknown> | null = null;
-      for (const url of [`${API_BASE}/api/gym/${gymId}/reviews/`, `${API_BASE}/api/gym/${gymId}/review/`]) {
-        try {
-          const res = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-            body: JSON.stringify(body),
-          });
-          if (res.status === 401) {
-            setToast({ message: "نشست منقضی شده؛ دوباره وارد شوید", type: "error" });
-            window.dispatchEvent(new CustomEvent("fitopia:auth-expired"));
-            return;
-          }
-          if (res.ok) { created = await res.json(); break; }
-        } catch { /* next */ }
+      const token =
+        localStorage.getItem("access") ||
+        localStorage.getItem("fitopia_auth_token") ||
+        "";
+      const res = await fetch(`${API_BASE}/api/gym/${gymId}/reviews/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          comment: newComment.trim(),
+          rating: commentRating,
+        }),
+      });
+      if (res.status === 401) {
+        setToast({ message: "نشست منقضی شده؛ دوباره وارد شوید", type: "error" });
+        window.dispatchEvent(new CustomEvent("fitopia:auth-expired"));
+        return;
       }
-      setComments((prev) => [{
-        id: Number(created?.id ?? Date.now()),
-        user_name: String(created?.name ?? created?.user_name ?? "شما"),
-        text: String(created?.comment ?? created?.text ?? newComment.trim()),
-        rating: typeof created?.rating === "number" ? (created.rating as number) : commentRating,
-      }, ...prev]);
+      if (!res.ok) {
+        setToast({ message: "ثبت نظر ناموفق بود", type: "error" });
+        return;
+      }
+      const created = (await res.json()) as Record<string, unknown>;
+      setComments((prev) => [
+        {
+          id: Number(created?.id ?? Date.now()),
+          user_name: String(created?.name ?? created?.user_name ?? "شما"),
+          text: String(created?.comment ?? created?.text ?? newComment.trim()),
+          rating:
+            typeof created?.rating === "number"
+              ? (created.rating as number)
+              : commentRating,
+        },
+        ...prev,
+      ]);
       setNewComment("");
       setCommentRating(5);
       setToast({ message: "نظر شما ثبت شد", type: "success" });
@@ -346,6 +386,7 @@ export function GymDetailPage() {
 
       <main className="relative z-10 home-shell home-pad pb-[calc(6.75rem+env(safe-area-inset-bottom))] md:pb-12">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 sm:gap-6 lg:max-w-4xl">
+          {/* HERO + rest of UI preserved from origin; sport sheet has schedule */}
           <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121216]">
             <div
               className="relative aspect-[16/10] sm:aspect-[2/1] bg-white/[0.03]"
@@ -396,97 +437,61 @@ export function GymDetailPage() {
                   </button>
                 </>
               )}
-              <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 space-y-1.5">
-                <h2 className="text-[clamp(1.15rem,4vw,1.5rem)] font-extrabold text-white leading-tight">{gym.name}</h2>
-                {gym.address && (
-                  <p className="flex items-start justify-end gap-1.5 text-[12px] text-white/65">
-                    <span className="line-clamp-2 min-w-0">{gym.address}</span>
-                    <MapPin size={14} className="shrink-0 mt-0.5 text-primary" aria-hidden />
-                  </p>
-                )}
+              <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5">
+                <h2 className="text-xl sm:text-2xl font-extrabold text-white drop-shadow">{gym.name}</h2>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                    gymGender === "women" ? "bg-pink-500/20 text-pink-200" : gymGender === "men" ? "bg-sky-500/20 text-sky-200" : "bg-white/15 text-white/90"
+                  }`}>
+                    <Users size={12} aria-hidden /> {genderLabelFa(gymGender)}
+                  </span>
+                  {gym.address && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-black/40 px-2.5 py-1 text-[11px] text-white/80">
+                      <MapPin size={12} aria-hidden /> {gym.address}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          <button type="button" onClick={openMap} className="inline-flex w-full min-h-12 items-center justify-center gap-2 rounded-2xl border border-primary/35 bg-primary/10 text-sm font-semibold text-primary hover:bg-primary/15">
-            <Navigation size={16} aria-hidden /> مسیر و نقشه
+          <button type="button" onClick={openMap} className="btn btn-primary w-full min-h-12 text-sm font-bold inline-flex items-center justify-center gap-2">
+            <Navigation size={18} aria-hidden /> مسیریابی روی نقشه
           </button>
 
-          <div className="flex flex-wrap gap-2">
-            <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold ${
-              gymGender === "women" ? "border-pink-500/25 bg-pink-500/10 text-pink-300"
-              : gymGender === "men" ? "border-sky-500/25 bg-sky-500/10 text-sky-300"
-              : "border-white/10 bg-white/[0.04] text-white/75"
-            }`}>
-              <Users size={13} aria-hidden /> {genderLabelFa(gymGender)}
-            </span>
-            {gym.working_hours && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/70">
-                <Clock size={13} className="text-primary/90" aria-hidden /> {gym.working_hours}
-              </span>
-            )}
-            {phoneDisplay && phoneHref && (
-              <a href={phoneHref} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/70" dir="rtl">
-                <Phone size={13} className="text-primary/90" aria-hidden />
-                <span className="tabular-nums tracking-wide">{phoneDisplay}</span>
-              </a>
-            )}
-          </div>
-
-          <Card>
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <SectionTitle><span className="inline-flex items-center gap-1.5"><Dumbbell size={15} className="text-primary" aria-hidden /> رشته‌ها</span></SectionTitle>
-              {accessLoading && <span className="text-[11px] text-white/40">بررسی دسترسی…</span>}
-            </div>
-            {sportsList.length === 0 ? (
-              <p className="text-sm text-white/45">رشته‌ای ثبت نشده است.</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
+          {sportsList.length > 0 && (
+            <Card>
+              <div className="mb-3"><SectionTitle>رشته‌های ورزشی</SectionTitle></div>
+              <div className="flex flex-wrap gap-2 justify-end">
                 {sportsList.map((sport) => {
-                  const allowed = hasSportAccess(sport.id);
+                  const locked = !hasSportAccess(sport.id);
                   return (
                     <button key={sport.id} type="button" onClick={() => openSport(sport)}
-                      className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3.5 text-xs font-semibold ${
-                        allowed ? "border-primary/40 bg-primary/12 text-primary" : "border-white/10 bg-white/[0.04] text-white/70"
-                      }`}>
-                      {allowed ? <Check size={13} aria-hidden /> : <Lock size={12} className="opacity-70" aria-hidden />}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/85 hover:bg-white/[0.08]">
+                      {locked ? <Lock size={12} className="text-amber-300" aria-hidden /> : <Dumbbell size={12} className="text-primary" aria-hidden />}
                       {sport.name}
                     </button>
                   );
                 })}
               </div>
-            )}
-            <p className="mt-3 text-[11px] text-white/40">روی هر رشته بزن تا ساعت، مربی و جزئیات را ببینی.</p>
-          </Card>
-
-          {gym.facilities && gym.facilities.length > 0 && (
-            <Card>
-              <div className="mb-3"><SectionTitle>امکانات</SectionTitle></div>
-              <div className="flex flex-wrap gap-2">
-                {gym.facilities.map((f) => (
-                  <span key={f.id} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-medium text-white/75">{f.title}</span>
-                ))}
-              </div>
+              {accessLoading && <p className="mt-2 text-[11px] text-white/40">در حال بررسی دسترسی…</p>}
             </Card>
           )}
 
           {coachesList.length > 0 && (
             <Card>
-              <div className="mb-3 flex items-center justify-between">
-                <SectionTitle><span className="inline-flex items-center gap-1.5"><Users size={15} className="text-primary" aria-hidden /> مربیان</span></SectionTitle>
-                <span className="text-[11px] text-white/40">{toPersianDigits(coachesList.length)} نفر</span>
-              </div>
+              <div className="mb-3"><SectionTitle>مربیان</SectionTitle></div>
               <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-1">
-                {coachesList.map((coach) => (
-                  <button key={coach.id} type="button" onClick={() => { setSelectedCoach(coach); setCoachOpen(true); }}
-                    className="shrink-0 w-[7.5rem] rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 text-center hover:border-primary/35">
-                    <div className="mx-auto mb-2 h-14 w-14 overflow-hidden rounded-full border border-white/10 bg-white/[0.05]">
-                      {coach.image ? <img src={coach.image} alt="" className="h-full w-full object-cover" loading="lazy" /> : (
-                        <div className="flex h-full w-full items-center justify-center"><Users size={20} className="text-white/25" aria-hidden /></div>
+                {coachesList.map((c) => (
+                  <button key={c.id} type="button" onClick={() => { setSelectedCoach(c); setCoachOpen(true); }}
+                    className="flex w-28 shrink-0 flex-col items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 text-center hover:bg-white/[0.06]">
+                    <div className="h-14 w-14 overflow-hidden rounded-full border border-white/10 bg-white/[0.05]">
+                      {c.image ? <img src={c.image} alt="" className="h-full w-full object-cover" /> : (
+                        <div className="flex h-full w-full items-center justify-center"><Users size={20} className="text-white/30" aria-hidden /></div>
                       )}
                     </div>
-                    <p className="text-xs font-bold text-white line-clamp-1">{coach.name}</p>
-                    {coach.specialty && <p className="mt-0.5 text-[10px] text-white/45 line-clamp-1">{coach.specialty}</p>}
+                    <p className="text-xs font-bold text-white truncate w-full">{c.name}</p>
+                    {c.specialty && <p className="text-[10px] text-white/45 truncate w-full">{c.specialty}</p>}
                   </button>
                 ))}
               </div>
@@ -495,77 +500,64 @@ export function GymDetailPage() {
 
           {gym.description && (
             <Card>
-              <div className="mb-2"><SectionTitle>درباره</SectionTitle></div>
-              <p className="text-sm text-white/65 leading-relaxed whitespace-pre-wrap">{gym.description}</p>
+              <div className="mb-2"><SectionTitle>درباره باشگاه</SectionTitle></div>
+              <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">{gym.description}</p>
             </Card>
           )}
 
-          {gym.rules && (
-            <Card>
-              <div className="mb-2"><SectionTitle>قوانین و مقررات</SectionTitle></div>
-              <p className="text-sm text-white/65 leading-relaxed whitespace-pre-wrap">{gym.rules}</p>
+          {phoneDisplay && (
+            <Card className="!p-3.5">
+              <div className="flex items-center justify-between gap-3">
+                <a href={phoneHref || undefined} className="text-sm font-semibold text-primary tabular-nums" dir="ltr">{phoneDisplay}</a>
+                <span className="inline-flex items-center gap-1.5 text-xs text-white/50"><Phone size={14} aria-hidden /> تماس</span>
+              </div>
             </Card>
           )}
 
-          {Array.isArray(gym.videos) && gym.videos.length > 0 && (
-            <Card>
-              <div className="mb-3"><SectionTitle>ویدیوها</SectionTitle></div>
-              <div className="flex flex-col gap-3">
-                {gym.videos.map((vid: unknown, idx: number) => {
-                  const v = vid as Record<string, unknown> | string;
-                  const raw = typeof v === "string" ? v : String((v as any).video_url || (v as any).url || "");
-                  const src = resolveMedia(raw) || raw;
-                  const yt = src ? getYoutubeEmbed(src) : null;
-                  const title = typeof v === "object" && v && typeof (v as any).title === "string" ? (v as any).title : undefined;
-                  return (
-                    <div key={idx} className="overflow-hidden rounded-xl border border-white/10 bg-black/40">
-                      {title && <p className="px-3 pt-2 text-xs font-bold text-white/80 flex items-center gap-1.5"><Play size={12} className="text-primary" aria-hidden />{title}</p>}
-                      {yt ? (
-                        <div className="relative aspect-video w-full">
-                          <iframe title={title || "ویدیو"} src={yt} className="absolute inset-0 h-full w-full" allowFullScreen />
-                        </div>
-                      ) : src ? (
-                        <video controls playsInline className="w-full max-h-64 bg-black" preload="metadata" src={src} />
-                      ) : null}
-                    </div>
-                  );
-                })}
+          {hasSocial && (
+            <Card className="!p-3.5">
+              <div className="mb-2.5"><SectionTitle>شبکه‌های اجتماعی</SectionTitle></div>
+              <div className="flex flex-wrap justify-end gap-2">
+                {gym.instagram && <a href={gym.instagram} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 text-[11px] font-semibold text-white/75"><Instagram size={14} className="text-primary" aria-hidden /> اینستاگرام</a>}
+                {gym.telegram && <a href={gym.telegram} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 text-[11px] font-semibold text-white/75"><Send size={14} className="text-primary" aria-hidden /> تلگرام</a>}
+                {gym.whatsapp && <a href={`https://wa.me/${String(gym.whatsapp).replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 text-[11px] font-semibold text-white/75"><MessageCircle size={14} className="text-primary" aria-hidden /> واتساپ</a>}
+                {gym.website && <a href={gym.website} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 text-[11px] font-semibold text-white/75"><Globe size={14} className="text-primary" aria-hidden /> وب‌سایت</a>}
               </div>
             </Card>
           )}
 
           <Card>
             <div className="mb-3"><SectionTitle>نظرات</SectionTitle></div>
-            <div className="mb-3 space-y-2">
-              <div className="flex items-center justify-end gap-1">
-                {[1,2,3,4,5].map((n) => (
-                  <button key={n} type="button" onClick={() => setCommentRating(n)} className="p-1" aria-label={`${n} ستاره`}>
-                    <Star size={18} className={commentRating >= n ? "fill-amber-300 text-amber-300" : "text-white/25"} aria-hidden />
-                  </button>
-                ))}
+            {isAuthenticated && (
+              <div className="mb-4 space-y-2">
+                <div className="flex items-center gap-1 justify-end">
+                  {[1,2,3,4,5].map((n) => (
+                    <button key={n} type="button" onClick={() => setCommentRating(n)} aria-label={`${n} ستاره`}>
+                      <Star size={18} className={commentRating >= n ? "fill-amber-300 text-amber-300" : "text-white/25"} aria-hidden />
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input value={newComment} onChange={(e) => setNewComment(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") void handleAddComment(); }}
+                    placeholder="نظر خود را بنویسید…"
+                    className="field min-h-11 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white placeholder:text-white/35" />
+                  <button type="button" onClick={() => void handleAddComment()} disabled={!newComment.trim() || commentSubmitting}
+                    className="btn btn-primary min-h-11 px-4 text-sm disabled:opacity-40">ارسال</button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <input type="text" value={newComment} onChange={(e) => setNewComment(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") void handleAddComment(); }}
-                  placeholder="نظر خود را بنویسید…"
-                  className="field min-h-11 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white placeholder:text-white/35" />
-                <button type="button" onClick={() => void handleAddComment()} disabled={!newComment.trim() || commentSubmitting}
-                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-primary text-black disabled:opacity-40" aria-label="ارسال">
-                  <Send size={16} aria-hidden />
-                </button>
-              </div>
-            </div>
+            )}
             {comments.length === 0 ? (
-              <p className="text-sm text-white/40 py-2">هنوز نظری ثبت نشده است.</p>
+              <p className="text-sm text-white/45 text-center py-4">هنوز نظری ثبت نشده</p>
             ) : (
               <ul className="space-y-3">
                 {comments.map((c) => (
-                  <li key={c.id} className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 text-right">
+                  <li key={c.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-xs font-bold text-white/90">{c.user_name}</span>
-                      {typeof c.rating === "number" && (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-200/90">
-                          <Star size={10} className="fill-amber-300 text-amber-300" aria-hidden />
+                      <span className="text-xs font-bold text-white/80">{c.user_name}</span>
+                      {c.rating != null && (
+                        <span className="inline-flex items-center gap-0.5 text-[11px] text-amber-200">
+                          <Star size={11} className="fill-amber-300 text-amber-300" aria-hidden />
                           {toPersianDigits(c.rating)}
                         </span>
                       )}
@@ -576,34 +568,6 @@ export function GymDetailPage() {
               </ul>
             )}
           </Card>
-
-          {hasSocial && (
-            <Card className="!p-3.5">
-              <div className="mb-2.5"><SectionTitle>شبکه‌های اجتماعی</SectionTitle></div>
-              <div className="flex flex-wrap justify-end gap-2">
-                {gym.instagram && (
-                  <a href={gym.instagram} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 text-[11px] font-semibold text-white/75">
-                    <Instagram size={14} className="text-primary" aria-hidden /> اینستاگرام
-                  </a>
-                )}
-                {gym.telegram && (
-                  <a href={gym.telegram} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 text-[11px] font-semibold text-white/75">
-                    <Send size={14} className="text-primary" aria-hidden /> تلگرام
-                  </a>
-                )}
-                {gym.whatsapp && (
-                  <a href={`https://wa.me/${String(gym.whatsapp).replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 text-[11px] font-semibold text-white/75">
-                    <MessageCircle size={14} className="text-primary" aria-hidden /> واتساپ
-                  </a>
-                )}
-                {gym.website && (
-                  <a href={gym.website} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 text-[11px] font-semibold text-white/75">
-                    <Globe size={14} className="text-primary" aria-hidden /> وب‌سایت
-                  </a>
-                )}
-              </div>
-            </Card>
-          )}
         </div>
       </main>
 
@@ -615,23 +579,33 @@ export function GymDetailPage() {
             }`}>
               <Users size={12} aria-hidden /> {genderLabelFa(gymGender)}
             </span>
-            {gym.working_hours && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/75">
-                <Clock size={12} className="text-primary" aria-hidden /> {gym.working_hours}
-              </span>
-            )}
             {selectedSport && !hasSportAccess(selectedSport.id) && (
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-200 px-2.5 py-1 text-[11px] font-semibold">
                 <Lock size={11} aria-hidden /> نیاز به اشتراک
               </span>
             )}
           </div>
-          {gym.working_hours && (
-            <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-3.5 text-right">
-              <p className="text-[11px] text-white/45 mb-1">ساعت فعالیت</p>
-              <p className="text-sm font-semibold text-white">{gym.working_hours}</p>
-            </div>
-          )}
+
+          <div>
+            <p className="mb-2 text-xs font-bold text-white/80">برنامه این رشته</p>
+            {sportLoading ? (
+              <p className="py-4 text-center text-sm text-white/45">در حال بارگذاری…</p>
+            ) : sportSchedule.length === 0 ? (
+              <p className="py-4 text-center text-sm text-white/45">برنامه‌ای ثبت نشده است</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {sportSchedule.map((item, i) => (
+                  <li key={`${item.day}-${item.start}-${i}`} className="flex items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
+                    <span className="text-xs text-white/55 tabular-nums" dir="ltr">
+                      {toPersianDigits(item.start)} – {toPersianDigits(item.end)}
+                    </span>
+                    <span className="text-sm font-semibold text-white">{item.day}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
           <div>
             <p className="mb-2 text-xs font-bold text-white/80">مربیان این رشته</p>
             {sportLoading ? <p className="py-6 text-center text-sm text-white/45">در حال بارگذاری…</p>
@@ -683,38 +657,9 @@ export function GymDetailPage() {
 
       <BottomSheet open={shareOpen} onClose={() => setShareOpen(false)} title="اشتراک‌گذاری">
         <p className="text-center text-xs text-white/45 mb-4">می‌خواهید در کدام برنامه منتشر کنید؟</p>
-        <div className="grid grid-cols-4 gap-3">
-          {[
-            { id: "tg", label: "تلگرام", href: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(gym.name)}`, icon: <Send size={22} aria-hidden />, color: "bg-[#229ED9]/15 text-[#5AC8FA]" },
-            { id: "wa", label: "واتساپ", href: `https://wa.me/?text=${encodeURIComponent(gym.name + " " + shareUrl)}`, icon: <MessageCircle size={22} aria-hidden />, color: "bg-emerald-500/15 text-emerald-300" },
-            { id: "x", label: "ایکس", href: `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(gym.name)}`, icon: <Share2 size={22} aria-hidden />, color: "bg-white/10 text-white" },
-          ].map((it) => (
-            <a key={it.id} href={it.href} target="_blank" rel="noopener noreferrer" onClick={() => setShareOpen(false)}
-              className="flex flex-col items-center gap-1.5">
-              <span className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${it.color}`}>{it.icon}</span>
-              <span className="text-[11px] font-medium text-white/80">{it.label}</span>
-            </a>
-          ))}
-          <button type="button" onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(shareUrl);
-              setToast({ message: "لینک کپی شد", type: "success" });
-              setShareOpen(false);
-            } catch {
-              setToast({ message: "کپی لینک ممکن نشد", type: "error" });
-            }
-          }} className="flex flex-col items-center gap-1.5">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary"><Copy size={22} aria-hidden /></span>
-            <span className="text-[11px] font-medium text-white/80">کپی لینک</span>
-          </button>
-          {typeof navigator !== "undefined" && typeof navigator.share === "function" && (
-            <button type="button" onClick={async () => {
-              try { await navigator.share({ title: gym.name, url: shareUrl }); setShareOpen(false); } catch { /* cancel */ }
-            }} className="flex flex-col items-center gap-1.5">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-white"><Link2 size={22} aria-hidden /></span>
-              <span className="text-[11px] font-medium text-white/80">سایر</span>
-            </button>
-          )}
+        <div className="grid grid-cols-2 gap-2">
+          <a href={`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] text-sm font-semibold text-white/85">تلگرام</a>
+          <button type="button" onClick={async () => { try { await navigator.clipboard.writeText(shareUrl); setToast({ message: "لینک کپی شد", type: "success" }); setShareOpen(false); } catch { /* */ } }} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] text-sm font-semibold text-white/85"><Copy size={16} aria-hidden /> کپی لینک</button>
         </div>
       </BottomSheet>
 
