@@ -1,8 +1,8 @@
 /**
- * Fitopia navigation — premium fitness marketplace
- * Mobile (<md): floating pill, HOME raised center
- * Tablet/Desktop (≥md): thin 68px icon rail (RTL-aware)
- * Routes and match logic preserved — UI only.
+ * Fitopia navigation
+ * Order: خانه → باشگاه‌ها → اعتبار → نقشه → پروفایل
+ * Mobile: floating pill, اعتبار raised center
+ * Desktop: thin 68px icon rail (RTL)
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -10,12 +10,12 @@ import {
   House,
   Compass,
   MapPinned,
-  CreditCard,
+  Wallet,
   UserRound,
   PanelLeftClose,
   PanelLeftOpen,
   LogOut,
-  Ticket,
+  CreditCard,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -29,8 +29,15 @@ type NavItem = {
   primary?: boolean;
 };
 
-/** Explore → Map → HOME (center) → Membership → Profile */
+/** خانه → باشگاه‌ها → اعتبار (center) → نقشه → پروفایل */
 const primaryNav: NavItem[] = [
+  {
+    id: "home",
+    to: "/home",
+    label: "خانه",
+    icon: House,
+    match: (p) => p === "/home" || p.startsWith("/home/"),
+  },
   {
     id: "explore",
     to: "/gym/all",
@@ -40,26 +47,19 @@ const primaryNav: NavItem[] = [
       p === "/gym/all" || (p.startsWith("/gym/") && !p.startsWith("/gym-map")),
   },
   {
+    id: "credit",
+    to: "/gym-access/tokens",
+    label: "اعتبار",
+    icon: Wallet,
+    primary: true,
+    match: (p) => p.startsWith("/gym-access"),
+  },
+  {
     id: "map",
     to: "/gym-map",
     label: "نقشه",
     icon: MapPinned,
     match: (p) => p.startsWith("/gym-map"),
-  },
-  {
-    id: "home",
-    to: "/home",
-    label: "خانه",
-    icon: House,
-    primary: true,
-    match: (p) => p === "/home" || p.startsWith("/home/"),
-  },
-  {
-    id: "membership",
-    to: "/subscriptions",
-    label: "اشتراک",
-    icon: CreditCard,
-    match: (p) => p.startsWith("/subscriptions"),
   },
   {
     id: "profile",
@@ -73,8 +73,6 @@ const primaryNav: NavItem[] = [
 function isActive(match: NavItem["match"], pathname: string) {
   return match(pathname);
 }
-
-/* ───────── Mobile floating pill ───────── */
 
 function MobileBottomNav() {
   const location = useLocation();
@@ -157,16 +155,12 @@ function MobileBottomNav() {
   );
 }
 
-/* ───────── Desktop / tablet rail ───────── */
-
 function DesktopNavRail() {
   const location = useLocation();
   const navigate = useNavigate();
   const { displayName, logout } = useAuth();
   const [expanded, setExpanded] = useState(false);
-  const [tooltip, setTooltip] = useState<{ label: string; y: number } | null>(
-    null,
-  );
+  const [tooltip, setTooltip] = useState<{ label: string; y: number } | null>(null);
   const tipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const toggle = useCallback(() => setExpanded((v) => !v), []);
@@ -227,15 +221,11 @@ function DesktopNavRail() {
           }`}
         >
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(255,106,0,0.14)]">
-            <span className="text-[10px] font-black tracking-tight text-[#FF6A00]">
-              F
-            </span>
+            <span className="text-[10px] font-black tracking-tight text-[#FF6A00]">F</span>
           </div>
           {expanded && (
             <>
-              <span className="text-[12px] font-extrabold text-white/90 tracking-wide">
-                FITOPIA
-              </span>
+              <span className="text-[12px] font-extrabold text-white/90 tracking-wide">FITOPIA</span>
               <button
                 type="button"
                 onClick={toggle}
@@ -267,9 +257,7 @@ function DesktopNavRail() {
             expanded ? "px-2" : "items-center px-0"
           }`}
         >
-          <div
-            className={`flex flex-col gap-0.5 ${expanded ? "" : "items-center"}`}
-          >
+          <div className={`flex flex-col gap-0.5 ${expanded ? "" : "items-center"}`}>
             {primaryNav.slice(0, 2).map((item) => (
               <RailLink
                 key={item.id}
@@ -293,9 +281,7 @@ function DesktopNavRail() {
             />
           </div>
 
-          <div
-            className={`flex flex-col gap-0.5 ${expanded ? "" : "items-center"}`}
-          >
+          <div className={`flex flex-col gap-0.5 ${expanded ? "" : "items-center"}`}>
             {primaryNav.slice(3).map((item) => (
               <RailLink
                 key={item.id}
@@ -312,15 +298,15 @@ function DesktopNavRail() {
             <>
               <div className="my-2 mx-1 border-t border-white/[0.05]" />
               <Link
-                to="/gym-access/tokens"
+                to="/subscriptions"
                 className={`flex items-center gap-2.5 rounded-xl min-h-9 px-2.5 no-underline text-[12.5px] transition-colors ${
-                  location.pathname.startsWith("/gym-access")
+                  location.pathname.startsWith("/subscriptions")
                     ? "bg-[rgba(255,106,0,0.12)] text-[#FF6A00] font-bold"
                     : "text-[#7A7A82] hover:bg-white/[0.04] hover:text-white/80 font-semibold"
                 }`}
               >
-                <Ticket size={17} strokeWidth={1.8} aria-hidden />
-                توکن‌ها
+                <CreditCard size={17} strokeWidth={1.8} aria-hidden />
+                اشتراک
               </Link>
             </>
           )}
@@ -337,9 +323,7 @@ function DesktopNavRail() {
               expanded ? "gap-2 px-2 min-h-9" : "h-8 w-8 justify-center"
             }`}
             aria-label={displayName || "پروفایل"}
-            onMouseEnter={(e) =>
-              showTip(displayName || "پروفایل", e.currentTarget)
-            }
+            onMouseEnter={(e) => showTip(displayName || "پروفایل", e.currentTarget)}
             onMouseLeave={hideTip}
           >
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.05] border border-white/[0.08] text-white/60">
@@ -427,11 +411,7 @@ function RailLink({
         aria-hidden
       />
       {expanded && (
-        <span
-          className={`text-[12.5px] whitespace-nowrap ${
-            active ? "font-bold" : "font-semibold"
-          }`}
-        >
+        <span className={`text-[12.5px] whitespace-nowrap ${active ? "font-bold" : "font-semibold"}`}>
           {item.label}
         </span>
       )}
