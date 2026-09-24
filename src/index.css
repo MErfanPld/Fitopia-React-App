@@ -1,5 +1,6 @@
 /* ============================================================
    FITOPIA Design System — Mobile-first dark + orange
+   Restored full stylesheet + soft route transition progress bar
    ============================================================ */
 
 @import "tailwindcss";
@@ -45,7 +46,6 @@ body {
   min-height: 100dvh;
 }
 
-/* Safe area helpers */
 .pb-safe {
   padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
 }
@@ -53,7 +53,6 @@ body {
   padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
 }
 
-/* Desktop nav rail body padding (RTL) */
 html.has-nav-rail body {
   padding-inline-start: 68px;
 }
@@ -63,12 +62,10 @@ html.has-nav-rail body {
   }
 }
 
-/* Home + pages with bottom nav */
 .home-with-rail {
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
 }
 
-/* Glass surfaces */
 .glass {
   background: rgba(18, 18, 22, 0.72);
   backdrop-filter: blur(16px);
@@ -88,7 +85,6 @@ html.has-nav-rail body {
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -129,12 +125,10 @@ html.has-nav-rail body {
   transform: none;
 }
 
-/* Elevation */
 .elevation-brand {
   box-shadow: 0 8px 28px rgba(255, 106, 0, 0.18);
 }
 
-/* Typography helpers */
 .font-vazir {
   font-family: var(--font-sans);
 }
@@ -147,7 +141,6 @@ html.has-nav-rail body {
   font-weight: 600;
 }
 
-/* Skeleton */
 .skeleton {
   background: linear-gradient(
     90deg,
@@ -190,7 +183,7 @@ html.has-nav-rail body {
   height: 2px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.06);
-  z-index: 10;
+  z-index: 60;
 }
 .fitopia-progress-bar > span {
   display: block;
@@ -199,6 +192,11 @@ html.has-nav-rail body {
   border-radius: 999px;
   background: linear-gradient(90deg, transparent, #ff6a00, #ffb000, transparent);
   animation: fitopia-progress 1.15s ease-in-out infinite;
+}
+.fitopia-progress-bar.fixed-top {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
 }
 .skeleton-stagger > *:nth-child(1) .skeleton { animation-delay: 0ms; }
 .skeleton-stagger > *:nth-child(2) .skeleton { animation-delay: 80ms; }
@@ -216,7 +214,6 @@ html.has-nav-rail body {
   margin-inline: auto; padding: 5.5rem 1rem 7rem;
 }
 
-/* Dark form controls */
 select,
 input[type="date"],
 input[type="time"],
@@ -230,7 +227,6 @@ select option {
   color: #e5e1e6;
 }
 
-/* Fade helpers */
 .fade-in-up {
   animation: fadeInUp 0.35s ease-out both;
 }
@@ -239,13 +235,11 @@ select option {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Leaflet overrides (map pages) */
 .leaflet-container {
   background: #0d0d11;
   font-family: var(--font-sans);
 }
 
-/* Utility: hide scrollbar on horizontal chips */
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -254,7 +248,6 @@ select option {
   display: none;
 }
 
-/* Screen-reader only */
 .sr-only {
   position: absolute;
   width: 1px;
