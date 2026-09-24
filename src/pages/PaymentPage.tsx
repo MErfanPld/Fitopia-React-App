@@ -195,7 +195,6 @@ export function PaymentPage() {
 
       <main className="relative z-10 home-shell home-pad pb-[calc(6.75rem+env(safe-area-inset-bottom))] md:pb-12">
         <div className="mx-auto flex w-full max-w-lg flex-col gap-4 sm:gap-5">
-          {/* Title row */}
           <div className="flex items-center gap-3 pt-1">
             <button
               type="button"
@@ -224,7 +223,6 @@ export function PaymentPage() {
             </div>
           ) : null}
 
-          {/* Selected plan */}
           <Card className="border-primary/25 bg-gradient-to-br from-primary/[0.1] to-[#121216]">
             <p className="text-[11px] font-medium text-white/45 mb-1">پلن انتخاب‌شده</p>
             <div className="flex items-start justify-between gap-3">
@@ -232,7 +230,7 @@ export function PaymentPage() {
                 <h2 className="text-base font-extrabold text-white leading-snug">{plan.name}</h2>
                 <ul className="mt-2 space-y-1">
                   <li className="flex items-center justify-end gap-1.5 text-[12px] text-white/65">
-                    <span>{plan.token_count.toLocaleString("fa-IR")} توکن</span>
+                    <span>{plan.token_count.toLocaleString("fa-IR")} اعتبار</span>
                     <Coins size={13} className="text-primary/80" aria-hidden />
                   </li>
                   <li className="flex items-center justify-end gap-1.5 text-[12px] text-white/65">
@@ -257,7 +255,6 @@ export function PaymentPage() {
             </div>
           </Card>
 
-          {/* Payment methods */}
           <Card>
             <h2 className="mb-3 flex items-center gap-2 text-[0.95rem] font-bold text-white">
               <span className="inline-block h-4 w-1 rounded-full bg-primary-container" aria-hidden />
@@ -308,7 +305,6 @@ export function PaymentPage() {
             </div>
           </Card>
 
-          {/* Discount */}
           {discount > 0 ? (
             <Card className="border-primary/20">
               <div className="flex items-center justify-between gap-3">
@@ -342,7 +338,6 @@ export function PaymentPage() {
             </Card>
           ) : null}
 
-          {/* Order summary */}
           <Card>
             <h2 className="mb-3 flex items-center gap-2 text-[0.95rem] font-bold text-white">
               <span className="inline-block h-4 w-1 rounded-full bg-primary-container" aria-hidden />
@@ -380,7 +375,6 @@ export function PaymentPage() {
             </div>
           </Card>
 
-          {/* CTA */}
           <button
             type="button"
             onClick={handlePayment}
