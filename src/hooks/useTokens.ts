@@ -30,7 +30,7 @@ export function useTokens(): UseTokensResult {
       const active = data.filter((t) => t.status === "active" && t.is_valid === true);
       setActiveCount(active.length);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "خطا در دریافت بلیت‌ها");
+      setError(err instanceof Error ? err.message : "خطا در دریافت اعتبار");
       setTokens([]);
       setActiveCount(0);
     } finally {
@@ -45,7 +45,7 @@ export function useTokens(): UseTokensResult {
         await fetchTokens();
         return newToken;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "خطا در دریافت بلیت");
+        setError(err instanceof Error ? err.message : "خطا در دریافت اعتبار");
         return null;
       }
     },
