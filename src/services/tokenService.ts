@@ -22,7 +22,7 @@ const handleApiError = async (response: Response): Promise<never> => {
     if (response.status === 401) {
       errorMessage = 'لطفاً دوباره وارد حساب کاربری خود شوید.';
     } else if (response.status === 404) {
-      errorMessage = 'توکنی یافت نشد.';
+      errorMessage = 'اعتباری یافت نشد.';
     }
   }
   
@@ -30,7 +30,7 @@ const handleApiError = async (response: Response): Promise<never> => {
 };
 
 export const tokenService = {
-  // دریافت لیست توکن‌های کاربر
+  // دریافت لیست اعتبارهای کاربر
   async getMyTokens(): Promise<Token[]> {
     const token = getAuthToken();
     
@@ -57,11 +57,10 @@ export const tokenService = {
     return response.json();
   },
 
-  // دریافت تعداد توکن‌های فعال
+  // دریافت تعداد اعتبارهای فعال
   async getActiveTokensCount(): Promise<number> {
     try {
       const tokens = await this.getMyTokens();
-      // فقط توکن‌های فعال و معتبر رو بشمار
       const activeTokens = tokens.filter(t => t.status === 'active' && t.is_valid === true);
       return activeTokens.length;
     } catch (error) {
@@ -71,9 +70,9 @@ export const tokenService = {
   },
 
   /**
-   * درخواست بلیت ورود — POST /api/tokens/request/
-   * - بدون gym_id یا gym_id: null → بلیت سراسری (همه باشگاه‌های پلن)
-   * - با gym_id → بلیت مخصوص یک باشگاه
+   * درخواست اعتبار ورود — POST /api/tokens/request/
+   * - بدون gym_id یا gym_id: null → اعتبار سراسری (همه باشگاه‌های پلن)
+   * - با gym_id → اعتبار مخصوص یک باشگاه
    */
   async purchaseToken(gymId?: number | null): Promise<Token> {
     const token = getAuthToken();

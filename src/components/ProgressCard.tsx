@@ -3,14 +3,14 @@ import { Coins, Flame, Footprints, Sparkles, Droplet, Clock } from "lucide-react
 
 export function ProgressCard() {
   const [tokens, setTokens] = useState(24);
-  const [waterCups, setWaterCups] = useState(4); // target: 8
-  const calorieProgressPercent = 75; // 600 / 800
-  const stepProgressPercent = 82; // 8200 / 10000
-  const activeProgressPercent = 60; // 36 / 60
+  const [waterCups, setWaterCups] = useState(4);
+  const calorieProgressPercent = 75;
+  const stepProgressPercent = 82;
+  const activeProgressPercent = 60;
 
   const handleAddTokens = () => {
     setTokens(prev => prev + 10);
-    alert("۱۰ توکن با موفقیت از طریق درگاه شبیه‌سازی شده اضافه گردید! 🎉");
+    alert("۱۰ اعتبار با موفقیت از طریق درگاه شبیه‌سازی شده اضافه گردید! 🎉");
   };
 
   const handleDrinkWater = () => {
@@ -23,7 +23,6 @@ export function ProgressCard() {
 
   return (
     <div className="space-y-6" id="progress-card-section">
-      {/* 1. Fluid Amber-Glow Tokens recharge card */}
       <div className="amber-glow-border float-anim" id="token-showcase-container">
         <div className="glass-card rounded-[2rem] p-6 relative overflow-hidden">
           <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary/20 blur-3xl rounded-full" />
@@ -33,7 +32,7 @@ export function ProgressCard() {
               <p className="font-label-sm text-xs text-on-surface-variant/60">شارژ کیف پول فیتوپیا</p>
               <div className="flex items-baseline gap-2 mt-2">
                 <h3 className="text-4xl font-black text-primary-container">{tokens}</h3>
-                <span className="text-xs text-on-surface font-bold">توکن فعال</span>
+                <span className="text-xs text-on-surface font-bold">اعتبار فعال</span>
               </div>
               <p className="font-body-md text-xs text-on-surface-variant/80 mt-1">
                 ویژه تایید جلسات حضوری و رزرو فوری باشگاه‌ها
@@ -57,9 +56,7 @@ export function ProgressCard() {
         </div>
       </div>
 
-      {/* 2. Ring-Progress Fitness Dashboard Widgets */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4" id="stat-widgets-grid">
-        {/* Main Rings Dashboard Progress Summary */}
         <div className="glass-panel rounded-3xl p-6 flex flex-col justify-between" id="daily-activity-gauge">
           <div className="flex justify-between items-center mb-4">
             <h4 className="text-sm font-bold text-on-surface">وضعیت سلامتی امروز</h4>
@@ -67,11 +64,8 @@ export function ProgressCard() {
           </div>
 
           <div className="flex items-center justify-around gap-4">
-            {/* Visual Circular rings simulation */}
             <div className="relative w-28 h-28 flex items-center justify-center" id="svg-ring-container">
-              {/* SVG nested rings */}
               <svg className="w-full h-full transform -rotate-90">
-                {/* Red Calorie ring */}
                 <circle cx="56" cy="56" r="45" stroke="rgba(255,106,0,0.15)" strokeWidth="8" fill="transparent" />
                 <circle
                   cx="56"
@@ -85,8 +79,6 @@ export function ProgressCard() {
                   strokeLinecap="round"
                   className="transition-all duration-1000"
                 />
-                
-                {/* Yellow Steps Ring */}
                 <circle cx="56" cy="56" r="32" stroke="rgba(255,176,0,0.15)" strokeWidth="8" fill="transparent" />
                 <circle
                   cx="56"
@@ -107,7 +99,6 @@ export function ProgressCard() {
               </div>
             </div>
 
-            {/* List breakdown values */}
             <div className="space-y-3 flex-grow" id="breakdown-metrics">
               <div className="flex justify-between items-center text-xs">
                 <div className="flex items-center gap-1.5">
@@ -136,7 +127,6 @@ export function ProgressCard() {
           </div>
         </div>
 
-        {/* Supplementary Tracker: Water Intake Hydration tracker */}
         <div className="glass-panel rounded-3xl p-6 flex flex-col justify-between" id="hydration-card">
           <div className="flex justify-between items-center mb-2">
             <h4 className="text-sm font-bold text-on-surface flex items-center gap-1.5">
@@ -151,7 +141,6 @@ export function ProgressCard() {
           </p>
 
           <div className="flex flex-col gap-3">
-            {/* Horizontal Water cells visual representation */}
             <div className="flex gap-1.5 justify-between bg-surface-container-lowest p-2.5 rounded-xl border border-white/5">
               {Array.from({ length: 8 }).map((_, index) => (
                 <div
