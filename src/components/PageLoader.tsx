@@ -4,10 +4,45 @@
  */
 
 type PageLoaderProps = {
-  /** full viewport overlay (default) vs compact inline */
+  /** full viewport overlay (default) vs compact inline vs thin top bar */
   variant?: "fullscreen" | "inline" | "bar";
   label?: string;
 };
+
+const progressCss = `
+@keyframes fitopia-progress {
+  0% { transform: translateX(120%); }
+  100% { transform: translateX(-120%); }
+}
+@keyframes fitopia-spin-soft {
+  to { transform: rotate(360deg); }
+}
+.fitopia-pl-bar {
+  position: fixed;
+  top: 0;
+  inset-inline: 0;
+  height: 2px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+  z-index: 200;
+  pointer-events: none;
+}
+.fitopia-pl-bar > span {
+  display: block;
+  height: 100%;
+  width: 40%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, #ff6a00, #ffb000, transparent);
+  animation: fitopia-progress 1.15s ease-in-out infinite;
+}
+.fitopia-pl-orbit {
+  animation: fitopia-spin-soft 1.1s linear infinite;
+}
+`;
+
+function ProgressStyles() {
+  return <style dangerouslySetInnerHTML={{ __html: progressCss }} />;
+}
 
 export function PageLoader({
   variant = "fullscreen",
@@ -15,9 +50,12 @@ export function PageLoader({
 }: PageLoaderProps) {
   if (variant === "bar") {
     return (
-      <div className="fitopia-progress-bar" role="progressbar" aria-label={label}>
-        <span />
-      </div>
+      <>
+        <ProgressStyles />
+        <div className="fitopia-pl-bar" role="progressbar" aria-label={label}>
+          <span />
+        </div>
+      </>
     );
   }
 
@@ -42,25 +80,21 @@ export function PageLoader({
       aria-live="polite"
       aria-label={label}
     >
-      {/* Top indeterminate progress — Instagram-style */}
-      <div className="fitopia-progress-bar">
+      <ProgressStyles />
+      <div className="fitopia-pl-bar">
         <span />
       </div>
 
       <div className="flex flex-col items-center gap-5">
         <div className="relative flex h-16 w-16 items-center justify-center">
-          {/* soft glow */}
           <div className="absolute inset-0 rounded-[1.15rem] bg-[#FF6A00]/20 blur-2xl animate-pulse" />
 
-          {/* brand tile */}
           <div className="relative flex h-14 w-14 items-center justify-center rounded-[1.15rem] border border-[#FF6A00]/25 bg-gradient-to-b from-[#16161c] to-[#0e0e12] shadow-[0_8px_28px_rgba(0,0,0,0.45)]">
             <span className="text-lg font-black text-[#FF6A00] tracking-tight">F</span>
           </div>
 
-          {/* thin orbit ring — subtle, not double-spin */}
           <div
-            className="absolute inset-[-3px] rounded-[1.25rem] border border-transparent border-t-[#FF6A00]/70 border-e-[#FF6A00]/25"
-            style={{ animation: "fitopia-spin 1.1s linear infinite" }}
+            className="fitopia-pl-orbit absolute inset-[-3px] rounded-[1.25rem] border border-transparent border-t-[#FF6A00]/70 border-e-[#FF6A00]/25"
             aria-hidden
           />
         </div>
