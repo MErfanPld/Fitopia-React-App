@@ -1,7 +1,6 @@
 /**
  * Mobile drawer — opens from the right (RTL).
- * Desktop: hidden (rail is in BottomNavigation).
- * Owns body scroll-lock via .drawer-open.
+ * Order: خانه، باشگاه‌ها، اعتبار، نقشه، پروفایل
  */
 
 import { FC, useEffect, useRef } from "react";
@@ -11,8 +10,8 @@ import {
   House,
   Compass,
   MapPinned,
+  Wallet,
   CreditCard,
-  Ticket,
   UserRound,
   History,
   LogOut,
@@ -27,10 +26,10 @@ interface SidebarMenuProps {
 const NAV = [
   { id: "home", label: "خانه", icon: House, path: "/home" },
   { id: "explore", label: "باشگاه‌ها", icon: Compass, path: "/gym/all" },
+  { id: "credit", label: "اعتبار", icon: Wallet, path: "/gym-access/tokens" },
   { id: "map", label: "نقشه", icon: MapPinned, path: "/gym-map" },
-  { id: "sub", label: "اشتراک", icon: CreditCard, path: "/subscriptions" },
-  { id: "tokens", label: "بلیت‌ها", icon: Ticket, path: "/gym-access/tokens" },
   { id: "profile", label: "پروفایل", icon: UserRound, path: "/profile" },
+  { id: "sub", label: "اشتراک", icon: CreditCard, path: "/subscriptions" },
   {
     id: "history",
     label: "سوابق اشتراک",
@@ -43,6 +42,7 @@ function isActive(pathname: string, path: string) {
   if (path === "/home") return pathname === "/home" || pathname.startsWith("/home/");
   if (path === "/gym/all") return pathname === "/gym/all";
   if (path === "/gym-map") return pathname.startsWith("/gym-map");
+  if (path === "/gym-access/tokens") return pathname.startsWith("/gym-access");
   if (path === "/subscriptions")
     return pathname === "/subscriptions" || pathname.startsWith("/subscriptions/payment");
   if (path === "/subscriptions/history") return pathname.startsWith("/subscriptions/history");
