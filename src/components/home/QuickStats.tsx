@@ -1,5 +1,5 @@
 /**
- * Compact stats — only real subscription / ticket metrics.
+ * Compact stats — only real subscription / credit metrics.
  */
 
 import { useUserSubscription } from "../../hooks/useUserSubscription";
@@ -34,10 +34,10 @@ export function QuickStats() {
     items.push({ label: "روز باقی‌مانده", value: Math.max(0, days) });
   }
   if (tokensRem !== null && Number.isFinite(tokensRem)) {
-    items.push({ label: "بلیت اشتراک", value: Math.max(0, tokensRem) });
+    items.push({ label: "اعتبار اشتراک", value: Math.max(0, tokensRem) });
   }
   if (typeof activeCount === "number") {
-    items.push({ label: "بلیت فعال", value: activeCount });
+    items.push({ label: "اعتبار فعال", value: activeCount });
   }
 
   if (items.length === 0) return null;
