@@ -78,7 +78,7 @@ export default function PlanCard({
             >
               {plan.token_count.toLocaleString("fa-IR")}
             </p>
-            <p className="mt-1 text-[10px] font-medium text-white/50">بلیت ورود</p>
+            <p className="mt-1 text-[10px] font-medium text-white/50">اعتبار ورود</p>
           </div>
           <div className="rounded-xl px-3 py-2.5 text-center border border-white/[0.08] bg-white/[0.04]">
             <p className="text-lg font-black tabular-nums leading-none text-white">
@@ -94,7 +94,7 @@ export default function PlanCard({
             <CalendarDays size={14} className="shrink-0 text-primary/90" aria-hidden />
           </li>
           <li className="flex items-center justify-end gap-2 text-[12px] text-white/70">
-            <span>{plan.token_count.toLocaleString("fa-IR")} بلیت ورود</span>
+            <span>{plan.token_count.toLocaleString("fa-IR")} اعتبار ورود</span>
             <Ticket size={14} className="shrink-0 text-primary/90" aria-hidden />
           </li>
           {plan.gyms_count > 0 ? (
