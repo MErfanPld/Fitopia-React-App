@@ -33,7 +33,7 @@ export function TokensPage() {
   const [selectedTokenQR, setSelectedTokenQR] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = 'FITOPIA | توکن‌های من';
+    document.title = 'FITOPIA | اعتبارهای من';
     loadTokens();
   }, []);
 
@@ -42,11 +42,11 @@ export function TokensPage() {
       setLoading(true);
       setError(null);
       const data = await apiService.get<Token[]>('/tokens/my/');
-      console.log('📤 Tokens loaded:', data);
+      console.log('📤 Credits loaded:', data);
       setTokens(data || []);
     } catch (err: any) {
-      console.error('❌ Error loading tokens:', err);
-      setError(err.message || 'خطا در بارگذاری توکن‌ها');
+      console.error('❌ Error loading credits:', err);
+      setError(err.message || 'خطا در بارگذاری اعتبارها');
     } finally {
       setLoading(false);
     }
@@ -125,7 +125,7 @@ export function TokensPage() {
         <main className="relative z-10 pt-24 pb-32 px-4 max-w-5xl mx-auto h-screen flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <Loader className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-on-surface-variant">درحال بارگذاری توکن‌ها...</p>
+            <p className="text-on-surface-variant">درحال بارگذاری اعتبارها...</p>
           </div>
         </main>
         <BottomNavigation />
@@ -149,7 +149,7 @@ export function TokensPage() {
           >
             <ArrowLeft className="w-5 h-5 text-on-surface" />
           </button>
-          <h1 className="text-2xl font-bold text-white">توکن‌های من</h1>
+          <h1 className="text-2xl font-bold text-white">اعتبارهای من</h1>
         </header>
 
         {/* Error Alert */}
@@ -171,7 +171,7 @@ export function TokensPage() {
           <div className="flex flex-wrap gap-3">
             <div className="glass-panel rounded-full px-5 py-2 flex items-center gap-2 border-primary/20">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span className="text-sm text-on-surface">کل توکن‌ها: {stats.total}</span>
+              <span className="text-sm text-on-surface">کل اعتبارها: {stats.total}</span>
             </div>
             <div className="glass-panel rounded-full px-5 py-2 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-green-500" />
@@ -213,11 +213,11 @@ export function TokensPage() {
           </div>
         </nav>
 
-        {/* Token List */}
+        {/* Credit List */}
         {filteredTokens.length === 0 ? (
           <div className="glass-panel rounded-2xl p-12 text-center">
             <QrCode className="w-12 h-12 text-on-surface-variant/50 mx-auto mb-4" />
-            <p className="text-on-surface-variant">توکنی برای این فیلتر یافت نشد</p>
+            <p className="text-on-surface-variant">اعتباری برای این فیلتر یافت نشد</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -226,7 +226,7 @@ export function TokensPage() {
                 key={token.id}
                 className="glass-panel rounded-xl overflow-hidden transition-all duration-300 hover:scale-105 hover:border-primary/30 border border-white/10"
               >
-                {/* Token Header with Status */}
+                {/* Credit Header with Status */}
                 <div className="p-5 border-b border-white/5">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
@@ -241,14 +241,14 @@ export function TokensPage() {
                     </div>
                   </div>
 
-                  {/* Token Code */}
+                  {/* Credit Code */}
                   <div className="glass-panel bg-white/5 rounded-lg p-3 mb-4">
-                    <p className="text-xs text-on-surface-variant mb-1">کد توکن</p>
+                    <p className="text-xs text-on-surface-variant mb-1">کد اعتبار</p>
                     <p className="text-sm font-mono text-primary break-all">{token.token_code}</p>
                   </div>
                 </div>
 
-                {/* Token Details */}
+                {/* Credit Details */}
                 <div className="p-5 space-y-3">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-on-surface-variant">📅 صادر شده:</span>
@@ -296,7 +296,7 @@ export function TokensPage() {
         {tokens.length === 0 && !loading && (
           <div className="glass-panel rounded-2xl p-12 text-center mt-8">
             <QrCode className="w-16 h-16 text-on-surface-variant/30 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">هنوز توکنی ندارید</h3>
+            <h3 className="text-xl font-bold text-white mb-2">هنوز اعتباری ندارید</h3>
             <p className="text-on-surface-variant mb-6">برای شروع، یک اشتراک خریداری کنید</p>
             <button
               onClick={() => navigate('/subscriptions')}
@@ -313,7 +313,7 @@ export function TokensPage() {
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="glass-panel rounded-2xl p-8 max-w-md w-full">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-white">کد دخول</h2>
+              <h2 className="text-xl font-bold text-white">کد ورود</h2>
               <button
                 onClick={() => setSelectedTokenQR(null)}
                 className="p-2 hover:bg-white/10 rounded-lg transition-colors"

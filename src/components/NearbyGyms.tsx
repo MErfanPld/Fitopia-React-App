@@ -46,7 +46,7 @@ export function NearbyGyms() {
 
   const handleBookGym = (gym: Gym) => {
     const confirmation = window.confirm(
-      `آیا می‌خواهید با کسر ${gym.tokensCost} توکن فیتوپیا، جلسه تمرینی خود در "${gym.name}" را تایید نهایی کنید؟`
+      `آیا می‌خواهید با کسر ${gym.tokensCost} اعتبار فیتوپیا، جلسه تمرینی خود در "${gym.name}" را تایید نهایی کنید؟`
     );
     if (confirmation) {
       alert(`کد رزرو فیتوپیا فعال شد! 🎫\nنام مجموعه: ${gym.name}\nساعت پذیرش: امروز از ساعت ${gym.openHours}\nلطفا آیدی رزرو را به مسئول پذیرش نشان دهید.`);
@@ -177,7 +177,7 @@ export function NearbyGyms() {
               <div className="mt-5 pt-4 border-t border-white/5 flex gap-2 items-center justify-between">
                 <div className="flex items-center gap-1 text-primary-container font-bold text-xs">
                   <Coins size={14} />
-                  <span>{gym.tokensCost} توکن برای رزرو</span>
+                  <span>{gym.tokensCost} اعتبار برای رزرو</span>
                 </div>
                 <span className="text-[11px] text-primary hover:underline font-bold">رزرو فوری</span>
               </div>
@@ -212,11 +212,11 @@ export function NearbyGyms() {
               <div className="bg-surface-container-lowest p-4 rounded-2xl space-y-2 border border-white/5 text-xs font-semibold">
                 <div className="flex justify-between">
                   <span className="text-on-surface-variant">بهای رزرو نهایی:</span>
-                  <span className="text-[#FFB000]">{selectedGym.tokensCost} توکن</span>
+                  <span className="text-[#FFB000]">{selectedGym.tokensCost} اعتبار</span>
                 </div>
                 <div className="flex justify-between border-t border-white/5 pt-2 mt-2">
                   <span className="text-on-surface-variant">کیف پول فعلی شما:</span>
-                  <span className="text-emerald-400">۲۴ توکن</span>
+                  <span className="text-emerald-400">۲۴ اعتبار</span>
                 </div>
               </div>
             </div>
@@ -226,7 +226,7 @@ export function NearbyGyms() {
                 onClick={() => handleBookGym(selectedGym)}
                 className="flex-grow py-3 bg-gradient-to-l from-[#FF6A00] to-[#FFB000] text-on-primary-container font-black text-xs rounded-xl cursor-pointer hover:brightness-110 active:scale-95 transition-all"
               >
-                کاهش توکن و رزرو نهایی
+                کاهش اعتبار و رزرو نهایی
               </button>
               <button
                 onClick={() => setSelectedGym(null)}
