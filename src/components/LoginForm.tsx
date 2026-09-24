@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { FormInput } from "./FormInput";
 import { PasswordInput } from "./PasswordInput";
 import { SubmitButton } from "./SubmitButton";
-import { User, AlertCircle } from "lucide-react";
+import { User, AlertCircle, Check } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 interface LoginFormValues {
@@ -23,6 +23,7 @@ export function LoginForm() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isValid },
     reset,
   } = useForm<LoginFormValues>({
@@ -33,6 +34,8 @@ export function LoginForm() {
       rememberMe: true,
     },
   });
+
+  const rememberMe = watch("rememberMe");
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
@@ -57,7 +60,9 @@ export function LoginForm() {
       const responseData = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setApiError(responseData?.detail || responseData?.error || "اطلاعات ورود اشتباه است");
+        setApiError(
+          responseData?.detail || responseData?.error || "اطلاعات ورود اشتباه است",
+        );
         setIsLoading(false);
         return;
       }
@@ -126,26 +131,16 @@ export function LoginForm() {
         />
 
         <label className="flex items-center gap-2.5 cursor-pointer select-none group">
-          <input
-            type="checkbox"
-            className="peer sr-only"
-            {...register("rememberMe")}
-          />
+          <input type="checkbox" className="sr-only" {...register("rememberMe")} />
           <span
-            className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-white/20 bg-white/[0.04] transition-colors peer-checked:border-primary peer-checked:bg-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary/50"
+            className={`relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors ${
+              rememberMe
+                ? "border-primary bg-primary text-black"
+                : "border-white/20 bg-white/[0.04] text-transparent group-hover:border-white/35"
+            }`}
             aria-hidden
           >
-            <svg
-              className="h-3 w-3 text-black opacity-0 peer-checked:opacity-100 group-has-[:checked]:opacity-100"
-              viewBox="0 0 12 12"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M2 6.5L4.5 9L10 3" />
-            </svg>
+            <Check size={12} strokeWidth={3} />
           </span>
           <span className="text-sm text-white/70 group-hover:text-white/90 transition-colors">
             مرا به خاطر بسپار
