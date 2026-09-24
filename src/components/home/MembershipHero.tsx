@@ -28,12 +28,8 @@ export function MembershipHero() {
   if (!hasSubscription || !subscription) {
     return (
       <section className="w-full rounded-2xl border border-white/10 bg-[#121216] p-5 text-right">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-white/45">
-          اشتراک
-        </p>
-        <h2 className="mt-2 text-lg font-extrabold text-white leading-snug">
-          هنوز اشتراک فعالی نداری
-        </h2>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-white/45">اشتراک</p>
+        <h2 className="mt-2 text-lg font-extrabold text-white leading-snug">هنوز اشتراک فعالی نداری</h2>
         <p className="mt-2 text-sm text-white/55 leading-relaxed">
           با تهیه اشتراک به باشگاه‌ها و اعتبار دسترسی وصل شو.
         </p>
@@ -63,7 +59,7 @@ export function MembershipHero() {
           const end = new Date(subscription.end_date).getTime();
           const now = Date.now();
           if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
-          return Math.min(100, Math.max(0, ((end - now) / (end - start)) * 100);
+          return Math.min(100, Math.max(0, ((end - now) / (end - start)) * 100));
         })()
       : null;
 
@@ -145,9 +141,7 @@ export function MembershipHero() {
               <p className="text-[clamp(1.15rem,4.5vw,1.4rem)] font-extrabold tabular-nums text-white leading-none">
                 {item.value}
               </p>
-              <p className="mt-1.5 text-[10px] font-medium text-white/50 leading-tight">
-                {item.label}
-              </p>
+              <p className="mt-1.5 text-[10px] font-medium text-white/50 leading-tight">{item.label}</p>
             </div>
           ))}
         </div>
