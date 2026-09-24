@@ -144,9 +144,6 @@ export function LoginForm() {
           </span>
           <span className="text-sm text-white/70 group-hover:text-white/90 transition-colors">
             مرا به خاطر بسپار
-            <span className="block text-[11px] text-white/40 mt-0.5">
-              تا ۱۰ روز وارد بمان
-            </span>
           </span>
         </label>
 
