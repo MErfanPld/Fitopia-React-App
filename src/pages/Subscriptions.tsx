@@ -25,16 +25,16 @@ import type { SubscriptionPlan } from "../types/subscription";
 
 const FAQ_ITEMS = [
   {
-    q: "بلیت‌ها چگونه کار می‌کنند؟",
-    a: "هر ورود به باشگاه معادل یک بلیت ورود است. یک بلیت برای همه باشگاه‌های قابل دسترس اشتراک شما معتبر است.",
+    q: "اعتبار چگونه کار می‌کند؟",
+    a: "هر ورود به باشگاه معادل یک اعتبار ورود است. یک اعتبار برای همه باشگاه‌های قابل دسترس اشتراک شما معتبر است.",
   },
   {
-    q: "آیا بلیت‌ها منقضی می‌شوند؟",
-    a: "بله، بلیت‌های هر اشتراک معمولاً هم‌زمان با اعتبار اشتراک منقضی می‌شوند. جزئیات هر اشتراک را روی کارت ببین.",
+    q: "آیا اعتبار منقضی می‌شود؟",
+    a: "بله، اعتبارهای هر اشتراک معمولاً هم‌زمان با پایان اشتراک منقضی می‌شوند. جزئیات هر اشتراک را روی کارت ببین.",
   },
   {
     q: "چطور وارد باشگاه شویم؟",
-    a: "از صفحه بلیت‌ها یک بلیت ورود صادر کن و QR یا کد آن را در پذیرش باشگاه نشان بده.",
+    a: "از صفحه اعتبار یک اعتبار ورود صادر کن و QR یا کد آن را در پذیرش باشگاه نشان بده.",
   },
 ];
 
@@ -76,10 +76,10 @@ export default function Subscriptions() {
                 type="button"
                 onClick={() => navigate("/gym-access/tokens")}
                 className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-white/80 hover:bg-white/[0.07] transition-colors"
-                aria-label="بلیت‌های ورود"
+                aria-label="اعتبار ورود"
               >
                 <Ticket size={15} className="text-primary" aria-hidden />
-                بلیت‌ها
+                اعتبار
               </button>
             </div>
           </section>
@@ -111,7 +111,7 @@ export default function Subscriptions() {
               </h2>
               <div className="relative z-10 mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 <div className="rounded-xl bg-black/25 px-3 py-2">
-                  <p className="text-[10px] text-white/45">بلیت باقی‌مانده</p>
+                  <p className="text-[10px] text-white/45">اعتبار باقی‌مانده</p>
                   <p className="text-sm font-black text-white tabular-nums">
                     {(subscription.tokens_remaining ?? 0).toLocaleString("fa-IR")}
                     <span className="text-[10px] font-medium text-white/40">

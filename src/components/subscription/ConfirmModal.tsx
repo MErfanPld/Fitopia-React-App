@@ -81,9 +81,9 @@ export default function ConfirmModal({ plan, onClose }: ConfirmModalProps) {
           <div className="flex items-center justify-between text-sm">
             <span className="inline-flex items-center gap-1.5 font-semibold text-white">
               <Coins size={14} className="text-primary" aria-hidden />
-              {plan.token_count.toLocaleString("fa-IR")} توکن
+              {plan.token_count.toLocaleString("fa-IR")} اعتبار
             </span>
-            <span className="text-white/50">اعتبار ورودی</span>
+            <span className="text-white/50">اعتبار ورود</span>
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="inline-flex items-center gap-1.5 font-semibold text-white">

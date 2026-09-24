@@ -73,7 +73,7 @@ export default function HistoryItem({ item, isActive = false }: HistoryItemProps
           </p>
         </div>
         <div className="rounded-xl bg-black/25 px-2.5 py-2">
-          <p className="text-[10px] text-white/40">توکن</p>
+          <p className="text-[10px] text-white/40">اعتبار</p>
           <p className="text-xs font-bold text-white tabular-nums mt-0.5 inline-flex items-center gap-1">
             <Coins size={11} className="text-primary" aria-hidden />
             {formatPersianNumber(item.tokens_remaining ?? 0)}

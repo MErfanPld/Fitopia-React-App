@@ -65,7 +65,7 @@ export default function ActivePlanCard({ subscription }: ActivePlanCardProps) {
         <div className="mb-1.5 flex items-center justify-between text-[11px]">
           <span className="inline-flex items-center gap-1 font-semibold text-white/80">
             <Coins size={12} className="text-primary" aria-hidden />
-            {formatPersianNumber(remaining)} / {formatPersianNumber(total)} توکن
+            {formatPersianNumber(remaining)} / {formatPersianNumber(total)} اعتبار
           </span>
           <span className="text-white/40">باقی‌مانده</span>
         </div>
