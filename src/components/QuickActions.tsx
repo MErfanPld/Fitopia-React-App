@@ -2,14 +2,14 @@
  * Compact discovery shortcuts — marketplace style, real routes only.
  */
 
-import { Building2, MapPinned, CreditCard, Ticket } from "lucide-react";
+import { Building2, MapPinned, CreditCard, Wallet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const actions = [
   { to: "/gym/all", label: "باشگاه‌ها", icon: Building2 },
   { to: "/gym-map", label: "نقشه", icon: MapPinned },
   { to: "/subscriptions", label: "اشتراک", icon: CreditCard },
-  { to: "/gym-access/tokens", label: "بلیت‌ها", icon: Ticket },
+  { to: "/gym-access/tokens", label: "اعتبار", icon: Wallet },
 ] as const;
 
 export function QuickActions() {
