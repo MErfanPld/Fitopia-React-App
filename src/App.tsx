@@ -2,6 +2,8 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { UpdatePrompt } from "./components/UpdatePrompt";
 import { OfflineIndicator } from "./components/OfflineIndicator";
+import { MobileOnlyGate } from "./components/MobileOnlyGate";
+import { AddToHomeScreen } from "./components/AddToHomeScreen";
 
 // Asynchronously load routes with named export resolution for optimal performance
 const HomePage = lazy(() => import("./pages/HomePage").then((module) => ({ default: module.HomePage })));
@@ -108,14 +110,19 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        {/* 1. Global Offline Connectivity Tracker */}
-        <OfflineIndicator />
+        <MobileOnlyGate>
+          {/* 1. Global Offline Connectivity Tracker */}
+          <OfflineIndicator />
 
-        {/* 2. Global Hot Service Worker Dynamic Updater Toast */}
-        <UpdatePrompt />
+          {/* 2. Global Hot Service Worker Dynamic Updater Toast */}
+          <UpdatePrompt />
 
-        {/* 3. Suspense Lazy Route Code Splitting Wrapper with Auth State Loading Barrier */}
-        <AppContent />
+          {/* 3. Add to Home Screen banner + guide */}
+          <AddToHomeScreen />
+
+          {/* 4. Suspense Lazy Route Code Splitting Wrapper with Auth State Loading Barrier */}
+          <AppContent />
+        </MobileOnlyGate>
       </BrowserRouter>
     </AuthProvider>
   );
