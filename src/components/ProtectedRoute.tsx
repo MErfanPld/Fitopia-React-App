@@ -2,11 +2,15 @@
  * Blocks unauthenticated / expired sessions — always → /welcome
  * Manual URL entry cannot bypass: storage + JWT exp checked on every route change.
  * Tries one refresh before denying so short-lived access tokens still work.
+ *
+ * UX: when the user is already authenticated, keep the previous page visible
+ * during re-check (no full-screen spinner flash on every navigation).
  */
 
 import { type ReactNode, useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { PageLoader } from "./PageLoader";
 import {
   emitAuthExpired,
   getAccessTokenFromStorage,
@@ -22,21 +26,25 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
-  const [gate, setGate] = useState<"checking" | "ok" | "deny">("checking");
+  const [gate, setGate] = useState<"checking" | "ok" | "deny">(() =>
+    isAuthenticated ? "ok" : "checking",
+  );
 
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
-      setGate("checking");
       const token = getAccessTokenFromStorage();
 
+      // Fast path: valid access token — stay ok, no UI flash
       if (token && !isAccessTokenExpired(token)) {
         if (!cancelled) setGate("ok");
         return;
       }
 
-      // Access expired / missing — try refresh once before denying
+      // Need refresh or deny — only then show checking if we weren't ok
+      if (!cancelled) setGate((prev) => (prev === "ok" ? "checking" : prev));
+
       const refresh = getRefreshTokenFromStorage();
       if (refresh) {
         const fresh = await tryRefreshAccessToken(refresh);
@@ -57,12 +65,23 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     };
   }, [location.pathname, location.key]);
 
-  if (isLoading || gate === "checking") {
+  // Initial app auth bootstrap only
+  if (isLoading) {
+    return <PageLoader label="در حال آماده‌سازی…" />;
+  }
+
+  // Soft re-check after session was already ok: keep children, thin top bar
+  if (gate === "checking" && isAuthenticated) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-[#07070A]">
-        <div className="fitopia-loader-ring" aria-label="بارگذاری" />
-      </div>
+      <>
+        <PageLoader variant="bar" />
+        {children}
+      </>
     );
+  }
+
+  if (gate === "checking") {
+    return <PageLoader />;
   }
 
   if (gate === "deny" || !isAuthenticated) {

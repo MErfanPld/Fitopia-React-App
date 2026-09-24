@@ -4,6 +4,7 @@ import { UpdatePrompt } from "./components/UpdatePrompt";
 import { OfflineIndicator } from "./components/OfflineIndicator";
 import { MobileOnlyGate } from "./components/MobileOnlyGate";
 import { AddToHomeScreen } from "./components/AddToHomeScreen";
+import { PageLoader } from "./components/PageLoader";
 
 // Asynchronously load routes with named export resolution for optimal performance
 const HomePage = lazy(() => import("./pages/HomePage").then((module) => ({ default: module.HomePage })));
@@ -23,32 +24,15 @@ const GymMapPage = lazy(() => import("./pages/GymMapPage").then((module) => ({ d
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
-// Sleek glassmorphic skeleton loader for premium dynamic routes
-function LoadingFallback() {
-  return (
-    <div className="fixed inset-0 bg-[#07070A] z-50 flex flex-col justify-center items-center pointer-events-none select-none">
-      <div className="relative w-20 h-20 flex items-center justify-center">
-        {/* Pulsating central energy glow */}
-        <div className="absolute inset-0 bg-primary/25 rounded-full blur-2xl animate-pulse" />
-        
-        {/* Double spinning rings */}
-        <div className="w-16 h-16 rounded-full border-t-2 border-r-2 border-primary animate-spin" />
-        <div className="absolute w-12 h-12 rounded-full border-b-2 border-l-2 border-[#FFB000]/60 animate-spin-[reverse_1.5s_linear_infinite]" />
-      </div>
-      <p className="mt-6 text-sm font-black font-vazir text-primary tracking-widest animate-pulse">FITOPIA</p>
-    </div>
-  );
-}
-
 function AppContent() {
   const { isLoading } = useAuth();
 
   if (isLoading) {
-    return <LoadingFallback />;
+    return <PageLoader label="در حال آماده‌سازی…" />;
   }
 
   return (
-    <Suspense fallback={<LoadingFallback />}>
+    <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/welcome" element={<WelcomePage />} />
         <Route path="/login" element={<LoginPage />} />
