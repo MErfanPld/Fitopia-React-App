@@ -1,5 +1,5 @@
 /**
- * Membership + stats in ONE unified card (remaining days, tickets, plan).
+ * Membership + stats in ONE unified card (remaining days, credit, plan).
  */
 
 import { useNavigate } from "react-router-dom";
@@ -63,7 +63,7 @@ export function MembershipHero() {
           const end = new Date(subscription.end_date).getTime();
           const now = Date.now();
           if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
-          return Math.min(100, Math.max(0, ((end - now) / (end - start)) * 100));
+          return Math.min(100, Math.max(0, ((end - now) / (end - start)) * 100);
         })()
       : null;
 
@@ -72,10 +72,10 @@ export function MembershipHero() {
     stats.push({ label: "روز باقی‌مانده", value: Math.max(0, days) });
   }
   if (tokensRem !== null && Number.isFinite(tokensRem)) {
-    stats.push({ label: "بلیت اشتراک", value: Math.max(0, tokensRem) });
+    stats.push({ label: "اعتبار اشتراک", value: Math.max(0, tokensRem) });
   }
   if (typeof activeCount === "number") {
-    stats.push({ label: "بلیت فعال", value: activeCount });
+    stats.push({ label: "اعتبار فعال", value: activeCount });
   }
 
   return (
@@ -166,7 +166,7 @@ export function MembershipHero() {
           onClick={() => navigate("/gym-access/tokens")}
           className="btn btn-secondary min-h-11 px-4 text-sm"
         >
-          بلیت‌ها
+          اعتبار
         </button>
       </div>
     </section>
