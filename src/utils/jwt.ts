@@ -29,25 +29,96 @@ export function isAccessTokenExpired(token: string | null | undefined): boolean 
   return payload.exp <= now + 30;
 }
 
+function readStorage(key: string): string | null {
+  try {
+    return localStorage.getItem(key) || sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
 export function getAccessTokenFromStorage(): string | null {
   return (
-    localStorage.getItem("access") ||
-    localStorage.getItem("fitopia_auth_token") ||
-    localStorage.getItem("fitopia_access_token") ||
+    readStorage("access") ||
+    readStorage("fitopia_auth_token") ||
+    readStorage("fitopia_access_token") ||
     null
   );
 }
 
 export function getRefreshTokenFromStorage(): string | null {
   return (
-    localStorage.getItem("refresh") ||
-    localStorage.getItem("fitopia_refresh_token") ||
+    readStorage("refresh") ||
+    readStorage("fitopia_refresh_token") ||
     null
   );
 }
 
+/** Whether the last login used remember_me (localStorage) */
+export function getRememberMeFromStorage(): boolean {
+  try {
+    if (localStorage.getItem("fitopia_remember_me") === "1") return true;
+    // Legacy sessions lived in localStorage without the flag
+    if (localStorage.getItem("access") || localStorage.getItem("fitopia_auth_token")) {
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Persist auth tokens.
+ * rememberMe=true  → localStorage (survives browser restart; API keeps session ~10 days)
+ * rememberMe=false → sessionStorage (cleared when the tab/browser session ends)
+ */
+export function persistAuthTokens(
+  access: string,
+  refresh: string,
+  rememberMe: boolean,
+  displayName?: string,
+  userData?: unknown,
+): void {
+  const store = rememberMe ? localStorage : sessionStorage;
+  const other = rememberMe ? sessionStorage : localStorage;
+
+  const keys = [
+    "access",
+    "fitopia_auth_token",
+    "fitopia_access_token",
+    "refresh",
+    "fitopia_refresh_token",
+    "fitopia_user_name",
+    "fitopia_user_data",
+    "fitopia_remember_me",
+  ];
+
+  // Clear the other store so we never mix session vs persistent
+  keys.forEach((k) => {
+    try {
+      other.removeItem(k);
+    } catch {
+      /* ignore */
+    }
+  });
+
+  store.setItem("access", access);
+  store.setItem("fitopia_auth_token", access);
+  store.setItem("refresh", refresh);
+  store.setItem("fitopia_refresh_token", refresh);
+  store.setItem("fitopia_remember_me", rememberMe ? "1" : "0");
+
+  if (displayName != null) {
+    store.setItem("fitopia_user_name", displayName);
+  }
+  if (userData !== undefined) {
+    store.setItem("fitopia_user_data", JSON.stringify(userData));
+  }
+}
+
 export function clearAuthStorage(): void {
-  [
+  const keys = [
     "access",
     "fitopia_auth_token",
     "fitopia_access_token",
@@ -56,7 +127,16 @@ export function clearAuthStorage(): void {
     "fitopia_user_name",
     "fitopia_user_data",
     "fitopia_token_expiry",
-  ].forEach((k) => localStorage.removeItem(k));
+    "fitopia_remember_me",
+  ];
+  keys.forEach((k) => {
+    try {
+      localStorage.removeItem(k);
+      sessionStorage.removeItem(k);
+    } catch {
+      /* ignore */
+    }
+  });
 }
 
 const REFRESH_URLS = [
@@ -78,11 +158,13 @@ export async function tryRefreshAccessToken(
       if (!res.ok) continue;
       const data = await res.json();
       if (data?.access) {
-        localStorage.setItem("access", data.access);
-        localStorage.setItem("fitopia_auth_token", data.access);
+        const remember = getRememberMeFromStorage();
+        const store = remember ? localStorage : sessionStorage;
+        store.setItem("access", data.access);
+        store.setItem("fitopia_auth_token", data.access);
         if (data.refresh) {
-          localStorage.setItem("refresh", data.refresh);
-          localStorage.setItem("fitopia_refresh_token", data.refresh);
+          store.setItem("refresh", data.refresh);
+          store.setItem("fitopia_refresh_token", data.refresh);
         }
         return data.access as string;
       }

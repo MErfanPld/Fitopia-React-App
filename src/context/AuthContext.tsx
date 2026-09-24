@@ -1,5 +1,5 @@
 /**
- * AuthContext — session restore, JWT expiry, force logout → welcome
+ * AuthContext — session restore, JWT expiry, remember_me (10-day), force logout → welcome
  */
 
 import {
@@ -16,6 +16,7 @@ import {
   getAccessTokenFromStorage,
   getRefreshTokenFromStorage,
   isAccessTokenExpired,
+  persistAuthTokens,
   tryRefreshAccessToken,
 } from "../utils/jwt";
 
@@ -31,12 +32,35 @@ interface AuthContextType {
     refreshToken: string,
     userData: unknown,
     displayName: string,
+    rememberMe?: boolean,
   ) => void;
   logout: () => Promise<void>;
   setDisplayNameState: (name: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+function readUserName(): string | null {
+  try {
+    return (
+      localStorage.getItem("fitopia_user_name") ||
+      sessionStorage.getItem("fitopia_user_name")
+    );
+  } catch {
+    return null;
+  }
+}
+
+function readUserData(): string | null {
+  try {
+    return (
+      localStorage.getItem("fitopia_user_data") ||
+      sessionStorage.getItem("fitopia_user_data")
+    );
+  } catch {
+    return null;
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
@@ -60,8 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         let storedToken = getAccessTokenFromStorage();
         const storedRefresh = getRefreshTokenFromStorage();
-        const storedName = localStorage.getItem("fitopia_user_name");
-        const storedUserData = localStorage.getItem("fitopia_user_data");
+        const storedName = readUserName();
+        const storedUserData = readUserData();
 
         if (storedToken && isAccessTokenExpired(storedToken)) {
           if (storedRefresh) {
@@ -170,6 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshTok: string,
     data: unknown,
     name: string,
+    rememberMe = true,
   ) => {
     const finalName = name?.trim() || "کاربر عزیز";
     setToken(accessTok);
@@ -177,12 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUserData(data);
     setDisplayName(finalName);
 
-    localStorage.setItem("access", accessTok);
-    localStorage.setItem("fitopia_auth_token", accessTok);
-    localStorage.setItem("refresh", refreshTok);
-    localStorage.setItem("fitopia_refresh_token", refreshTok);
-    localStorage.setItem("fitopia_user_name", finalName);
-    localStorage.setItem("fitopia_user_data", JSON.stringify(data));
+    persistAuthTokens(accessTok, refreshTok, rememberMe, finalName, data);
   };
 
   const logout = async () => {
@@ -213,7 +233,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setDisplayNameState = (name: string) => {
     setDisplayName(name);
-    localStorage.setItem("fitopia_user_name", name);
+    try {
+      if (localStorage.getItem("fitopia_remember_me") === "1") {
+        localStorage.setItem("fitopia_user_name", name);
+      } else if (sessionStorage.getItem("fitopia_remember_me") === "0") {
+        sessionStorage.setItem("fitopia_user_name", name);
+      } else {
+        localStorage.setItem("fitopia_user_name", name);
+      }
+    } catch {
+      /* ignore */
+    }
   };
 
   const isAuthenticated =
