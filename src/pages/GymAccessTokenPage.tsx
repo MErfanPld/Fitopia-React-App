@@ -19,6 +19,7 @@ import {
   Ticket,
   RefreshCw,
   ChevronLeft,
+  CreditCard,
 } from "lucide-react";
 import { Header } from "../components/Header";
 import { BottomNavigation } from "../components/BottomNavigation";
@@ -74,7 +75,7 @@ function calculateTimeRemaining(validUntil: string): string {
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
     return `${formatPersianNumber(hours)}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   } catch {
-    return "\u2014";
+    return "—";
   }
 }
 
@@ -318,6 +319,15 @@ export function GymAccessTokenPage() {
                   <p className="mt-1 text-xl sm:text-2xl font-black text-white tabular-nums">{formatPersianNumber(subscriptionInfo.tokens_total ?? 0)}</p>
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={() => navigate("/subscriptions")}
+                className="relative z-10 mt-4 w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/15 px-4 text-sm font-bold text-primary hover:bg-primary/25 active:scale-[0.98] transition-all"
+              >
+                <CreditCard size={18} aria-hidden />
+                مشاهده پلن‌ها
+                <ChevronLeft size={16} aria-hidden />
+              </button>
             </section>
           ) : null}
 
@@ -375,7 +385,7 @@ export function GymAccessTokenPage() {
             <section className="rounded-2xl border border-white/[0.08] bg-[#121216] p-4">
               <div className="flex items-center justify-between gap-2 mb-3">
                 <h3 className="text-sm font-bold text-white">باشگاه‌های قابل دسترس</h3>
-                <span className="text-[11px] text-white/45">{accessibleGyms.length > 0 ? `${formatPersianNumber(accessibleGyms.length)} باشگاه` : "\u2014"}</span>
+                <span className="text-[11px] text-white/45">{accessibleGyms.length > 0 ? `${formatPersianNumber(accessibleGyms.length)} باشگاه` : "—"}</span>
               </div>
               {accessibleGyms.length === 0 ? (
                 <p className="text-xs text-white/45 py-2">باشگاهی در اشتراک شما نیست.</p>
@@ -396,21 +406,19 @@ export function GymAccessTokenPage() {
           ) : null}
 
           {!loading && pastTokens.length > 0 ? (
-            <section>
-              <h3 className="text-sm font-bold text-white mb-2">سوابق اعتبار</h3>
+            <section className="space-y-3">
+              <h3 className="text-sm font-bold text-white px-0.5">اعتبارهای قبلی</h3>
               <ul className="space-y-2">
                 {pastTokens.map((t) => {
                   const meta = statusMeta(t.status);
-                  const Icon = meta.Icon;
+                  const StatusIcon = meta.Icon;
                   return (
-                    <li key={t.id} className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-[#121216] px-3 py-3">
-                      <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${meta.className}`}>
-                        <Icon size={14} aria-hidden />
+                    <li key={t.id} className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#121216] px-3.5 py-3">
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${meta.className}`}>
+                        <StatusIcon size={11} aria-hidden />
+                        {meta.label}
                       </span>
-                      <div className="min-w-0 flex-1 text-right">
-                        <p className="text-xs font-mono text-white/80 truncate" dir="ltr">{t.token_code}</p>
-                        <p className="text-[10px] text-white/40">{meta.label}</p>
-                      </div>
+                      <code className="flex-1 min-w-0 truncate text-xs font-mono text-white/55 text-left" dir="ltr">{t.token_code}</code>
                     </li>
                   );
                 })}
@@ -419,41 +427,46 @@ export function GymAccessTokenPage() {
           ) : null}
         </div>
       </main>
-      <BottomNavigation />
 
       {showQRModal && activeToken ? (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="کد QR اعتبار">
-          <div className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#121216] p-5 space-y-4">
-            <button type="button" onClick={() => setShowQRModal(false)} className="absolute left-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-xl text-white/50 hover:bg-white/5" aria-label="بستن">
-              <X size={18} />
-            </button>
-            <h3 className="text-base font-extrabold text-white text-center">کد QR اعتبار</h3>
-            {activeToken.qr_code ? (
-              <img src={activeToken.qr_code} alt="QR" className="mx-auto h-48 w-48 rounded-xl bg-white p-2" />
-            ) : (
-              <p className="text-center text-sm text-white/50">QR در دسترس نیست</p>
-            )}
-            <p className="text-center font-mono text-sm text-white/80" dir="ltr">{activeToken.token_code}</p>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
+          <button type="button" className="absolute inset-0 bg-black/70 backdrop-blur-sm" aria-label="بستن" onClick={() => setShowQRModal(false)} />
+          <div className="relative z-10 w-full max-w-md rounded-t-3xl sm:rounded-3xl border border-white/10 bg-[#121216] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold text-white">کد QR اعتبار</h2>
+              <button type="button" onClick={() => setShowQRModal(false)} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/50" aria-label="بستن">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="bg-white rounded-2xl p-4 mb-4">
+              <img src={activeToken.qr_code} alt="QR Code" className="w-full max-w-[260px] mx-auto" />
+            </div>
+            <p className="text-center text-xs text-white/50 mb-4">این کد را برای ورود به باشگاه نشان دهید</p>
+            <button type="button" onClick={() => setShowQRModal(false)} className="btn btn-primary w-full min-h-12">بستن</button>
           </div>
         </div>
       ) : null}
 
       {showCopyModal && activeToken ? (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="کپی اعتبار">
-          <div className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#121216] p-5 space-y-4">
-            <button type="button" onClick={() => setShowCopyModal(false)} className="absolute left-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-xl text-white/50 hover:bg-white/5" aria-label="بستن">
-              <X size={18} />
-            </button>
-            <h3 className="text-base font-extrabold text-white text-center">کپی کد اعتبار</h3>
-            <p className="text-center font-mono text-sm text-white/80 break-all" dir="ltr">{activeToken.token_code}</p>
-            <button type="button" onClick={copyToClipboard} className="btn btn-primary w-full min-h-12">
-              {copyFeedback ? "کپی شد ✓" : "کپی"}
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
+          <button type="button" className="absolute inset-0 bg-black/70 backdrop-blur-sm" aria-label="بستن" onClick={() => setShowCopyModal(false)} />
+          <div className="relative z-10 w-full max-w-md rounded-t-3xl sm:rounded-3xl border border-white/10 bg-[#121216] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-white">کپی کد اعتبار</h2>
+              <button type="button" onClick={() => setShowCopyModal(false)} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/50" aria-label="بستن">
+                <X size={18} />
+              </button>
+            </div>
+            <code className="block w-full rounded-xl bg-black/40 border border-white/10 px-4 py-3 text-center font-mono text-sm text-white" dir="ltr">{activeToken.token_code}</code>
+            <button type="button" onClick={copyToClipboard} className="btn btn-primary w-full min-h-12 inline-flex items-center justify-center gap-2">
+              <Copy size={16} aria-hidden />
+              {copyFeedback ? "کپی شد!" : "کپی کد"}
             </button>
           </div>
         </div>
       ) : null}
+
+      <BottomNavigation />
     </div>
   );
 }
-
-export default GymAccessTokenPage;
